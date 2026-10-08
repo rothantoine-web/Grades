@@ -119,17 +119,19 @@
   <h1>Grades dashboard</h1>
   <p class="sub">Single trend line per child/year, colored by subject · class average overlaid · coefficient-weighted trend. Values normalized to /20.</p>
 
-  <div id="drop" class="drop">
-    <p>📂 <b>Drop EcoleDirecte / Pronote JSON files here</b> — or click to choose files.</p>
-    <p style="font-size:12px">Name each file <span class="mono">Child_Level_Year.json</span> &nbsp;e.g. <span class="mono">Valentina_6eme_2025-2026.json</span>, <span class="mono">Nolan_5eme_2026-2027.json</span>.<br>
-    The page auto-detects the format; child → tab, level+year → buttons. Loading is local — nothing is uploaded.</p>
-    <input type="file" id="fileInput" accept=".json,.txt,application/json" multiple hidden>
-    <div id="loadedFiles" class="loaded-files"></div>
+  <div id="dropHome" style="display:none">
+    <div id="drop" class="drop">
+      <p>📂 <b>Drop EcoleDirecte / Pronote JSON files here</b> — or click to choose files.</p>
+      <p style="font-size:12px">Name each file <span class="mono">Child_Level_Year.json</span> &nbsp;e.g. <span class="mono">Valentina_6eme_2025-2026.json</span>, <span class="mono">Nolan_5eme_2026-2027.json</span>.<br>
+      The page auto-detects the format; child → tab, level+year → buttons. Loading is local — nothing is uploaded.</p>
+      <input type="file" id="fileInput" accept=".json,.txt,application/json" multiple hidden>
+      <div id="loadedFiles" class="loaded-files"></div>
+    </div>
   </div>
 
   <div id="tabs" class="tabs"></div>
   <div id="panels"></div>
-  <div id="empty" class="empty">No data loaded yet. Drop your JSON files above to begin.</div>
+  <div id="empty" class="empty">No data loaded yet. Open <b>⚙︎ Settings</b> to drop your JSON files, or they'll load from the published data automatically.</div>
 </div>
 
 <template id="dashTemplate">
@@ -1030,6 +1032,10 @@ function rebuildUI(){
   const children=Object.keys(store);
   document.getElementById('empty').style.display = children.length? 'none':'block';
   tabsEl.innerHTML='';
+  // rescue the drop zone (lives inside Settings while that tab is open) back to
+  // its hidden home before wiping panels, so its bound handlers survive.
+  const dropEl=document.getElementById('drop'), dropHome=document.getElementById('dropHome');
+  if(dropEl && dropHome && dropEl.parentElement!==dropHome){ dropHome.appendChild(dropEl); dropEl.style.display='none'; }
   // keep existing panels' charts? simplest: wipe and rebuild lazily
   panelsEl.innerHTML='';
   if(activeChild!=='__settings__' && !children.includes(activeChild)) activeChild = children[0] || null;
@@ -1098,6 +1104,11 @@ function renderSettings(panel){
         <button id="btnPull" style="background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 18px;font:inherit;font-weight:600;font-size:14px;cursor:pointer">☁︎ Pull latest published data</button>
         <span id="pullMsg" style="font-size:13px;color:var(--muted)"></span>
       </div>
+    </div>
+    <div class="card">
+      <h2>Load files manually</h2>
+      <p class="legend-note" style="margin-top:0">Add or replace data by hand — e.g. Valentina's export from the EcoleDirecte bookmarklet. Nothing is uploaded; files stay in this browser.</p>
+      <div id="dropSlot"></div>
     </div>
     <div class="card">
       <h2>Refresh log</h2>
@@ -1186,6 +1197,11 @@ function renderSettings(panel){
       msg.textContent=''; showNoServer();
     });
   };
+
+  // relocate the live drop zone (with its already-bound handlers) into Settings
+  const dropSlot = panel.querySelector('#dropSlot');
+  const dropEl = document.getElementById('drop');
+  if(dropSlot && dropEl){ dropSlot.appendChild(dropEl); dropEl.style.display=''; }
 
   loadLog();
 }
