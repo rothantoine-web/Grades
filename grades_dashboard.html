@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Grades Dashboard</title>
+<!-- PWA: installable to the home screen, opens standalone + offline -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f1220">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Grades">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root { --bg:#0f1220; --panel:#1a1f35; --ink:#e8ecf7; --muted:#9aa3c0; --line:#2a3150; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; padding:24px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0 0 20px; font-size:13px; }
+  .wrap { max-width:1180px; margin:0 auto; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:22px; }
+  .controls { display:flex; gap:18px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+  .controls label { color:var(--muted); font-size:13px; cursor:pointer; user-select:none; }
+  .controls input { vertical-align:middle; margin-right:5px; }
+  .chartbox { position:relative; height:460px; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+  .stat { background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .stat .k { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.5px; }
+  .stat .v { font-size:20px; font-weight:600; margin-top:4px; }
+  .stat .sub { font-size:12px; color:var(--muted); margin-top:2px; }
+  .legend-note { color:var(--muted); font-size:12px; margin-top:10px; }
+  .subjlegend { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:12px; }
+  .subjlegend .swatch { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); cursor:pointer; padding:3px 8px; border-radius:7px; border:1px solid transparent; transition:.15s; user-select:none; }
+  .subjlegend .swatch:hover { background:var(--bg); border-color:var(--line); }
+  .subjlegend .swatch i { width:12px; height:12px; border-radius:50%; display:inline-block; }
+  .subjlegend .swatch.off { opacity:.32; }
+  .subjlegend .swatch.active { background:var(--bg); border-color:var(--line); color:var(--ink); font-weight:600; }
+  .subjlegend .swatch.reset { color:var(--ink); border-color:var(--line); }
+  h2 { font-size:15px; margin:0 0 12px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+  /* replay final-result strip (static end-state, shown without playing) */
+  .replayResult { margin:10px 0 2px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; }
+  .rr-year { font-size:13px; color:var(--ink); font-weight:600; }
+  .rr-year .rr-cls { color:var(--muted); font-weight:400; }
+  .rr-year .rr-gap { padding:1px 7px; border-radius:999px; font-size:12px; margin-left:4px; }
+  .rr-sep { color:var(--line); }
+  .rr-chips { display:flex; flex-wrap:wrap; gap:5px; }
+  .rr-chip { display:inline-flex; align-items:center; gap:5px; font-size:11px; padding:2px 7px 2px 6px; border-radius:999px; background:var(--bg); border:1px solid var(--line); }
+  .rr-chip i { width:8px; height:8px; border-radius:50%; flex:none; }
+  .rr-chip b { font-weight:600; }
+  /* per-subject range rows */
+  .ranges { display:flex; flex-direction:column; gap:11px; }
+  .range-row { display:flex; align-items:center; gap:10px; }
+  .range-lab { width:200px; flex:none; text-align:right; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .range-track { position:relative; flex:1; height:22px; }
+  .range-track::before { content:''; position:absolute; left:0; right:0; top:50%; height:2px; background:#2a3150; transform:translateY(-50%); }
+  .range-band { position:absolute; top:50%; height:14px; transform:translateY(-50%); border:1px solid; border-radius:4px; }
+  .range-cap { position:absolute; top:50%; width:3px; height:18px; transform:translate(-50%,-50%); border-radius:1px; }
+  .range-end { position:absolute; top:-2px; font-size:9px; color:var(--muted); transform:translateX(-50%); }
+  .range-end.lo { transform:translateX(-115%); }
+  .range-end.hi { transform:translateX(15%); }
+  .range-mark { position:absolute; top:50%; transform:translate(-50%,-50%); }
+  .range-mark.class { width:13px; height:13px; border-radius:50%; border:2px solid #e8ecf7; background:transparent !important; z-index:2; }
+  .range-mark.student { width:13px; height:13px; border:1.5px solid #0f1220; transform:translate(-50%,-50%) rotate(45deg); z-index:3; }
+  .range-axis { position:absolute; left:0; right:0; top:0; }
+  .range-axis span { position:absolute; transform:translateX(-50%); font-size:10px; color:var(--muted); }
+  .axis-track { height:16px; }
+  .axis-track::before { display:none; }
+  /* heatmap */
+  .heatmap { width:100%; }
+  .heatgrid { display:grid; gap:2px; grid-auto-rows:22px; align-content:start; width:100%; }
+  .heatgrid .hlabel { font-size:10px; color:var(--ink); white-space:nowrap; padding-right:8px; display:flex; align-items:center; justify-content:flex-end; overflow:hidden; text-overflow:ellipsis; }
+  .heatgrid .hhead { font-size:10px; color:var(--muted); white-space:nowrap; display:flex; align-items:flex-end; justify-content:center; border-left:1px solid var(--line); }
+  .heatgrid .headrow { height:22px; }
+  .heatgrid .cell { height:22px; min-width:0; border-radius:2px; cursor:default; }
+  .heatgrid .cell.carry { opacity:.42; }
+  .heatgrid .cell.empty { background:#141a2e; }
+  .heatlegend { display:flex; align-items:center; gap:8px; font-size:11px; color:var(--muted); margin-top:12px; flex-wrap:wrap; }
+  .heatlegend .scale { display:flex; height:12px; border-radius:3px; overflow:hidden; width:220px; }
+  .heatlegend .scale span { flex:1; }
+  /* tabs (children) */
+  .tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .tabs button { background:var(--panel); color:var(--muted); border:1px solid var(--line); border-radius:10px 10px 0 0; padding:10px 20px; font:inherit; font-size:14px; cursor:pointer; transition:.15s; }
+  .tabs button:hover { color:var(--ink); }
+  .tabs button.active { background:var(--ink); color:var(--bg); font-weight:600; border-color:var(--ink); }
+  .tabpanel { display:none; }
+  .tabpanel.active { display:block; }
+  /* year/level selector */
+  .yearbar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .yearbar button { background:var(--bg); color:var(--muted); border:1px solid var(--line); border-radius:9px; padding:8px 16px; font:inherit; font-size:13px; cursor:pointer; transition:.15s; }
+  .yearbar button:hover { color:var(--ink); border-color:var(--muted); }
+  .yearbar button.active { background:#2a3150; color:var(--ink); font-weight:600; border-color:#3a4573; }
+  .yearbar .cnt { opacity:.6; font-size:11px; margin-left:4px; }
+  /* drop zone */
+  .drop { border:2px dashed var(--line); border-radius:14px; padding:26px; text-align:center; color:var(--muted); transition:.15s; margin-bottom:22px; cursor:pointer; }
+  .drop:hover, .drop.over { border-color:#4a9df0; color:var(--ink); background:#141a2e; }
+  .drop b { color:var(--ink); }
+  .drop .mono { font-family:ui-monospace,Consolas,monospace; font-size:12px; background:var(--bg); padding:2px 6px; border-radius:5px; }
+  .empty { text-align:center; color:var(--muted); padding:40px 20px; }
+  .loaded-files { font-size:12px; color:var(--muted); margin-top:10px; }
+  .loaded-files span { display:inline-block; background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:2px 8px; margin:2px; }
+  .toggle-src { background:none; border:1px solid var(--line); color:var(--muted); border-radius:8px; padding:6px 12px; font:inherit; font-size:12px; cursor:pointer; }
+  .toggle-src:hover { color:var(--ink); }
+  /* PWA / mobile: respect the notch and give phones more room */
+  body { padding:max(16px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left)); }
+  @media (max-width:640px){
+    body { font-size:14px; }
+    .card { padding:14px 14px; }
+    .chartbox { height:360px; }
+    .tabs button { padding:9px 14px; }
+    .controls { gap:10px; }
+    .range-lab { width:120px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Grades dashboard</h1>
+  <p class="sub">Single trend line per child/year, colored by subject · class average overlaid · coefficient-weighted trend. Values normalized to /20.</p>
+
+  <div id="drop" class="drop">
+    <p>📂 <b>Drop EcoleDirecte / Pronote JSON files here</b> — or click to choose files.</p>
+    <p style="font-size:12px">Name each file <span class="mono">Child_Level_Year.json</span> &nbsp;e.g. <span class="mono">Valentina_6eme_2025-2026.json</span>, <span class="mono">Nolan_5eme_2026-2027.json</span>.<br>
+    The page auto-detects the format; child → tab, level+year → buttons. Loading is local — nothing is uploaded.</p>
+    <input type="file" id="fileInput" accept=".json,.txt,application/json" multiple hidden>
+    <div id="loadedFiles" class="loaded-files"></div>
+  </div>
+
+  <div id="tabs" class="tabs"></div>
+  <div id="panels"></div>
+  <div id="empty" class="empty">No data loaded yet. Drop your JSON files above to begin.</div>
+</div>
+
+<template id="dashTemplate">
+  <div class="card">
+    <div class="controls">
+      <label><input type="checkbox" class="toggleClass" checked> Show class average (dashed)</label>
+      <label><input type="checkbox" class="toggleVsClass"> Recolor points: beat class = green / below = red</label>
+      <label><input type="checkbox" class="toggleTrend" checked> Show overall trend line</label>
+      <label><input type="checkbox" class="toggleCrowns"> 👑 Show top-of-class crowns</label>
+      <label>Period: <select class="periodSel" style="background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:4px 8px;font:inherit;font-size:13px"></select></label>
+      <button class="replaySubjBtn" type="button" style="background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:4px 12px;font:inherit;font-size:13px;cursor:pointer">📊 Subjects vs class</button>
+    </div>
+    <div class="replayResult"></div>
+    <div class="subjlegend"></div>
+    <div class="chartbox"><canvas class="chart"></canvas></div>
+    <p class="legend-note"><b>Click a subject above</b> to isolate it. <b>Circle size = coefficient</b>. White line = coefficient-weighted trend. Red zone (&lt;10/20) = below-passing. 👑 = top of class on that assessment. Hover any point for details.</p>
+  </div>
+  <div class="card">
+    <h2>At a glance</h2>
+    <div class="stats"></div>
+  </div>
+  <div class="card">
+    <h2>Per-subject range — class min · avg · student · max (/20, full year)</h2>
+    <p class="legend-note" style="margin:0 0 10px">Band = class range (lowest→highest student average in the class). <b>◆</b> = student average · <b>○</b> = class average. Full-year figures: EcoleDirecte semester averages are averaged across terms. Shows where she sits within the headroom each subject offered.</p>
+    <div class="chartbox" style="height:380px"><canvas class="barChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="controls" style="justify-content:space-between">
+      <h2 style="margin:0">Heatmap — by subject & week</h2>
+      <label><input type="checkbox" class="toggleHeatMode"> Show raw grade /20 (off = difference vs class)</label>
+    </div>
+    <div class="heatmap"></div>
+    <div class="heatlegend"></div>
+    <p class="legend-note">Each cell = that subject's <b>coefficient-weighted</b> result for the week. Weeks with no new grade keep the previous week's color (faded) until the next grade. Hover a cell for details.</p>
+  </div>
+  <div class="card radar-card">
+    <h2>Subject radar — standing within class, by year</h2>
+    <p class="legend-note" style="margin:0 0 10px">Each axis = a subject; distance from center = where her average sits <b>within the class range</b> — 0% = the lowest class average, 100% = the top. Subjects with no data yet sit at 50% (hollow marker). One polygon per year — see how the shape of strengths shifts.</p>
+    <div class="chartbox" style="height:420px"><canvas class="radarChart"></canvas></div>
+  </div>
+  <div class="card">
+    <h2>Standing in class <span class="standing-title" style="text-transform:none;font-weight:400">over time</span> <span style="text-transform:none;font-weight:400;color:var(--muted)">(estimated)</span></h2>
+    <p class="legend-note" style="margin:0 0 10px">Estimated position within the class on each assessment, from the grade's place on the min→average→max line (50% = class average, 100% = top score, 0% = lowest). A position proxy, <b>not</b> an exact rank.</p>
+    <div class="chartbox" style="height:320px"><canvas class="standingChart"></canvas></div>
+  </div>
+</template>
+
+<script>
+/* ===================================================================
+   Grades dashboard — loads raw EcoleDirecte & Pronote JSON exports.
+   Drop files named  Child_Level_Year.json  (e.g. Valentina_6eme_2025-2026.json).
+   =================================================================== */
+
+/* ===================================================================
+   PWA + remote-data config.
+   DATA_URL: where the PC publishes the latest grades (a secret gist raw URL,
+   or later a password-protected endpoint). Leave '' to disable remote fetch
+   and run purely on built-in + dropped files. Set it once, here.
+
+   The published file is EITHER:
+     - a bundle: { "files": { "Louis_6eme_2026-2027.json": {..parsed json..}, ... } }
+     - or a single raw export (treated as one file named by DATA_FILENAME).
+   publish_to_gist.py writes the bundle form.
+   =================================================================== */
+const CONFIG = {
+  DATA_URL: 'https://gist.githubusercontent.com/rothantoine-web/e8b72caf4ea72b9c3f67b72029fbbde2/raw/grades.json',
+  DATA_FILENAME: 'remote.json',         // name used if DATA_URL returns a single raw export
+  // AUTH stub — disabled. Flip ENABLED to true later to gate the app behind a
+  // shared passphrase (speed-bump only; see notes). PASS_HASH = SHA-256 of the passphrase.
+  AUTH: { ENABLED: false, PASS_HASH: '' }
+};
+
+/* ---------- register the service worker (enables install + offline) ---------- */
+if ('serviceWorker' in navigator && (location.protocol==='http:'||location.protocol==='https:')) {
+  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+
+
+/* ---------- color palette (stable per subject family, shared across children) ---------- */
+// Subjects are colored by a canonical "family" so the same topic matches across
+// Valentina (EcoleDirecte) and Louis (Pronote) even when the names differ.
+const FAMILY_COLOR = {
+  "FRANCAIS":"#e74c6b", "MATHEMATIQUES":"#4a9df0", "ANGLAIS":"#2ecc9b",
+  "ANGLAIS_BILINGUE":"#1ab6c8", "HISTOIRE_GEO":"#f06292", "PHYSIQUE_CHIMIE":"#b36bf5",
+  "SVT":"#8bc34a", "EMC":"#ff8a65", "EPS":"#ffd54f", "MUSIQUE":"#000075",
+  "ARTS":"#f5a623", "ESPAGNOL":"#ff7043", "TECHNO":"#90a4ae"
+};
+// map any school's subject label -> canonical family key
+function canon(label){
+  const s = (label||"").toUpperCase();
+  if(/BILING|\bEBS\b/.test(s)) return "ANGLAIS_BILINGUE";
+  if(/ANGLAIS|\bAGL|\bLV1\b|\bLLC/.test(s)) return "ANGLAIS";
+  if(/ESPAGNOL|\bESP/.test(s)) return "ESPAGNOL";
+  if(/HIST|GEO/.test(s)) return "HISTOIRE_GEO";
+  if(/MATH/.test(s)) return "MATHEMATIQUES";
+  if(/\bEPS\b|PHYSIQUE ET SPORT|SPORT/.test(s)) return "EPS";       // before PHYS (EPS contains "PHYSIQUE")
+  if(/PHYSIQUE-CHIM|PHYSIQUE\/CHIM|PHYS.*CHIM|CHIM/.test(s)) return "PHYSIQUE_CHIMIE";
+  if(/SCIENCES DE LA VIE|\bSVT\b|\bEIS\b/.test(s)) return "SVT";   // EIS = integrated science -> SVT green
+  if(/MORAL|\bEMC\b/.test(s)) return "EMC";
+  if(/MUSICALE|MUSIQUE/.test(s)) return "MUSIQUE";
+  if(/ARTS|PLASTIQ/.test(s)) return "ARTS";
+  if(/TECHNO/.test(s)) return "TECHNO";
+  if(/FRANC/.test(s)) return "FRANCAIS";
+  return s;   // unknown -> its own key
+}
+// fallback colors for families with no assigned color, deterministic by key
+const FALLBACK = ["#4a9df0","#e74c6b","#2ecc9b","#f5a623","#b36bf5","#1ab6c8","#ff8a65","#8bc34a","#ba68c8","#ffd54f","#f06292","#00bcd4"];
+let _fallbackSeen = {};
+function familyColor(label){
+  const k = canon(label);
+  if(FAMILY_COLOR[k]) return FAMILY_COLOR[k];
+  if(!(k in _fallbackSeen)) _fallbackSeen[k] = FALLBACK[Object.keys(_fallbackSeen).length % FALLBACK.length];
+  return _fallbackSeen[k];
+}
+
+/* ---------- parsing helpers ---------- */
+const num = v => { if(v===null||v===undefined||v==="") return null; const n=parseFloat(String(v).replace(',','.')); return isNaN(n)?null:n; };
+const frDate = s => { if(!s) return null; if(s.includes('/')){ const [d,m,y]=s.split('/'); return `${y}-${m}-${d}`; } return s; };
+
+// EcoleDirecte raw export -> {data, subjectStats}.
+// subjectStats pulled from periodes[].ensembleMatieres.disciplines (authoritative subject
+// averages: moyenne/moyenneClasse/moyenneMin/moyenneMax, already on /20).
+function fromEcoleDirecte(json){
+  const root = json.data || json;
+  const notes = root.notes || [];
+  const data = notes.map(d=>({
+    devoir: d.devoir||"", matiere: d.libelleMatiere, type: d.typeDevoir||"",
+    dateSaisie: d.dateSaisie || d.date, coef: num(d.coef)??1,
+    noteSur: num(d.noteSur), valeur: (d.enLettre ? null : num(d.valeur)),
+    moyenneClasse: num(d.moyenneClasse), minClasse: num(d.minClasse), maxClasse: num(d.maxClasse)
+  })).filter(d=> d.valeur!=null && d.noteSur>0 && d.matiere);
+
+  // merge discipline stats across non-annual periods; later periods overwrite earlier when populated
+  const subjectStats = {};
+  // EcoleDirecte reports subject averages PER SEMESTER (no populated annual figure), so
+  // average the semester values per subject for a full-year view. Averaging per field-count
+  // (not a hardcoded /2) handles subjects graded in only one semester. The min/max band stays
+  // meaningful: it's the mean of each semester's class min/max (spread of real student averages).
+  const acc = {};   // discipline -> {you:[], ca:[], lo:[], hi:[]}
+  (root.periodes||[]).forEach(p=>{
+    if(p.annuel) return;
+    ((p.ensembleMatieres && p.ensembleMatieres.disciplines)||[]).forEach(di=>{
+      if(!di.codeMatiere || !di.discipline) return;          // skip group rows (empty codeMatiere)
+      const you=num(di.moyenne), ca=num(di.moyenneClasse), lo=num(di.moyenneMin), hi=num(di.moyenneMax);
+      if(you==null && ca==null && lo==null && hi==null) return;
+      const a = acc[di.discipline] || (acc[di.discipline] = {you:[],ca:[],lo:[],hi:[]});
+      if(you!=null) a.you.push(you); if(ca!=null) a.ca.push(ca);
+      if(lo!=null) a.lo.push(lo);  if(hi!=null) a.hi.push(hi);
+    });
+  });
+  const avg = arr => arr.length ? +(arr.reduce((x,y)=>x+y,0)/arr.length).toFixed(2) : null;
+  Object.entries(acc).forEach(([disc,a])=>{
+    subjectStats[disc] = { lo:avg(a.lo), hi:avg(a.hi), classAvg:avg(a.ca), studentAvg:avg(a.you) };
+  });
+  return { data, subjectStats };
+}
+
+// Pronote raw export -> common record shape (x-axis = assessment date).
+// Returns {data, subjectStats}. Pronote carries authoritative per-subject
+// min/max/averages in listeServices (moyMin/moyMax/moyClasse/moyEleve, all /20).
+function fromPronote(json){
+  const root = (json.dataSec && json.dataSec.data) || json.data || json;
+  const devoirs = (root.listeDevoirs && root.listeDevoirs.V) || [];
+  const data = devoirs.map(d=>({
+    devoir: d.commentaire||"", matiere: d.service.V.L, type:"",
+    dateSaisie: frDate(d.date && d.date.V), coef: num(d.coefficient)||1,
+    noteSur: num(d.bareme && d.bareme.V)||20, valeur: num(d.note && d.note.V),
+    moyenneClasse: num(d.moyenne && d.moyenne.V),
+    minClasse: num(d.noteMin && d.noteMin.V), maxClasse: num(d.noteMax && d.noteMax.V),
+    _couleur: d.service.V.couleur
+  })).filter(d=> d.valeur!=null && d.noteSur>0 && d.matiere);
+
+  const subjectStats = {};
+  const services = (root.listeServices && root.listeServices.V) || [];
+  services.forEach(s=>{
+    const bar = num(s.baremeMoyEleve && s.baremeMoyEleve.V) || 20;
+    const to20 = v => v==null ? null : +(v/bar*20).toFixed(2);
+    subjectStats[s.L] = {
+      lo: to20(num(s.moyMin && s.moyMin.V)),
+      hi: to20(num(s.moyMax && s.moyMax.V)),
+      classAvg: to20(num(s.moyClasse && s.moyClasse.V)),
+      studentAvg: to20(num(s.moyEleve && s.moyEleve.V))
+    };
+  });
+  return { data, subjectStats };
+}
+
+// detect format and normalize. Returns {source, data, subjectStats, method}.
+// subjectStats: optional {subject -> {lo,hi,classAvg,studentAvg}} (Pronote supplies it directly).
+// method: how to compute overall averages — 'pool' (Pronote: Σnote/Σbareme×20) or 'per20' (EcoleDirecte).
+function parseFile(json){
+  if(Array.isArray(json.__records)) return {source:"built-in", data:json.__records, subjectStats:json.__stats||{}, method:json.__method||'per20'};
+  const r = (json.dataSec && json.dataSec.data) || json.data || json;
+  if(r.listeDevoirs){ const {data,subjectStats}=fromPronote(json); return {source:"Pronote", data, subjectStats, method:'pool'}; }
+  if(r.notes || json.notes){ const {data,subjectStats}=fromEcoleDirecte(json); return {source:"EcoleDirecte", data, subjectStats, method:'per20'}; }
+  throw new Error("Unrecognized format (no notes[] or listeDevoirs)");
+}
+
+// build a palette map {subjectLabel -> color} using the shared family colors,
+// so the same topic is identical across children regardless of the school's naming
+function paletteFor(data){
+  const p = {};
+  for(const d of data){
+    if(p[d.matiere]) continue;
+    p[d.matiere] = familyColor(d.matiere);
+  }
+  return p;
+}
+
+// parse "Child_Level_Year" from filename -> {child, level, year, label}
+function parseName(filename){
+  const base = filename.replace(/\.[^.]+$/,'');            // strip extension
+  const parts = base.split(/[_\-]+/).filter(Boolean);
+  const child = parts[0] || "Child";
+  // find a level-like token (6eme, 5e, 4ème...) and a year-like token (2025-2026 / 2025)
+  const level = parts.find(p=>/^\d\s*(e|è|eme|ème|nde|re)/i.test(p)) || "";
+  const yearTok = base.match(/20\d\d\s*[-–]\s*20\d\d|20\d\d/);
+  const year = yearTok ? yearTok[0].replace(/\s/g,'') : "";
+  const labelBits = [level, year].filter(Boolean).join(" · ");
+  return { child, level, year, label: labelBits || base };
+}
+
+/* ===================================================================
+   Dashboard renderer (one trend line, clickable legend, weighted trend)
+   =================================================================== */
+function renderDashboard(root, data, palette, opts={}){
+  data = data.map(d => ({
+    ...d,
+    norm: +(d.valeur / d.noteSur * 20).toFixed(2),
+    normClass: d.moyenneClasse ? +(d.moyenneClasse / d.noteSur * 20).toFixed(2) : null,
+    vsClass: d.moyenneClasse ? +((d.valeur - d.moyenneClasse) / d.noteSur * 20).toFixed(2) : null,
+    normMin: d.minClasse!=null ? +(d.minClasse / d.noteSur * 20).toFixed(2) : null,
+    normMax: d.maxClasse!=null ? +(d.maxClasse / d.noteSur * 20).toFixed(2) : null
+  }));
+
+  const subjects = [...new Set(data.map(d=>d.matiere))];
+  const color = s => palette[s] || "#8aa0ff";
+  // top-of-class = grade equals the class max on that assessment (needs per-test max)
+  const isTop = d => d.normMax!=null && d.norm >= d.normMax - 0.001;
+  const seqAll = data.slice().sort((a,b)=>
+    new Date(a.dateSaisie)-new Date(b.dateSaisie) || a.matiere.localeCompare(b.matiere));
+  let seq = seqAll;                     // active view (period filter narrows this)
+  let crownsAlways = false;             // toggle: show crowns even in full (all-subjects) view
+
+  // x-axis labels: one month name at the first grade of each month, blank elsewhere
+  // (every grade keeps its own slot; the labels just read as month sections).
+  function labelsFor(){
+    let prevMonth = null;
+    return seq.map(d=>{
+      const dd=new Date(d.dateSaisie), m=dd.getFullYear()+'-'+dd.getMonth();
+      if(m===prevMonth) return '';
+      prevMonth = m;
+      return dd.toLocaleDateString('en-GB',{month:'short'});     // Sep, Oct, Nov…
+    });
+  }
+
+  let activeSubject = null;
+  const visible = d => activeSubject===null || d.matiere===activeSubject;
+
+  function studentDataset(colorByVs){
+    return {
+      label:"Grade",
+      data: seq.map((d,i)=>({x:i, y:visible(d)?d.norm:null, raw:d})),
+      parsing:false, spanGaps:true,
+      borderColor:"#c9d2f0", borderWidth:2.5, tension:0.3, fill:false,
+      pointRadius: seq.map(d=> visible(d) ? 4 + d.coef*2.2 : 0),
+      pointHoverRadius: seq.map(d=> visible(d) ? 6 + d.coef*2.2 : 0),
+      pointBackgroundColor: colorByVs
+        ? seq.map(d=> d.vsClass>=0 ? "#2ecc9b" : "#e74c6b")
+        : seq.map(d=>color(d.matiere)),
+      pointBorderColor:"#0f1220", pointBorderWidth:1.5, _kind:"student"
+    };
+  }
+  function classDataset(){
+    return {
+      label:"Class average",
+      data: seq.map((d,i)=>({x:i, y:visible(d)?d.normClass:null, raw:d})),
+      parsing:false, spanGaps:true,
+      borderColor:"rgba(154,163,192,0.55)", borderWidth:1.6, borderDash:[6,4], tension:0.3, fill:false,
+      pointRadius: seq.map(d=> visible(d) ? 3 : 0),
+      pointHoverRadius: seq.map(d=> visible(d) ? 5 : 0),
+      pointBackgroundColor: seq.map(d=>color(d.matiere)),
+      pointBorderColor:"rgba(154,163,192,0.55)", pointBorderWidth:1, _kind:"class"
+    };
+  }
+  function trendDataset(){
+    const items = seq.map((d,i)=>({x:i, y:d.norm, w:d.coef})).filter((_,i)=>visible(seq[i]));
+    if(items.length<2) return {label:"Overall trend",_kind:"trend",data:[],pointRadius:0};
+    const W=items.reduce((s,p)=>s+p.w,0);
+    const sx=items.reduce((s,p)=>s+p.w*p.x,0), sy=items.reduce((s,p)=>s+p.w*p.y,0);
+    const sxx=items.reduce((s,p)=>s+p.w*p.x*p.x,0), sxy=items.reduce((s,p)=>s+p.w*p.x*p.y,0);
+    const b=(W*sxy-sx*sy)/(W*sxx-sx*sx), a=(sy-b*sx)/W;
+    const x0=items[0].x, x1=items[items.length-1].x;
+    return { label:"Overall trend (coef-weighted)", _kind:"trend", parsing:false,
+      data:[{x:x0,y:+(a+b*x0).toFixed(2)},{x:x1,y:+(a+b*x1).toFixed(2)}],
+      borderColor:"#ffffff", borderWidth:2, borderDash:[2,3], pointRadius:0, tension:0, fill:false };
+  }
+
+  const passZone = { id:'passZone', beforeDraw(c){
+    const {ctx,chartArea:{left,right,bottom},scales:{y}}=c;
+    if(y.max<10) return;                      // only on the /20 axis, not the gap view
+    const y10=y.getPixelForValue(10);
+    ctx.save(); ctx.fillStyle='rgba(231,76,107,0.07)'; ctx.fillRect(left,y10,right-left,bottom-y10); ctx.restore();
+  }};
+
+  // 👑 above each top-of-class point. Shown when a subject is isolated, OR when the
+  // "show crowns" toggle is on (lets you see them in the full-year view on demand).
+  const crownPlugin = { id:'crowns', afterDatasetsDraw(c){
+    if(activeSubject===null && !crownsAlways) return;
+    const meta = c.getDatasetMeta(0);                       // dataset 0 = student line
+    if(!meta || !meta.data) return;
+    const ctx=c.ctx; ctx.save(); ctx.font='13px serif'; ctx.textAlign='center';
+    meta.data.forEach((pt,i)=>{
+      const d=seq[i];
+      if(d && visible(d) && isTop(d) && pt && !pt.skip){
+        ctx.fillText('👑', pt.x, pt.y - 10);
+      }
+    });
+    ctx.restore();
+  }};
+
+  const legendEl = root.querySelector('.subjlegend');
+  const gapInk = g=> g==null? 'var(--muted)' : g>=0 ? '#2ecc9b' : '#e74c6b';
+  // per-subject coef-weighted gap vs class for the active period (seq) — class-rated grades only
+  function gapForSubject(s){
+    let n=0,w=0,cn=0,cw=0,any=false;
+    seq.forEach(d=>{ if(d.matiere===s && d.normClass!=null){ n+=d.norm*d.coef; w+=d.coef; cn+=d.normClass*d.coef; cw+=d.coef; any=true; } });
+    return any ? (n/w)-(cn/cw) : null;
+  }
+  function renderSubjLegend(){
+    // sort strongest→weakest gap vs class (subjects with no class-rated grade go last)
+    const ordered = subjects.slice().sort((a,b)=>{
+      const ga=gapForSubject(a), gb=gapForSubject(b);
+      if(ga==null && gb==null) return 0; if(ga==null) return 1; if(gb==null) return -1;
+      return gb-ga;
+    });
+    legendEl.innerHTML = ordered.map(s=>{
+      const on = activeSubject===null || activeSubject===s;
+      const g = gapForSubject(s);
+      const badge = g==null ? '' : ` <b style="color:${gapInk(g)};font-weight:600">${g>=0?'+':''}${g.toFixed(1)}</b>`;
+      return `<span class="swatch${on?'':' off'}${activeSubject===s?' active':''}" data-subj="${s}" title="${s}${g==null?'':`: ${g>=0?'+':''}${g.toFixed(2)} vs class`}"><i style="background:${color(s)}"></i>${s}${badge}</span>`;
+    }).join('') + (activeSubject!==null ? `<span class="swatch reset" data-subj="__all">↺ show all</span>` : '');
+    legendEl.querySelectorAll('.swatch').forEach(sw=>sw.onclick=()=>{
+      const s=sw.dataset.subj; activeSubject=(s==='__all'||s===activeSubject)?null:s; renderSubjLegend(); refresh();
+    });
+  }
+
+  let showClass=true, colorByVs=false, showTrend=true;
+  function datasets(){ let d=[studentDataset(colorByVs)]; if(showClass) d.push(classDataset()); if(showTrend) d.push(trendDataset()); return d; }
+
+  const chart = new Chart(root.querySelector('.chart'), {
+    type:'line', data:{labels:labelsFor(), datasets:datasets()},
+    options:{ maintainAspectRatio:false, animation:{duration:400}, interaction:{mode:'nearest', intersect:true},
+      scales:{ x:{type:'category', grid:{color:'#2a3150'}, ticks:{color:'#9aa3c0', autoSkip:false, maxRotation:0, minRotation:0}},
+        y:{min:0, max:20, grid:{color:'#2a3150'}, ticks:{color:'#9aa3c0', stepSize:2}, title:{display:true, text:'Grade (/20)', color:'#9aa3c0'}} },
+      plugins:{ legend:{labels:{color:'#e8ecf7', boxWidth:14, usePointStyle:true}},
+        tooltip:{ callbacks:{
+          title:items=>items[0].raw.raw ? new Date(items[0].raw.raw.dateSaisie).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '',
+          label:ctx=>{ const d=ctx.raw.raw; if(!d) return ctx.dataset.label+': '+ctx.parsed.y+'/20';
+            if(ctx.dataset._kind==='class') return `Class average: ${ctx.parsed.y}/20`;
+            const typeLine = d.type ? `${d.type} · coef ${d.coef}` : `coef ${d.coef}`;
+            return [ `${d.matiere}${d.devoir?' — '+d.devoir:''}`, `Grade: ${d.valeur}/${d.noteSur}  →  ${d.norm}/20`, typeLine,
+              d.normClass!=null ? `Class avg: ${d.normClass}/20 (you ${d.vsClass>=0?'+':''}${d.vsClass})` : '' ].filter(Boolean);
+          } } } }
+    }, plugins:[passZone, crownPlugin]
+  });
+
+  function refresh(){ chart.data.labels=labelsFor(); chart.data.datasets=datasets(); chart.update(); }
+  root.querySelector('.toggleClass').onchange=e=>{showClass=e.target.checked; refresh();};
+  root.querySelector('.toggleVsClass').onchange=e=>{colorByVs=e.target.checked; refresh();};
+  root.querySelector('.toggleTrend').onchange=e=>{showTrend=e.target.checked; refresh();};
+  const crownBox = root.querySelector('.toggleCrowns'); if(crownBox){ crownBox.onchange=e=>{crownsAlways=e.target.checked; chart.update();}; }
+
+  // period (month) selector — zoom the trend to a date window; "Full year" = all
+  const periodSel = root.querySelector('.periodSel');
+  if(periodSel){
+    const months = [...new Set(seqAll.map(d=>{const m=new Date(d.dateSaisie); return m.getFullYear()+'-'+String(m.getMonth()+1).padStart(2,'0');}))].sort();
+    const monthLabel = ym=>{ const [y,m]=ym.split('-'); return new Date(y,m-1,1).toLocaleDateString('en-GB',{month:'short',year:'2-digit'}); };
+    let opts2 = '<option value="all">Full year</option>';
+    months.forEach(ym=> opts2+=`<option value="${ym}">${monthLabel(ym)}</option>`);
+    // also offer first-half / second-half if the span is long
+    if(months.length>=6){
+      const mid=Math.floor(months.length/2);
+      opts2+=`<option value="range:${months[0]}:${months[mid-1]}">${monthLabel(months[0])} → ${monthLabel(months[mid-1])}</option>`;
+      opts2+=`<option value="range:${months[mid]}:${months[months.length-1]}">${monthLabel(months[mid])} → ${monthLabel(months[months.length-1])}</option>`;
+    }
+    periodSel.innerHTML = opts2;
+    const ym = d => { const m=new Date(d.dateSaisie); return m.getFullYear()+'-'+String(m.getMonth()+1).padStart(2,'0'); };
+    periodSel.onchange = e=>{
+      const v=e.target.value;
+      if(v==='all') seq = seqAll;
+      else if(v.startsWith('range:')){ const [,a,b]=v.split(':'); seq = seqAll.filter(d=> ym(d)>=a && ym(d)<=b); }
+      else seq = seqAll.filter(d=> ym(d)===v);
+      refresh();
+      renderSubjLegend();             // per-subject gaps are period-specific
+      renderResult();                 // keep the student-vs-class strip in sync with the period
+    };
+  }
+  renderSubjLegend();
+
+  /* ---- Student-vs-class summary line for the active period. The per-subject gaps
+     now live in the subject legend (merged), so this shows only the overall figure. */
+  const resultBox = root.querySelector('.replayResult');
+  function renderResult(){
+    if(!resultBox) return;
+    const rows = seq;                                   // active period view (filter-aware)
+    const full = (rows===seqAll) || rows.length===seqAll.length;
+    let sNum=0,sW=0,cNum=0,cW=0;
+    rows.forEach(d=>{ sNum+=d.norm*d.coef; sW+=d.coef;
+      if(d.normClass!=null){ cNum+=d.normClass*d.coef; cW+=d.coef; } });
+    const you = sW? sNum/sW : null, cls = cW? cNum/cW : null;
+    const fmt1 = v=> v==null? '—' : v.toFixed(1);
+    const gap = (you!=null && cls!=null) ? you-cls : null;
+    const gapCol = g=> g==null? 'var(--muted)' : g>=0 ? 'rgba(46,204,155,0.22)' : 'rgba(231,76,107,0.22)';
+    resultBox.innerHTML = `<span class="rr-year">${full?'Year':'Period'}: <b>You ${fmt1(you)}</b> <span class="rr-cls">· Class ${fmt1(cls)}</span>`
+      + (gap!=null ? ` <span class="rr-gap" style="background:${gapCol(gap)};color:${gapInk(gap)}">${gap>=0?'+':''}${gap.toFixed(1)}</span>` : '')
+      + `</span>`;
+  }
+  renderResult();
+
+
+  /* ---- "Subjects vs class" static view (one-click toggle, no animation) ----
+     Flattens the class average to a horizontal zero line and shows each subject's
+     full-year cumulative coef-weighted gap vs class (student − class), clamped ±4.
+     One click swaps the normal /20 trend for this view; click again to return. */
+  const subjBtn = root.querySelector('.replaySubjBtn');
+  if(subjBtn){
+    const CLAMP = 4;
+    const clamp = v => Math.max(-CLAMP, Math.min(CLAMP, v));
+    const gapLabels = seqAll.map((d,i)=>{
+      const s=new Date(d.dateSaisie).toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+      return (i>0 && seqAll[i-1].dateSaisie===d.dateSaisie) ? '' : s;
+    });
+    // continuous per-subject gap line (forward-filled so it coasts between grades)
+    const subjSeries = subjects.map(s=>{
+      let num=0,w=0,cnum=0,cw=0,any=false,last=null;
+      const data = seqAll.map(d=>{
+        if(d.matiere===s && d.normClass!=null){
+          num+=d.norm*d.coef; w+=d.coef; cnum+=d.normClass*d.coef; cw+=d.coef; any=true;
+          last=clamp(+((num/w)-(cnum/cw)).toFixed(2));
+        }
+        return last;
+      });
+      return { s, data, any };
+    }).filter(x=>x.any);
+    const baseline = seqAll.map(()=>0);
+    function subjDatasets(){
+      const lines = subjSeries.map(({s,data})=>({
+        label:s, data, parsing:true, spanGaps:true,
+        borderColor:color(s), borderWidth:2.5, tension:0.3, fill:false,
+        pointRadius:0, _kind:"subjgap" }));
+      lines.unshift({ label:"Class average", data:baseline, parsing:true,
+        borderColor:"rgba(154,163,192,0.65)", borderWidth:1.6, borderDash:[6,4],
+        pointRadius:0, tension:0, fill:false, _kind:"baseline" });
+      return lines;
+    }
+    const normalY = chart.options.scales.y;
+    const gapY = { min:-CLAMP, max:CLAMP, grid:{color:'#2a3150'},
+      ticks:{color:'#9aa3c0', stepSize:1, callback:v=> (v>0?'+':'')+v },
+      title:{display:true, text:'Gap vs class (pts)', color:'#9aa3c0'} };
+    let showing=false;
+    subjBtn.onclick=()=>{
+      if(!subjSeries.length) return;
+      if(!showing){
+        showing=true; subjBtn.textContent='↩ Back to grades';
+        chart.data.labels = gapLabels;
+        chart.data.datasets = subjDatasets();
+        chart.options.scales.y = gapY;
+        chart.options.plugins.legend.display = false;   // chips already label the colors
+        chart.update();
+      } else {
+        showing=false; subjBtn.textContent='📊 Subjects vs class';
+        chart.options.scales.y = normalY;
+        chart.options.plugins.legend.display = true;
+        refresh();
+      }
+    };
+    // leaving the subjects view if the user changes period while it is shown
+    if(periodSel){ const prev=periodSel.onchange; periodSel.onchange=e=>{ if(showing) subjBtn.onclick(); prev&&prev(e); }; }
+  }
+
+  // stats
+  const norms=data.map(d=>d.norm);
+  // Average method matches each school: Pronote pools points (Σnote/Σbareme×20, coef-weighted);
+  // EcoleDirecte averages the /20 grades (coef-weighted).
+  const method = opts.method || 'per20';
+  function overallAvg(rows){
+    if(!rows.length) return null;
+    if(method==='pool'){
+      const earned=rows.reduce((s,d)=>s+d.valeur*d.coef,0), poss=rows.reduce((s,d)=>s+d.noteSur*d.coef,0);
+      return poss>0 ? earned/poss*20 : null;
+    }
+    const w=rows.reduce((s,d)=>s+d.coef,0);
+    return w>0 ? rows.reduce((s,d)=>s+d.norm*d.coef,0)/w : null;
+  }
+  const avgLabel = method==='pool' ? 'Average (pooled)' : 'Weighted avg';
+  const rated=data.filter(d=>d.vsClass!=null);              // grades that have a class average
+  const beat=rated.filter(d=>d.vsClass>0).length;
+  const beatPct = rated.length ? Math.round(beat/rated.length*100) : 0;
+  // top-of-class count (isTop defined near top of renderDashboard).
+  // Denominator = ALL grades (not just those with class-max), so a few grades
+  // missing class-max data don't collapse it to a misleading "1/1". Note the
+  // gap when some grades lack class-max so the % is read correctly.
+  const withMax = data.filter(d=>d.normMax!=null);
+  const topCount = withMax.filter(isTop).length;
+  const topStat = data.length
+    ? [`${topCount} / ${data.length}`,
+       withMax.length < data.length
+         ? `${data.length - withMax.length} grade(s) lack class-max data`
+         : `${Math.round(topCount/data.length*100)}% of graded`]
+    : ['n/a', 'no grades'];
+  const stats=[
+    ["Grades", data.length],
+    [avgLabel, overallAvg(data).toFixed(2)+"/20"],
+    ["Best", Math.max(...norms).toFixed(1)+"/20"],
+    ["Lowest", Math.min(...norms).toFixed(1)+"/20"],
+    ["Beat class %", beatPct+"%", `${beat} / ${rated.length}`],
+    ["👑 Top of class", topStat[0], topStat[1]],
+  ];
+  root.querySelector('.stats').innerHTML = stats.map(([k,v,sub])=>
+    `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`).join('');
+
+  // per-subject range: band = class min..max, markers = class avg (○) & student (◆).
+  // Prefer authoritative subject-level stats (Pronote); else derive from per-assessment data.
+  const hexA = (hex,a)=>{ const h=hex.replace('#',''); const n=h.length===3?h.split('').map(c=>c+c).join(''):h;
+    const r=parseInt(n.slice(0,2),16), g=parseInt(n.slice(2,4),16), b=parseInt(n.slice(4,6),16); return `rgba(${r},${g},${b},${a})`; };
+  const mean = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
+  const sstats = opts.subjectStats || {};
+  const bySubj = subjects.map(s=>{
+    const rows = data.filter(d=>d.matiere===s);
+    const st = sstats[s] || {};
+    return {
+      s,
+      avg: st.studentAvg!=null ? st.studentAvg : overallAvg(rows),
+      classAvg: st.classAvg!=null ? st.classAvg : mean(rows.filter(d=>d.normClass!=null).map(d=>d.normClass)),
+      lo: st.lo!=null ? st.lo : mean(rows.filter(d=>d.normMin!=null).map(d=>d.normMin)),
+      hi: st.hi!=null ? st.hi : mean(rows.filter(d=>d.normMax!=null).map(d=>d.normMax))
+    };
+  }).sort((a,b)=>b.avg-a.avg);
+  const fmt = v => v==null ? '—' : v.toFixed(1)+'/20';
+
+  // Custom HTML/CSS range rows (Chart.js can't mix a bar with a linear index axis).
+  const barBox = root.querySelector('.barChart').closest('.chartbox');
+  (function drawRanges(){
+    barBox.style.height='auto'; barBox.innerHTML='';
+    const wrap=document.createElement('div'); wrap.className='ranges';
+    bySubj.forEach(x=>{
+      const row=document.createElement('div'); row.className='range-row';
+      const lab=document.createElement('div'); lab.className='range-lab'; lab.textContent=x.s; lab.style.color=color(x.s);
+      const track=document.createElement('div'); track.className='range-track';
+      const pct=v=>Math.max(0,Math.min(100,v/20*100));
+      if(x.lo!=null && x.hi!=null){
+        const band=document.createElement('div'); band.className='range-band';
+        band.style.left=pct(x.lo)+'%'; band.style.width=Math.max(0.8,pct(x.hi)-pct(x.lo))+'%';
+        band.style.background=hexA(color(x.s),0.35); band.style.borderColor=color(x.s);
+        band.title=`Class range: ${fmt(x.lo)} – ${fmt(x.hi)}`;
+        track.appendChild(band);
+        // min & max end caps + labels so they're clearly visible
+        [['lo',x.lo],['hi',x.hi]].forEach(([k,v])=>{
+          const cap=document.createElement('div'); cap.className='range-cap'; cap.style.left=pct(v)+'%';
+          cap.style.background=color(x.s); track.appendChild(cap);
+          const t=document.createElement('div'); t.className='range-end '+k; t.style.left=pct(v)+'%'; t.textContent=v.toFixed(1);
+          track.appendChild(t);
+        });
+      }
+      if(x.classAvg!=null){
+        const cm=document.createElement('div'); cm.className='range-mark class'; cm.style.left=pct(x.classAvg)+'%';
+        cm.title=`Class average: ${fmt(x.classAvg)}`; track.appendChild(cm);
+      }
+      if(x.avg!=null){
+        const sm=document.createElement('div'); sm.className='range-mark student'; sm.style.left=pct(x.avg)+'%';
+        sm.style.background=color(x.s); sm.title=`Student: ${fmt(x.avg)}`; track.appendChild(sm);
+      }
+      row.appendChild(lab); row.appendChild(track); wrap.appendChild(row);
+    });
+    const axis=document.createElement('div'); axis.className='range-axis';
+    for(let t=0;t<=20;t+=5){ const tk=document.createElement('span'); tk.style.left=`${t/20*100}%`; tk.textContent=t; axis.appendChild(tk); }
+    const axrow=document.createElement('div'); axrow.className='range-row';
+    axrow.innerHTML='<div class="range-lab"></div>'; const at=document.createElement('div'); at.className='range-track axis-track'; at.appendChild(axis); axrow.appendChild(at);
+    wrap.appendChild(axrow);
+    barBox.appendChild(wrap);
+  })();
+  const barChart = { destroy(){} };
+
+  /* ---------- heatmap: subject × ISO-week, color = diff-vs-class or raw /20 ---------- */
+  const heatEl = root.querySelector('.heatmap');
+  const heatLegEl = root.querySelector('.heatlegend');
+  const heatToggle = root.querySelector('.toggleHeatMode');
+
+  // ISO week key + Monday date for a given date
+  function isoWeek(d){
+    const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+    const day=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-day);          // Monday of this week
+    const monday=new Date(t);
+    const thu=new Date(t); thu.setUTCDate(t.getUTCDate()+3);                  // Thursday decides the year
+    const week1=new Date(Date.UTC(thu.getUTCFullYear(),0,4));
+    const wd=(week1.getUTCDay()+6)%7; week1.setUTCDate(week1.getUTCDate()-wd);
+    const no=1+Math.round((thu-week1)/(7*864e5));
+    return { key: thu.getUTCFullYear()+'-W'+String(no).padStart(2,'0'), monday };
+  }
+
+  // build the ordered list of weeks spanning the data
+  const wk = {};                       // key -> {monday, label}
+  seq.forEach(d=>{ const w=isoWeek(new Date(d.dateSaisie)); wk[w.key]=wk[w.key]||{monday:w.monday}; });
+  // fill in all weeks between first and last (so empty weeks exist as columns)
+  const weekKeys = Object.keys(wk).sort();
+  if(weekKeys.length){
+    let cur=new Date(wk[weekKeys[0]].monday), end=new Date(wk[weekKeys[weekKeys.length-1]].monday);
+    const all={};
+    while(cur<=end){ const w=isoWeek(cur); all[w.key]={monday:new Date(w.monday)}; cur.setUTCDate(cur.getUTCDate()+7); }
+    Object.assign(all, wk); Object.keys(all).forEach(k=>wk[k]=all[k]);
+  }
+  const weeks = Object.keys(wk).sort();
+  const weekLabel = k => { const m=wk[k].monday; return m.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}); };
+
+  // per subject × week: coefficient-weighted norm + diff vs class (only real grades)
+  const cellData = {};                 // subj -> { weekKey -> {norm, diff, items[]} }
+  subjects.forEach(s=> cellData[s]={});
+  data.forEach(d=>{
+    const k=isoWeek(new Date(d.dateSaisie)).key;
+    (cellData[d.matiere][k] = cellData[d.matiere][k] || {items:[]}).items.push(d);
+  });
+  subjects.forEach(s=> weeks.forEach(k=>{
+    const c=cellData[s][k]; if(!c) return;
+    const W=c.items.reduce((a,b)=>a+b.coef,0);
+    c.norm = c.items.reduce((a,b)=>a+b.norm*b.coef,0)/W;
+    const rated=c.items.filter(b=>b.vsClass!=null);
+    const rW=rated.reduce((a,b)=>a+b.coef,0);
+    c.diff = rW ? rated.reduce((a,b)=>a+b.vsClass*b.coef,0)/rW : null;
+  }));
+
+  // color scales
+  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  const lerp=(a,b,t)=>Math.round(a+(b-a)*t);
+  const rgb=(r,g,b)=>`rgb(${r},${g},${b})`;
+  function diffColor(v){                 // -5..0..+5  red -> grey -> green
+    const t=clamp(v,-5,5)/5;
+    if(t<0){ const u=-t; return rgb(lerp(90,231,u),lerp(99,76,u),lerp(120,107,u)); }
+    const u=t; return rgb(lerp(90,46,u),lerp(99,204,u),lerp(120,113,u));
+  }
+  function rawColor(v){                   // 0..10 deep red->red (10 = red threshold), 10..20 red->green
+    const g=clamp(v,0,20);
+    if(g<=10){ const u=g/10;              // 0 -> dark red, 10 -> bright red
+      return rgb(lerp(120,231,u), lerp(0,76,u), lerp(10,76,u)); }
+    const u=(g-10)/10;                     // 10 -> red, 20 -> green
+    return rgb(lerp(231,46,u), lerp(76,204,u), lerp(76,113,u));
+  }
+
+  function drawHeatmap(){
+    const rawMode = heatToggle.checked;
+    const grid=document.createElement('div'); grid.className='heatgrid';
+    grid.style.gridTemplateColumns = `130px repeat(${weeks.length}, minmax(0,1fr))`;
+    grid.style.gridTemplateRows = `22px`;   // header (month) row; rest use grid-auto-rows
+    // header row: one label per MONTH, spanning the weeks that fall in it
+    grid.appendChild(Object.assign(document.createElement('div'),{className:'hlabel headrow'}));
+    const monthOf = k => { const m=wk[k].monday; return m.getFullYear()+'-'+m.getMonth(); };
+    let col = 2;                                  // grid col 1 is the subject-label column
+    for(let i=0;i<weeks.length;){
+      const mk = monthOf(weeks[i]); let span=1;
+      while(i+span<weeks.length && monthOf(weeks[i+span])===mk) span++;
+      const m = wk[weeks[i]].monday;
+      const h=document.createElement('div'); h.className='hhead headrow';
+      h.textContent = m.toLocaleDateString('en-GB',{month:'short'}) + (m.getMonth()===0 ? " '"+String(m.getFullYear()).slice(2) : "");
+      h.style.gridColumn = `${col} / ${col+span}`;
+      grid.appendChild(h);
+      i+=span; col+=span;
+    }
+    // subject rows (same order as bar chart: by student avg desc)
+    const order = subjects.slice().sort((a,b)=>{
+      const ma=mean(data.filter(d=>d.matiere===a).map(d=>d.norm));
+      const mb=mean(data.filter(d=>d.matiere===b).map(d=>d.norm)); return mb-ma;
+    });
+    order.forEach(s=>{
+      const lab=document.createElement('div'); lab.className='hlabel'; lab.textContent=s; lab.style.color=color(s);
+      grid.appendChild(lab);
+      let carryVal=null, carryStarted=false, carriedFromLast=false;
+      weeks.forEach(k=>{
+        const c=cellData[s][k];
+        const cell=document.createElement('div'); cell.className='cell';
+        let val=null, isReal=false;
+        if(c){ val = rawMode ? c.norm : c.diff; isReal=true; carryStarted=true; carryVal=val; }
+        else if(carryStarted && carryVal!=null){ val=carryVal; }     // fill-forward
+        if(val==null){ cell.classList.add('empty'); }
+        else {
+          cell.style.background = rawMode ? rawColor(val) : diffColor(val);
+          if(!isReal) cell.classList.add('carry');
+          // tooltip
+          if(isReal){
+            const parts=c.items.map(it=>`${it.devoir||'(devoir)'}: ${it.valeur}/${it.noteSur}${it.normClass!=null?` (classe ${it.normClass})`:''}`);
+            cell.title = `${s} — ${weekLabel(k)}\n`+
+              (rawMode?`Grade: ${c.norm.toFixed(1)}/20`:`Diff vs class: ${c.diff>=0?'+':''}${c.diff.toFixed(1)}`)+
+              `\n`+parts.join('\n');
+          } else {
+            cell.title = `${s} — ${weekLabel(k)}\n(no new grade — showing previous week)`;
+          }
+        }
+        grid.appendChild(cell);
+      });
+    });
+    heatEl.innerHTML=''; heatEl.appendChild(grid);
+
+    // legend
+    if(rawMode){
+      heatLegEl.innerHTML = `<span>0</span><div class="scale">`+
+        Array.from({length:41},(_,i)=>`<span style="background:${rawColor(i*0.5)}"></span>`).join('')+
+        `</div><span>20 /20</span> &nbsp;·&nbsp; <span>red ≤ 10, green → 20</span>`;
+    } else {
+      heatLegEl.innerHTML = `<span>−5 (below class)</span><div class="scale">`+
+        Array.from({length:21},(_,i)=>`<span style="background:${diffColor(-5+i*0.5)}"></span>`).join('')+
+        `</div><span>+5 (above class)</span> &nbsp;·&nbsp; <span style="opacity:.42">faded = carried from previous week</span>`;
+    }
+  }
+  heatToggle.onchange = drawHeatmap;
+  drawHeatmap();
+
+  /* ---------- subject radar: vs-class per subject, one polygon per year ---------- */
+  const radarEl = root.querySelector('.radarChart');
+  let radarChart = null;
+  (function drawRadar(){
+    const years = (opts.allYears || []).filter(y=>y.data && y.data.length);
+    const card = root.querySelector('.radar-card');
+    if(years.length<1){ if(card) card.style.display='none'; return; }
+    const mean = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
+    // per year: canonical-subject -> % of class ceiling reached = studentAvg / classMax(moyMax) × 100
+    const famLabel = {}; const perYear = [];
+    years.forEach(y=>{
+      const stats = y.subjectStats || {};
+      // group this year's records by canonical family, keeping a display label and the raw subject label
+      const byFam = {};
+      y.data.forEach(d=>{
+        if(!d.noteSur) return;
+        const k = canon(d.matiere);
+        (byFam[k] = byFam[k] || {label:d.matiere, recs:[]}).recs.push(d);
+        if(!famLabel[k]) famLabel[k] = d.matiere;
+      });
+      const pct = {};
+      Object.keys(byFam).forEach(k=>{
+        const {label, recs} = byFam[k];
+        const st = stats[label];
+        let you, lo, hi;
+        if(st && st.studentAvg!=null && st.lo!=null && st.hi!=null){ you=st.studentAvg; lo=st.lo; hi=st.hi; }  // authoritative
+        else {                                                                                                 // derive from records
+          you = mean(recs.map(d=>d.norm));
+          const mins = recs.filter(d=>d.normMin!=null).map(d=>d.normMin);
+          const maxes = recs.filter(d=>d.normMax!=null).map(d=>d.normMax);
+          lo = mins.length ? mean(mins) : null;
+          hi = maxes.length ? mean(maxes) : null;
+        }
+        // position within the class range: 0% = weakest class average, 100% = top class average
+        if(you!=null && lo!=null && hi!=null && hi>lo)
+          pct[k] = Math.max(0, Math.min(100, +((you-lo)/(hi-lo)*100).toFixed(1)));
+      });
+      perYear.push({ label:y.label||y.key, pct });
+    });
+    // axes = union of families across years
+    const fams = [...new Set(perYear.flatMap(p=>Object.keys(p.pct)))];
+    if(!fams.length){ if(card) card.style.display='none'; return; }
+    if(card) card.style.display='';
+    const labels = fams.map(k=>famLabel[k]);
+    const YEARCOLORS = ['#4a9df0','#e74c6b','#2ecc9b','#f5a623'];
+    const datasets = perYear.map((p,i)=>{
+      const missing = fams.map(k=> p.pct[k]==null);           // true where this year has no data
+      const col = YEARCOLORS[i%YEARCOLORS.length];
+      return {
+        label: p.label,
+        // missing subject -> 50% placeholder (neutral midpoint), flagged for the tooltip
+        data: fams.map(k=> p.pct[k]!=null ? p.pct[k] : 50),
+        _missing: missing,
+        borderColor: col,
+        backgroundColor: hexA(col, 0.15),
+        borderWidth:2,
+        // hollow/faded marker on placeholder points so they read as "no data"
+        pointRadius: missing.map(m=> m?4:3),
+        pointStyle: missing.map(m=> m?'crossRot':'circle'),
+        pointBackgroundColor: missing.map(m=> m?'transparent':col),
+        pointBorderColor: col,
+        pointBorderWidth: missing.map(m=> m?1:1.5)
+      };
+    });
+    radarChart = new Chart(radarEl, {
+      type:'radar',
+      data:{ labels, datasets },
+      options:{ maintainAspectRatio:false,
+        scales:{ r:{
+          min:0, max:100,
+          angleLines:{color:'#2a3150'}, grid:{color:'#2a3150'},
+          pointLabels:{color:'#e8ecf7', font:{size:10}},
+          ticks:{color:'#9aa3c0', backdropColor:'transparent', stepSize:25,
+            callback:v=> v+'%' }
+        }},
+        plugins:{
+          legend:{labels:{color:'#e8ecf7', usePointStyle:true, boxWidth:12}},
+          tooltip:{callbacks:{label:c=>{
+            const miss = c.dataset._missing && c.dataset._missing[c.dataIndex];
+            return miss ? `${c.dataset.label}: no data (placeholder at 50%)`
+                        : `${c.dataset.label}: ${c.parsed.r}% within class range`;
+          }}}
+        }}
+    });
+  })();
+
+  /* ---------- standing in class (estimated) ---------- */
+  const standingEl = root.querySelector('.standingChart');
+  let standingChart = null;
+  const standTitle = root.querySelector('.standing-title');
+  const posInRange = (g,avg,mn,mx)=>{
+    let p; if(g>=avg){ const s=mx-avg; p = s>0 ? 50+50*(g-avg)/s : 50; }
+    else { const s=avg-mn; p = s>0 ? 50*(g-mn)/s : 50; }
+    return Math.max(0,Math.min(100,Math.round(p)));
+  };
+  (function drawStanding(){
+    // Preferred: per-assessment line (needs per-test min/max — EcoleDirecte).
+    const pts = seq.map((d,i)=>{
+      if(d.normClass==null || d.normMin==null || d.normMax==null) return {x:i, y:null, raw:d};
+      return {x:i, y:posInRange(d.norm,d.normClass,d.normMin,d.normMax), raw:d};
+    });
+    const haveOverTime = pts.some(p=>p.y!=null);
+
+    if(haveOverTime){
+      if(standTitle) standTitle.textContent='over time';
+      standingChart = new Chart(standingEl, {
+        type:'line',
+        data:{ labels: seq.map((_,i)=>i), datasets:[{
+          label:'Standing (est.)', data:pts, parsing:false, spanGaps:true,
+          borderColor:'#c9d2f0', borderWidth:2, tension:0.3, fill:false,
+          pointRadius: seq.map(d=>4+d.coef*2), pointHoverRadius: seq.map(d=>6+d.coef*2),
+          pointBackgroundColor: seq.map(d=>color(d.matiere)), pointBorderColor:'#0f1220', pointBorderWidth:1.5
+        }]},
+        options:{ maintainAspectRatio:false, interaction:{mode:'nearest',intersect:true},
+          scales:{
+            x:{type:'category', grid:{color:'#2a3150'}, ticks:{display:false}},
+            y:{min:0,max:100, grid:{color:'#2a3150'}, ticks:{color:'#9aa3c0', stepSize:25, callback:v=>v+'%'},
+               title:{display:true,text:'Standing in class (est.)',color:'#9aa3c0'}}
+          },
+          plugins:{ legend:{display:false},
+            tooltip:{callbacks:{
+              title:items=> items[0].raw.raw ? new Date(items[0].raw.raw.dateSaisie).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '',
+              label:ctx=>{ const d=ctx.raw.raw; if(!d||ctx.parsed.y==null) return 'no class data';
+                return [`${d.matiere} — ${d.devoir||''}`.trim(), `~${ctx.parsed.y}th position`, `(${d.valeur}/${d.noteSur}; class ${d.normClass}/20, range ${d.normMin}–${d.normMax})`]; }
+            }}
+          }}
+      });
+      return;
+    }
+
+    // Fallback: per-SUBJECT standing from subject-level stats (Pronote supplies min/avg/max per subject).
+    const ss = opts.subjectStats || {};
+    const rows = subjects.map(s=>{
+      const st = ss[s];
+      if(!st || st.lo==null || st.hi==null || st.classAvg==null || st.studentAvg==null) return null;
+      return { s, pos: posInRange(st.studentAvg, st.classAvg, st.lo, st.hi), st };
+    }).filter(Boolean).sort((a,b)=>b.pos-a.pos);
+
+    if(standTitle) standTitle.textContent='by subject';
+    standingChart = new Chart(standingEl, {
+      type:'bar',
+      data:{ labels: rows.map(r=>r.s), datasets:[{
+        data: rows.map(r=>r.pos), backgroundColor: rows.map(r=>color(r.s)), borderRadius:4, barPercentage:0.75
+      }]},
+      options:{ maintainAspectRatio:false, indexAxis:'y',
+        scales:{
+          x:{min:0,max:100, grid:{color:'#2a3150'}, ticks:{color:'#9aa3c0', stepSize:25, callback:v=>v+'%'}},
+          y:{grid:{display:false}, ticks:{color:'#e8ecf7', font:{size:11}}}
+        },
+        plugins:{ legend:{display:false},
+          tooltip:{callbacks:{ label:ctx=>{ const r=rows[ctx.dataIndex];
+            return [`~${r.pos}th position in class`, `(you ${r.st.studentAvg}/20; class ${r.st.classAvg}/20, range ${r.st.lo}–${r.st.hi})`]; } }}
+        }}
+    });
+  })();
+
+  return { chart, barChart, radarChart, standingChart,
+    destroy(){ [chart,barChart,radarChart,standingChart].forEach(c=>c&&c.destroy&&c.destroy()); } };
+}
+
+/* ===================================================================
+   Loader: files -> grouped by child -> tabs; years/levels -> buttons
+   =================================================================== */
+const tpl = document.getElementById('dashTemplate');
+// store = { child: { label, years:[ {key,label,data,palette,count} ], active, handle, area, panel, tabBtn } }
+const store = {};
+let activeChild = null;
+
+function addDataset(meta, data, subjectStats, method){
+  const child = meta.child;
+  if(!store[child]) store[child] = { label:child, years:[], handle:null, area:null, panel:null, tabBtn:null, year:null, thin:false };
+  const key = (meta.level||'')+(meta.year?('_'+meta.year):'') || ('set'+(store[child].years.length+1));
+  // replace if same key reloaded
+  const existing = store[child].years.findIndex(y=>y.key===key);
+  const entry = { key, label: meta.label, level:meta.level, year:meta.year, data, subjectStats:subjectStats||{}, method:method||'per20', palette:paletteFor(data), count:data.length };
+  if(existing>=0) store[child].years[existing]=entry; else store[child].years.push(entry);
+  // sort years chronologically by year string then level
+  store[child].years.sort((a,b)=> (a.year||'').localeCompare(b.year||'') || (a.level||'').localeCompare(b.level||''));
+}
+
+function rebuildUI(){
+  const tabsEl=document.getElementById('tabs'), panelsEl=document.getElementById('panels');
+  const children=Object.keys(store);
+  document.getElementById('empty').style.display = children.length? 'none':'block';
+  tabsEl.innerHTML='';
+  // keep existing panels' charts? simplest: wipe and rebuild lazily
+  panelsEl.innerHTML='';
+  if(activeChild!=='__settings__' && !children.includes(activeChild)) activeChild = children[0] || null;
+
+  children.forEach(child=>{
+    const c=store[child];
+    const btn=document.createElement('button'); btn.textContent=child; btn.dataset.child=child;
+    btn.className = child===activeChild?'active':''; btn.onclick=()=>{ activeChild=child; rebuildUI(); };
+    tabsEl.appendChild(btn);
+
+    const panel=document.createElement('div'); panel.className='tabpanel'+(child===activeChild?' active':'');
+    panel.id='panel-'+child;
+    const yearbar=document.createElement('div'); yearbar.className='yearbar';
+    panel.appendChild(yearbar);
+    const holder=document.createElement('div'); holder.className='dashholder'; panel.appendChild(holder);
+    panelsEl.appendChild(panel);
+    c.panel=panel; c.holder=holder; c.yearbar=yearbar;
+
+    if(!c.year || !c.years.find(y=>y.key===c.year)) c.year = c.years[c.years.length-1].key; // default to latest
+    yearbar.innerHTML = c.years.map(y=>
+      `<button data-key="${y.key}" class="${y.key===c.year?'active':''}">${y.label} <span class="cnt">${y.count}</span></button>`).join('');
+    yearbar.querySelectorAll('button').forEach(b=>b.onclick=()=>{ c.year=b.dataset.key; renderChild(child); });
+
+    if(child===activeChild) renderChild(child);
+  });
+
+  // --- fixed Settings tab (not part of store) ---
+  const sbtn=document.createElement('button');
+  sbtn.textContent='⚙︎ Settings'; sbtn.dataset.child='__settings__';
+  sbtn.className = activeChild==='__settings__'?'active':'';
+  sbtn.onclick=()=>{ activeChild='__settings__'; rebuildUI(); };
+  tabsEl.appendChild(sbtn);
+  if(activeChild==='__settings__'){
+    const sp=document.createElement('div'); sp.className='tabpanel active'; sp.id='panel-settings';
+    panelsEl.appendChild(sp);
+    renderSettings(sp);
+  }
+}
+
+function renderChild(child){
+  const c=store[child];
+  // mark active year button
+  c.yearbar.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.key===c.year));
+  if(c.handle){ c.handle.destroy(); c.holder.innerHTML=''; }
+  const area=document.createElement('div'); area.appendChild(tpl.content.cloneNode(true)); c.holder.appendChild(area);
+  const y=c.years.find(x=>x.key===c.year);
+  c.handle = renderDashboard(area, y.data, y.palette, {subjectStats: y.subjectStats, method: y.method, allYears: c.years});
+}
+
+/* ---------- Settings tab: Pronote refresh button + log (needs local server) ---------- */
+function renderSettings(panel){
+  panel.innerHTML = `
+    <div class="card">
+      <h2>⚙︎ Settings — Pronote (Louis)</h2>
+      <p class="legend-note" style="margin-top:0">Pulls Louis's latest grades from Pronote and updates the dashboard. Requires the local helper to be running (it auto-starts at login).</p>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0">
+        <button id="btnRefresh" style="background:var(--ink);color:var(--bg);border:0;border-radius:10px;padding:10px 18px;font:inherit;font-weight:600;font-size:14px;cursor:pointer">🔄 Refresh Louis now</button>
+        <span id="refreshMsg" style="font-size:13px;color:var(--muted)"></span>
+      </div>
+      <div id="serverWarn" style="display:none;background:rgba(231,76,107,0.12);border:1px solid rgba(231,76,107,0.4);border-radius:10px;padding:12px 14px;font-size:13px;margin-bottom:12px"></div>
+    </div>
+    <div class="card">
+      <h2>Published data (phone / anywhere)</h2>
+      <p class="legend-note" style="margin-top:0">Pulls the latest grades your PC published to the cloud. Works without the local helper — this is what the phone app uses.</p>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0">
+        <button id="btnPull" style="background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 18px;font:inherit;font-weight:600;font-size:14px;cursor:pointer">☁︎ Pull latest published data</button>
+        <span id="pullMsg" style="font-size:13px;color:var(--muted)"></span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Refresh log</h2>
+      <div id="refreshLog" style="font-size:13px;color:var(--muted)">Loading…</div>
+    </div>`;
+
+  const msg = panel.querySelector('#refreshMsg');
+  const warn = panel.querySelector('#serverWarn');
+  const btn = panel.querySelector('#btnRefresh');
+  const logBox = panel.querySelector('#refreshLog');
+
+  // "Pull latest published data" — uses CONFIG.DATA_URL (works off the local server)
+  const pullBtn = panel.querySelector('#btnPull');
+  const pullMsg = panel.querySelector('#pullMsg');
+  if(!CONFIG.DATA_URL){
+    pullBtn.disabled = true; pullBtn.style.opacity = .5; pullBtn.style.cursor='not-allowed';
+    pullMsg.textContent = 'No published-data URL configured yet.';
+  } else {
+    pullBtn.onclick = async ()=>{
+      pullBtn.disabled = true; pullBtn.style.opacity = .6; pullMsg.textContent = 'Pulling…';
+      const r = await fetchRemote();
+      pullBtn.disabled = false; pullBtn.style.opacity = 1;
+      if(r.ok){
+        pullMsg.textContent = '✓ Updated '+r.count+' file'+(r.count>1?'s':'')+(r.publishedAt?(' · published '+r.publishedAt):'');
+        pullMsg.style.color = '#2ecc9b';
+        activeChild = '__settings__'; rebuildUI();   // stay on Settings after re-render
+      } else {
+        pullMsg.textContent = '✗ '+(r.reason==='no-url'?'no URL configured':r.reason);
+        pullMsg.style.color = '#e74c6b';
+      }
+    };
+  }
+
+  // if opened as a plain file:// (no server), fetch() to /api fails -> guide the user
+  const serverBase = (location.protocol==='http:'||location.protocol==='https:') ? '' : null;
+
+  function showNoServer(){
+    btn.disabled = true; btn.style.opacity = .5; btn.style.cursor = 'not-allowed';
+    warn.style.display = 'block';
+    warn.innerHTML = "Live refresh needs the local helper. Open the dashboard via <b>start_dashboard.bat</b> "
+      + "(at <b>http://127.0.0.1:8099/grades_dashboard.html</b>) instead of double-clicking the file. "
+      + "Everything else works offline.";
+    logBox.textContent = "(log unavailable without the local helper)";
+  }
+
+  function renderLog(entries){
+    if(!entries || !entries.length){ logBox.textContent = "No refreshes yet."; return; }
+    const rows = entries.slice().reverse().map(e=>{
+      const col = e.ok ? '#2ecc9b' : '#e74c6b';
+      const tick = e.ok ? '✓' : '✗';
+      return `<tr>
+        <td style="padding:4px 10px 4px 0;white-space:nowrap">${e.ts||''}</td>
+        <td style="padding:4px 10px;color:${col};font-weight:600">${tick}</td>
+        <td style="padding:4px 10px;white-space:nowrap">${e.student||'—'}</td>
+        <td style="padding:4px 10px;text-align:right">${e.ok?(e.grades+' gr · '+e.subjects+' subj'):''}</td>
+        <td style="padding:4px 0;color:var(--muted)">${(e.message||'').replace(/</g,'&lt;')}</td>
+      </tr>`;
+    }).join('');
+    logBox.innerHTML = `<table style="border-collapse:collapse;width:100%"><tbody>${rows}</tbody></table>`;
+  }
+
+  function loadLog(){
+    if(serverBase===null){ showNoServer(); return; }
+    fetch('/api/log').then(r=>r.json()).then(d=> renderLog(d.log)).catch(showNoServer);
+  }
+
+  btn.onclick = ()=>{
+    if(serverBase===null) return;
+    btn.disabled = true; btn.style.opacity = .6; msg.textContent = 'Refreshing from Pronote…';
+    fetch('/api/refresh', {method:'POST'}).then(r=>r.json()).then(res=>{
+      btn.disabled = false; btn.style.opacity = 1;
+      msg.textContent = (res.ok?'✓ ':'✗ ') + (res.message||'');
+      msg.style.color = res.ok ? '#2ecc9b' : '#e74c6b';
+      if(res.ok && res.filename){
+        // pull the freshly-written file and live-update the dashboard
+        fetch('/input/'+encodeURIComponent(res.filename)+'?t='+Date.now())
+          .then(r=>r.text()).then(text=>{
+            ingest(res.filename, text, true);   // persist to localStorage too
+            activeChild = parseName(res.filename).child;  // jump to Louis
+            rebuildUI();
+          }).catch(()=>{ /* file read failed; log still updated */ loadLog(); });
+      }
+      loadLog();
+    }).catch(err=>{
+      btn.disabled = false; btn.style.opacity = 1;
+      msg.textContent=''; showNoServer();
+    });
+  };
+
+  loadLog();
+}
+
+/* ---------- file intake ---------- */
+const LS_KEY = "gradesDashboard.v2";   // localStorage: { filename: {records, stats} }
+
+function loadSaved(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)) || {}; }catch(e){ return {}; } }
+function saveRecords(name, records, stats, method){
+  const all = loadSaved(); all[name] = {records, stats:stats||{}, method:method||'per20'};
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(all)); }catch(e){ /* quota — ignore */ }
+}
+
+// ingest one file's text as if it were named `name`; persist=true writes it to localStorage
+function ingest(name, text, persist){
+  try{
+    const json=JSON.parse(text);
+    const {source,data,subjectStats,method}=parseFile(json);
+    if(!data.length) throw new Error("no usable grades");
+    const meta=parseName(name);
+    addDataset(meta, data, subjectStats, method);
+    if(persist) saveRecords(name, data, subjectStats, method);
+    return `${meta.child} · ${meta.label} (${data.length}) — ${source}`;
+  }catch(err){ return `⚠️ ${name}: ${err.message}`; }
+}
+
+function readFiles(fileList){
+  const files=[...fileList].filter(f=>/\.(json|txt)$/i.test(f.name) && !/readme/i.test(f.name));
+  let pending=files.length; if(!pending) return;
+  const loaded=[];
+  files.forEach(file=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      loaded.push(ingest(file.name, r.result, true));   // dropped files are remembered
+      if(--pending===0){ document.getElementById('loadedFiles').innerHTML = loaded.map(x=>`<span>${x}</span>`).join('') + resetLink(); rebuildUI(); }
+    };
+    r.readAsText(file);
+  });
+}
+
+function resetLink(){
+  return ` <span style="cursor:pointer;text-decoration:underline" onclick="resetBuiltin()">↺ reset to built-in</span>`;
+}
+window.resetBuiltin = function(){
+  localStorage.removeItem(LS_KEY); location.reload();
+};
+
+const drop=document.getElementById('drop'), fileInput=document.getElementById('fileInput');
+drop.onclick=()=>fileInput.click();
+fileInput.onchange=e=>readFiles(e.target.files);
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault(); drop.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault(); drop.classList.remove('over');}));
+drop.addEventListener('drop', e=>readFiles(e.dataTransfer.files));
+
+/* ---------- built-in default data (renders on open; drop files to add/replace) ---------- */
+// Each entry mirrors a file in the input\ folder: {name, json}. Dropping a file
+// with the same Child_Level_Year name overwrites the matching default.
+const BUILTIN = [
+  {name:"Louis_6eme_2026-2027.json", json:{"__records":[{"devoir":"Repérer un verbe conjugué en utilisant l","matiere":"FRANCAIS","type":"","dateSaisie":"21/09/2026","coef":1.0,"noteSur":20.0,"valeur":20.0,"moyenneClasse":19.04,"minClasse":15.0,"maxClasse":20.0,"_couleur":null},{"devoir":"My Life in 30 Words","matiere":"LLC1 AGL9","type":"","dateSaisie":"18/09/2026","coef":1.0,"noteSur":20.0,"valeur":20.0,"moyenneClasse":18.15,"minClasse":12.0,"maxClasse":20.0,"_couleur":null},{"devoir":"DM fiche internet hominidés","matiere":"HISTOIRE-GEOGRAPHIE","type":"","dateSaisie":"21/09/2026","coef":1.0,"noteSur":10.0,"valeur":6.0,"moyenneClasse":7.27,"minClasse":2.0,"maxClasse":10.0,"_couleur":null},{"devoir":"Nombres entiers","matiere":"MATHEMATIQUES","type":"","dateSaisie":"28/09/2026","coef":2.0,"noteSur":20.0,"valeur":18.5,"moyenneClasse":16.55,"minClasse":12.0,"maxClasse":19.5,"_couleur":null},{"devoir":"Contrôle n°1","matiere":"EIS","type":"","dateSaisie":"30/09/2026","coef":1.0,"noteSur":10.0,"valeur":10.0,"moyenneClasse":8.76,"minClasse":3.0,"maxClasse":10.0,"_couleur":null},{"devoir":"DST préhistoire","matiere":"HISTOIRE-GEOGRAPHIE","type":"","dateSaisie":"01/10/2026","coef":1.0,"noteSur":20.0,"valeur":18.5,"moyenneClasse":12.41,"minClasse":6.0,"maxClasse":18.5,"_couleur":null}],"__stats":{"FRANCAIS":{"lo":15.0,"hi":20.0,"classAvg":19.04,"studentAvg":20.0},"LLC1 AGL9":{"lo":12.0,"hi":20.0,"classAvg":18.15,"studentAvg":20.0},"HISTOIRE-GEOGRAPHIE":{"lo":5.4,"hi":20.0,"classAvg":13.32,"studentAvg":16.4},"MATHEMATIQUES":{"lo":12.0,"hi":19.5,"classAvg":16.55,"studentAvg":18.5},"EIS":{"lo":6.0,"hi":20.0,"classAvg":17.52,"studentAvg":20.0}},"__method":"pool"}},
+  {name:"Valentina_5eme_2026-2027.json", json:{__records:[{"devoir":"Réécriture 1","matiere":"FRANCAIS","type":"Devoir surveillé","dateSaisie":"2026-09-18","coef":1,"noteSur":20,"valeur":17,"moyenneClasse":13.52,"minClasse":5,"maxClasse":20},{"devoir":"Contrôle n°1 Enchaînements d'opérations","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2026-09-15","coef":1,"noteSur":10,"valeur":10,"moyenneClasse":7.98,"minClasse":3,"maxClasse":10},{"devoir":"Croquis + Trace écrite 1","matiere":"ARTS PLASTIQUES","type":"Travaux Pratiques","dateSaisie":"2026-09-16","coef":1,"noteSur":20,"valeur":15,"moyenneClasse":15.17,"minClasse":10,"maxClasse":20},{"devoir":"Autodictée 1","matiere":"FRANCAIS","type":"Devoir surveillé","dateSaisie":"2026-09-25","coef":0.5,"noteSur":10,"valeur":9,"moyenneClasse":7,"minClasse":0,"maxClasse":10},{"devoir":"Test File 1","matiere":"ANGLAIS LV1","type":"Écrit","dateSaisie":"2026-09-18","coef":2,"noteSur":20,"valeur":19.5,"moyenneClasse":14.45,"minClasse":5.5,"maxClasse":19.5},{"devoir":"Evaluation états et changements d'état","matiere":"PHYSIQUE-CHIMIE","type":"Devoir surveillé","dateSaisie":"2026-09-23","coef":1,"noteSur":20,"valeur":12.5,"moyenneClasse":12.27,"minClasse":6.5,"maxClasse":17},{"devoir":"Dictée préparée 1","matiere":"FRANCAIS","type":"Devoir surveillé","dateSaisie":"2026-09-29","coef":1,"noteSur":20,"valeur":19.5,"moyenneClasse":13.29,"minClasse":3,"maxClasse":20},{"devoir":"A letter to a new friend","matiere":"ENGLISH BILINGUAL SECTION","type":"Écrit","dateSaisie":"2026-09-15","coef":1,"noteSur":10,"valeur":9.5,"moyenneClasse":9,"minClasse":8,"maxClasse":9.5},{"devoir":"QCM Calcul numérique","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2026-10-03","coef":1,"noteSur":10,"valeur":6,"moyenneClasse":7.35,"minClasse":2,"maxClasse":10},{"devoir":"DM Nados histoire","matiere":"HISTOIRE, GEOGRAPHIE & EMC","type":"Devoir maison","dateSaisie":"2026-10-01","coef":0.5,"noteSur":7.5,"valeur":6,"moyenneClasse":6.31,"minClasse":2.5,"maxClasse":7.5},{"devoir":"Réécriture 2","matiere":"FRANCAIS","type":"Devoir surveillé","dateSaisie":"2026-10-06","coef":1,"noteSur":20,"valeur":20,"moyenneClasse":16.61,"minClasse":9,"maxClasse":20},{"devoir":"Analyse de doc histoire par îlots","matiere":"HISTOIRE, GEOGRAPHIE & EMC","type":"Écrit","dateSaisie":"2026-10-05","coef":1,"noteSur":20,"valeur":9,"moyenneClasse":14.19,"minClasse":9,"maxClasse":20},{"devoir":"Test File 2","matiere":"ANGLAIS LV1","type":"Écrit","dateSaisie":"2026-10-03","coef":2,"noteSur":20,"valeur":17.5,"moyenneClasse":14.08,"minClasse":2.5,"maxClasse":20},{"devoir":"Contrôle 3 Symétrie centrale (1)","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2026-10-06","coef":1,"noteSur":8,"valeur":5.5,"moyenneClasse":5.85,"minClasse":0,"maxClasse":8}], __stats:{"ARTS PLASTIQUES":{"lo":10,"hi":20,"classAvg":15.17,"studentAvg":15},"FRANCAIS":{"lo":4.6,"hi":20,"classAvg":13.5,"studentAvg":18.2},"HISTOIRE, GEOGRAPHIE & EMC":{"lo":10.89,"hi":19.55,"classAvg":15.07,"studentAvg":11.33},"ANGLAIS LV1":{"lo":7.44,"hi":19.5,"classAvg":14.26,"studentAvg":18.5},"ENGLISH BILINGUAL SECTION":{"lo":8,"hi":19,"classAvg":16.43,"studentAvg":19},"MATHEMATIQUES":{"lo":7,"hi":18.75,"classAvg":15.11,"studentAvg":15.25},"PHYSIQUE-CHIMIE":{"lo":6.5,"hi":17,"classAvg":12.27,"studentAvg":12.5}}, __method:"per20"}},
+  {name:"Valentina_6eme_2025-2026.json", json:{__records:[{"devoir":"Dictée 1- Se presenter","matiere":"ANGLAIS LV1","type":"Écrit","dateSaisie":"2025-09-13","coef":1,"noteSur":20,"valeur":20,"moyenneClasse":18.28,"minClasse":15,"maxClasse":20},{"devoir":"Dictée 2- les mois et les saisons","matiere":"ANGLAIS LV1","type":"Écrit","dateSaisie":"2025-09-16","coef":1,"noteSur":20,"valeur":19.5,"moyenneClasse":18.5,"minClasse":13,"maxClasse":20},{"devoir":"Evaluation tableau","matiere":"PHYSIQUE-CHIMIE","type":"Devoir surveillé","dateSaisie":"2025-09-29","coef":1,"noteSur":10,"valeur":9.5,"moyenneClasse":8.3,"minClasse":4,"maxClasse":10},{"devoir":"Chapitre 1 : Nombres entiers et décimaux","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2025-09-23","coef":1,"noteSur":20,"valeur":11.5,"moyenneClasse":14.02,"minClasse":7.5,"maxClasse":19},{"devoir":"All about me hoody","matiere":"ENGLISH BILINGUAL SECTION","type":"Oral","dateSaisie":"2025-09-19","coef":1,"noteSur":20,"valeur":20,"moyenneClasse":19.5,"minClasse":17,"maxClasse":20},{"devoir":"Test environnement","matiere":"SCIENCES DE LA VIE & DE LA TERRE","type":"Devoir surveillé","dateSaisie":"2025-09-24","coef":1,"noteSur":8,"valeur":4,"moyenneClasse":6.33,"minClasse":4,"maxClasse":8},{"devoir":"The weather report on TV","matiere":"ENGLISH BILINGUAL SECTION","type":"Oral","dateSaisie":"2025-09-26","coef":1,"noteSur":10,"valeur":9,"moyenneClasse":8.36,"minClasse":6,"maxClasse":10},{"devoir":"Dictée 4- Le verbe BE au Présent","matiere":"ANGLAIS LV1","type":"Devoir surveillé","dateSaisie":"2025-09-30","coef":1,"noteSur":20,"valeur":20,"moyenneClasse":17.5,"minClasse":11,"maxClasse":20},{"devoir":"Dictée n°1","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2025-09-29","coef":1,"noteSur":10,"valeur":7.5,"moyenneClasse":7.18,"minClasse":5,"maxClasse":10},{"devoir":"Dictée n°2","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2025-09-29","coef":1,"noteSur":10,"valeur":8,"moyenneClasse":7.1,"minClasse":2,"maxClasse":10},{"devoir":"Evaluation EMC","matiere":"ENS. MORAL & CIVIQUE","type":"Devoir surveillé","dateSaisie":"2025-10-09","coef":2,"noteSur":20,"valeur":17,"moyenneClasse":15.43,"minClasse":10.5,"maxClasse":19.75},{"devoir":"Evaluation documentaire","matiere":"PHYSIQUE-CHIMIE","type":"Devoir surveillé","dateSaisie":"2025-10-06","coef":1,"noteSur":10,"valeur":8.5,"moyenneClasse":7.62,"minClasse":1,"maxClasse":9.5},{"devoir":"Chapitre 2 : Notion de base en géométrie","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2025-10-09","coef":0.5,"noteSur":10,"valeur":9,"moyenneClasse":8.67,"minClasse":6,"maxClasse":10},{"devoir":"Participation","matiere":"MATHEMATIQUES","type":"Oral","dateSaisie":"2025-10-09","coef":1,"noteSur":20,"valeur":18,"moyenneClasse":15.52,"minClasse":13,"maxClasse":19},{"devoir":"Calcul mental ","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2025-10-09","coef":0.5,"noteSur":40,"valeur":40,"moyenneClasse":34.97,"minClasse":16,"maxClasse":40},{"devoir":"Class Mascot Expression Orale en Continu","matiere":"ANGLAIS LV1","type":"Oral","dateSaisie":"2025-10-08","coef":2,"noteSur":20,"valeur":17.5,"moyenneClasse":17.4,"minClasse":11.5,"maxClasse":20},{"devoir":"Chapitre 3 :Nombres entiers et décimaux (2/2)","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2025-11-04","coef":0.1,"noteSur":20,"valeur":12,"moyenneClasse":null,"minClasse":null,"maxClasse":null},{"devoir":"Chapitre 3 : Nombres entiers et décimaux (2/2)","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2025-11-06","coef":0.5,"noteSur":14,"valeur":13.5,"moyenneClasse":12.07,"minClasse":8.5,"maxClasse":14},{"devoir":"affiche de campagne","matiere":"ENS. MORAL & CIVIQUE","type":"Devoir maison","dateSaisie":"2025-10-20","coef":1,"noteSur":10,"valeur":5.5,"moyenneClasse":7.83,"minClasse":3,"maxClasse":10},{"devoir":"Conjugaison: le présent de l'indicatif","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2025-10-14","coef":1,"noteSur":23,"valeur":9,"moyenneClasse":18.55,"minClasse":6,"maxClasse":23},{"devoir":"Participation in class","matiere":"ENGLISH BILINGUAL SECTION","type":"Travaux Pratiques","dateSaisie":"2025-10-10","coef":1,"noteSur":10,"valeur":9,"moyenneClasse":8.48,"minClasse":6,"maxClasse":10},{"devoir":"Oral leçon ","matiere":"HISTOIRE, GEOGRAPHIE & EMC","type":"Oral","dateSaisie":"2025-10-27","coef":2,"noteSur":5,"valeur":5,"moyenneClasse":4.33,"minClasse":3,"maxClasse":5},{"devoir":"Lexique: les niveaux de langues","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2025-11-04","coef":1,"noteSur":20,"valeur":19.5,"moyenneClasse":17.83,"minClasse":13.5,"maxClasse":20},{"devoir":"Dictée de mots invariables n°1","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2025-11-04","coef":1,"noteSur":20,"valeur":16,"moyenneClasse":17.2,"minClasse":6,"maxClasse":20},{"devoir":"Littérature: séquence 1","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2025-11-04","coef":1,"noteSur":20,"valeur":20,"moyenneClasse":17.75,"minClasse":14.5,"maxClasse":20},{"devoir":"Littérature: récitation poème \"Ecrit après la visite d'un bagne\"","matiere":"FRANCAIS","type":"Oral","dateSaisie":"2025-11-03","coef":1,"noteSur":20,"valeur":20,"moyenneClasse":18.9,"minClasse":15,"maxClasse":20},{"devoir":"Chapitre 4 : Droites parallèles et perpendiculaires","matiere":"MATHEMATIQUES","type":"Devoir maison","dateSaisie":"2025-11-22","coef":0.5,"noteSur":20,"valeur":14,"moyenneClasse":14.95,"minClasse":7,"maxClasse":20},{"devoir":"Dictation 5- Famille, Pronoms Poss et Génitif","matiere":"ANGLAIS LV1","type":"Devoir surveillé","dateSaisie":"2025-11-07","coef":1,"noteSur":20,"valeur":18.5,"moyenneClasse":16.91,"minClasse":8.5,"maxClasse":19},{"devoir":"Have got/Has got","matiere":"ENGLISH BILINGUAL SECTION","type":"Écrit","dateSaisie":"2025-11-10","coef":1,"noteSur":10,"valeur":10,"moyenneClasse":8.95,"minClasse":7.5,"maxClasse":10},{"devoir":"Rédaction: raconte ta rentrée scolaire à tes grands-parents. ","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2025-11-11","coef":1,"noteSur":20,"valeur":20,"moyenneClasse":15.82,"minClasse":10,"maxClasse":20},{"devoir":"Natatioin","matiere":"EDUCATION PHYSIQUE ET SPORTIVE","type":"EPS","dateSaisie":"2025-11-17","coef":1,"noteSur":20,"valeur":13.5,"moyenneClasse":15.1,"minClasse":11,"maxClasse":19},{"devoir":"Test classification boîtes","matiere":"SCIENCES DE LA VIE & DE LA TERRE","type":"Devoir surveillé","dateSaisie":"2025-11-17","coef":2,"noteSur":12,"valeur":12,"moyenneClasse":10.3,"minClasse":4,"maxClasse":12},{"devoir":"Test classification leçon","matiere":"SCIENCES DE LA VIE & DE LA TERRE","type":"Devoir surveillé","dateSaisie":"2025-11-17","coef":2,"noteSur":6,"valeur":1,"moyenneClasse":2.43,"minClasse":0,"maxClasse":6},{"devoir":"Adjectives for Mr. Fox and the farmers.","matiere":"ENGLISH BILINGUAL SECTION","type":"Écrit","dateSaisie":"2025-11-17","coef":1,"noteSur":20,"valeur":20,"moyenneClasse":18.13,"minClasse":15,"maxClasse":20},{"devoir":"Test classification raisonnement","matiere":"SCIENCES DE LA VIE & DE LA TERRE","type":"Devoir surveillé","dateSaisie":"2025-11-17","coef":2,"noteSur":2,"valeur":1.5,"moyenneClasse":1.45,"minClasse":1,"maxClasse":2},{"devoir":"Dictation 6- HAVE GOT au Présent","matiere":"ANGLAIS LV1","type":"Devoir surveillé","dateSaisie":"2025-11-17","coef":1,"noteSur":20,"valeur":15.5,"moyenneClasse":13.86,"minClasse":6,"maxClasse":20},{"devoir":"Conjugaison: le présent de l'indicatif","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2025-11-22","coef":1,"noteSur":20,"valeur":18,"moyenneClasse":14.83,"minClasse":7,"maxClasse":19},{"devoir":"Dictée de mots invariables n°3","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2025-11-22","coef":1,"noteSur":20,"valeur":20,"moyenneClasse":18,"minClasse":13,"maxClasse":20},{"devoir":"Chapitre 5 : addition et soustraction","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2025-11-27","coef":1,"noteSur":20,"valeur":16.5,"moyenneClasse":15.52,"minClasse":11,"maxClasse":20},{"devoir":"Dictation 7-Décrire apparance physique/HAVE GOT-Revision","matiere":"ANGLAIS LV1","type":"Devoir surveillé","dateSaisie":"2025-11-28","coef":1,"noteSur":20,"valeur":20,"moyenneClasse":17.94,"minClasse":11.5,"maxClasse":20},{"devoir":"Biathlon","matiere":"EDUCATION PHYSIQUE ET SPORTIVE","type":"EPS","dateSaisie":"2025-11-25","coef":1,"noteSur":20,"valeur":15,"moyenneClasse":15.87,"minClasse":12,"maxClasse":20},{"devoir":"Tenue du cahier","matiere":"MATHEMATIQUES","type":"Écrit","dateSaisie":"2025-11-27","coef":0.25,"noteSur":20,"valeur":18,"moyenneClasse":16.83,"minClasse":13,"maxClasse":19},{"devoir":"Mémorisation d'un dialogue","matiere":"ANGLAIS LV1","type":"Oral","dateSaisie":"2025-11-28","coef":1,"noteSur":20,"valeur":19,"moyenneClasse":18.43,"minClasse":13,"maxClasse":20},{"devoir":"Evaluation Histoire 1","matiere":"HISTOIRE, GEOGRAPHIE & EMC","type":"Devoir surveillé","dateSaisie":"2025-12-18","coef":2,"noteSur":20,"valeur":15.75,"moyenneClasse":13.13,"minClasse":7.5,"maxClasse":19.25},{"devoir":"Chapitre 6 : Distances et cercles","matiere":"MATHEMATIQUES","type":"Devoir maison","dateSaisie":"2025-12-05","coef":0.25,"noteSur":20,"valeur":17,"moyenneClasse":15.67,"minClasse":9,"maxClasse":20},{"devoir":"Evaluation masse et volume","matiere":"PHYSIQUE-CHIMIE","type":"Devoir surveillé","dateSaisie":"2025-12-08","coef":1,"noteSur":25,"valeur":23,"moyenneClasse":16.43,"minClasse":4.5,"maxClasse":23},{"devoir":"Dictation 8-Verbe Do, Thanksgiving Verbs and nouns","matiere":"ANGLAIS LV1","type":"Devoir surveillé","dateSaisie":"2025-12-01","coef":1,"noteSur":20,"valeur":20,"moyenneClasse":18.03,"minClasse":6.5,"maxClasse":20},{"devoir":"Enquête en binome","matiere":"HISTOIRE, GEOGRAPHIE & EMC","type":"Travaux Pratiques","dateSaisie":"2025-12-02","coef":1,"noteSur":25,"valeur":21.75,"moyenneClasse":22.32,"minClasse":20.25,"maxClasse":24.75},{"devoir":"Chapitre 6 : Distance et cercles","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2025-12-06","coef":1,"noteSur":20,"valeur":16.5,"moyenneClasse":15.12,"minClasse":8.5,"maxClasse":19.5},{"devoir":"Calcul mental","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2025-12-09","coef":0.5,"noteSur":30,"valeur":30,"moyenneClasse":26.53,"minClasse":18,"maxClasse":30},{"devoir":"Reading/Listening Final Task Unit 3","matiere":"ANGLAIS LV1","type":"Écrit","dateSaisie":"2025-12-09","coef":2,"noteSur":20,"valeur":20,"moyenneClasse":18.95,"minClasse":15,"maxClasse":20},{"devoir":"Chapitre 7 : Multiplication","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2025-12-13","coef":1,"noteSur":20,"valeur":16,"moyenneClasse":14.72,"minClasse":5.5,"maxClasse":20},{"devoir":"Theatre 1","matiere":"ENGLISH BILINGUAL SECTION","type":"Oral","dateSaisie":"2025-12-12","coef":1,"noteSur":20,"valeur":20,"moyenneClasse":19.21,"minClasse":16,"maxClasse":20},{"devoir":"Christmas vocabulary","matiere":"ANGLAIS LV1","type":"Écrit","dateSaisie":"2025-12-22","coef":1,"noteSur":20,"valeur":19,"moyenneClasse":16.72,"minClasse":9.5,"maxClasse":20},{"devoir":"Dictée n°4","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2025-12-16","coef":1,"noteSur":10,"valeur":9.5,"moyenneClasse":4.59,"minClasse":0,"maxClasse":9.5},{"devoir":"Evaluation volume et schémas","matiere":"PHYSIQUE-CHIMIE","type":"Devoir surveillé","dateSaisie":"2026-01-12","coef":1,"noteSur":16,"valeur":14,"moyenneClasse":13.79,"minClasse":10.5,"maxClasse":16},{"devoir":"Chapitre 8 : La médiatrice","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2025-12-20","coef":0.5,"noteSur":10,"valeur":7.5,"moyenneClasse":7.38,"minClasse":4,"maxClasse":10},{"devoir":"Dessin d'observation microscopique de cellules","matiere":"SCIENCES DE LA VIE & DE LA TERRE","type":"Travaux Pratiques","dateSaisie":"2026-01-03","coef":1,"noteSur":20,"valeur":18,"moyenneClasse":15.75,"minClasse":11,"maxClasse":18},{"devoir":"Test unité des êtres vivants grille","matiere":"SCIENCES DE LA VIE & DE LA TERRE","type":"Devoir surveillé","dateSaisie":"2026-01-03","coef":2,"noteSur":4,"valeur":4,"moyenneClasse":3.55,"minClasse":1,"maxClasse":4},{"devoir":"Test unité des êtres vivants cellule","matiere":"SCIENCES DE LA VIE & DE LA TERRE","type":"Devoir surveillé","dateSaisie":"2026-01-03","coef":2,"noteSur":10,"valeur":6.5,"moyenneClasse":5.55,"minClasse":2.5,"maxClasse":8.5},{"devoir":"Participation","matiere":"ENGLISH BILINGUAL SECTION","type":"Oral","dateSaisie":"2026-01-08","coef":1,"noteSur":20,"valeur":18,"moyenneClasse":17.37,"minClasse":16,"maxClasse":19},{"devoir":"Evaluation Géographie","matiere":"HISTOIRE, GEOGRAPHIE & EMC","type":"Devoir surveillé","dateSaisie":"2026-01-14","coef":2,"noteSur":20,"valeur":15.75,"moyenneClasse":13.72,"minClasse":8,"maxClasse":17.5},{"devoir":"Participation/Investissement","matiere":"ANGLAIS LV1","type":"Oral","dateSaisie":"2026-01-12","coef":3,"noteSur":20,"valeur":20,"moyenneClasse":17.32,"minClasse":13,"maxClasse":20},{"devoir":"Present the image","matiere":"ENGLISH BILINGUAL SECTION","type":"Oral","dateSaisie":"2026-01-15","coef":1,"noteSur":20,"valeur":19,"moyenneClasse":17.57,"minClasse":14,"maxClasse":20},{"devoir":"S2 - QCM Pierre et le Loup","matiere":"EDUCATION MUSICALE","type":"Devoir surveillé","dateSaisie":"2026-01-16","coef":1,"noteSur":20,"valeur":14,"moyenneClasse":null,"minClasse":null,"maxClasse":null},{"devoir":"Chapitre 9 : Division Euclidienne","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2026-01-27","coef":1,"noteSur":10,"valeur":9,"moyenneClasse":8.12,"minClasse":5,"maxClasse":10},{"devoir":"S2 - QCM Instruments de l'orchestre","matiere":"EDUCATION MUSICALE","type":"Devoir surveillé","dateSaisie":"2026-01-22","coef":1,"noteSur":20,"valeur":13,"moyenneClasse":null,"minClasse":null,"maxClasse":null},{"devoir":"Present your British School ","matiere":"ANGLAIS LV1","type":"Oral","dateSaisie":"2026-01-27","coef":1,"noteSur":20,"valeur":19,"moyenneClasse":17.97,"minClasse":16,"maxClasse":20},{"devoir":"Littérature: séquence 2","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2026-01-26","coef":1,"noteSur":20,"valeur":19,"moyenneClasse":14.81,"minClasse":6,"maxClasse":20},{"devoir":"Chapitre 10 : Les angles","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2026-02-03","coef":1,"noteSur":20,"valeur":19.5,"moyenneClasse":15.33,"minClasse":9.5,"maxClasse":20},{"devoir":"Evaluation sur mouvements et trajectoire","matiere":"PHYSIQUE-CHIMIE","type":"Devoir surveillé","dateSaisie":"2026-02-02","coef":1,"noteSur":20,"valeur":14.5,"moyenneClasse":9,"minClasse":3.5,"maxClasse":18},{"devoir":"Calcul mental","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2026-02-03","coef":0.5,"noteSur":30,"valeur":29,"moyenneClasse":25.38,"minClasse":13,"maxClasse":30},{"devoir":"Investissement","matiere":"MATHEMATIQUES","type":"Oral","dateSaisie":"2026-02-01","coef":1,"noteSur":20,"valeur":16,"moyenneClasse":15.13,"minClasse":12,"maxClasse":19},{"devoir":"Chapitre 11 : Division décimale","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2026-02-12","coef":0.5,"noteSur":15,"valeur":10.5,"moyenneClasse":11.04,"minClasse":7,"maxClasse":14.5},{"devoir":"Test exercice trilobite","matiere":"SCIENCES DE LA VIE & DE LA TERRE","type":"Devoir surveillé","dateSaisie":"2026-02-03","coef":2,"noteSur":6,"valeur":3.5,"moyenneClasse":3.7,"minClasse":2,"maxClasse":6},{"devoir":"Dessin d'observation de fossile","matiere":"SCIENCES DE LA VIE & DE LA TERRE","type":"Travaux Pratiques","dateSaisie":"2026-02-03","coef":1,"noteSur":20,"valeur":19,"moyenneClasse":16.14,"minClasse":12.5,"maxClasse":19},{"devoir":"Evaluation Histoire Néolithique","matiere":"HISTOIRE, GEOGRAPHIE & EMC","type":"Devoir surveillé","dateSaisie":"2026-03-03","coef":2,"noteSur":20,"valeur":14.5,"moyenneClasse":12.87,"minClasse":7,"maxClasse":17.75},{"devoir":"Ilot Atelier C Développement construit","matiere":"HISTOIRE, GEOGRAPHIE & EMC","type":"Travaux Pratiques","dateSaisie":"2026-02-09","coef":1,"noteSur":10,"valeur":6.75,"moyenneClasse":6.81,"minClasse":5.75,"maxClasse":8.25},{"devoir":"Oral leçon 1","matiere":"HISTOIRE, GEOGRAPHIE & EMC","type":"Oral","dateSaisie":"2026-03-01","coef":2,"noteSur":5,"valeur":4.5,"moyenneClasse":4.32,"minClasse":2,"maxClasse":5},{"devoir":"First Day at School Dialogue","matiere":"ANGLAIS LV1","type":"Oral","dateSaisie":"2026-02-09","coef":1,"noteSur":20,"valeur":19,"moyenneClasse":18.07,"minClasse":13,"maxClasse":20},{"devoir":"Evaluation sur mouvements et trajectoire","matiere":"PHYSIQUE-CHIMIE","type":"Devoir surveillé","dateSaisie":"2026-02-12","coef":1,"noteSur":10,"valeur":8.5,"moyenneClasse":6.86,"minClasse":1,"maxClasse":10},{"devoir":"Chapitre 12 : Fractions partagées","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2026-03-04","coef":1,"noteSur":20,"valeur":18,"moyenneClasse":17.39,"minClasse":12.5,"maxClasse":20},{"devoir":"Final Task School is Cool","matiere":"ANGLAIS LV1","type":"Devoir surveillé","dateSaisie":"2026-02-17","coef":2,"noteSur":20,"valeur":19.5,"moyenneClasse":16.82,"minClasse":4.5,"maxClasse":20},{"devoir":"M.Fox theatre","matiere":"ENGLISH BILINGUAL SECTION","type":"Oral","dateSaisie":"2026-03-01","coef":1,"noteSur":20,"valeur":16,"moyenneClasse":16.62,"minClasse":12,"maxClasse":18},{"devoir":"Chapitre 13 : Triangles","matiere":"MATHEMATIQUES","type":"Devoir maison","dateSaisie":"2026-03-17","coef":0.25,"noteSur":20,"valeur":20,"moyenneClasse":17.83,"minClasse":10,"maxClasse":20},{"devoir":"DIctée: La Belle au Bois dormant","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2026-03-03","coef":1,"noteSur":10,"valeur":8,"moyenneClasse":6.04,"minClasse":0,"maxClasse":10},{"devoir":"Conjugaison: le passé simple de l'indicatif","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2026-03-03","coef":1,"noteSur":32,"valeur":31,"moyenneClasse":27.77,"minClasse":16,"maxClasse":32},{"devoir":"Le pluriel des noms et des adjectifs","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2026-03-08","coef":1,"noteSur":50,"valeur":43,"moyenneClasse":40.13,"minClasse":30,"maxClasse":46},{"devoir":"Chapitre 13 : Triangles","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2026-03-13","coef":1,"noteSur":20,"valeur":18.5,"moyenneClasse":16.98,"minClasse":9.5,"maxClasse":20},{"devoir":"travail en binome démocratie à Athènes","matiere":"HISTOIRE, GEOGRAPHIE & EMC","type":"Travaux Pratiques","dateSaisie":"2026-03-19","coef":1,"noteSur":20,"valeur":15,"moyenneClasse":16.02,"minClasse":9,"maxClasse":19},{"devoir":"Chapitre 14 : Proportionnalité","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2026-03-19","coef":0.5,"noteSur":8,"valeur":7.5,"moyenneClasse":6.63,"minClasse":3.5,"maxClasse":8},{"devoir":"Evaluation mouvement et conversions","matiere":"PHYSIQUE-CHIMIE","type":"Devoir surveillé","dateSaisie":"2026-03-23","coef":1,"noteSur":10,"valeur":6,"moyenneClasse":7.15,"minClasse":3.5,"maxClasse":10},{"devoir":"Eval Histoire Monde Grec","matiere":"HISTOIRE, GEOGRAPHIE & EMC","type":"Devoir surveillé","dateSaisie":"2026-04-17","coef":2,"noteSur":20,"valeur":16,"moyenneClasse":12.35,"minClasse":6.5,"maxClasse":19},{"devoir":"Evaluation mouvement et système solaire","matiere":"PHYSIQUE-CHIMIE","type":"Devoir surveillé","dateSaisie":"2026-03-23","coef":1,"noteSur":10,"valeur":10,"moyenneClasse":8.07,"minClasse":4,"maxClasse":10},{"devoir":"Dictee- Parts of the House","matiere":"ANGLAIS LV1","type":"Devoir surveillé","dateSaisie":"2026-03-22","coef":1,"noteSur":20,"valeur":19,"moyenneClasse":17.2,"minClasse":13,"maxClasse":20},{"devoir":"Chapitre 15 : Symétrie axiale","matiere":"MATHEMATIQUES","type":"Devoir maison","dateSaisie":"2026-03-31","coef":0.25,"noteSur":20,"valeur":19,"moyenneClasse":17.47,"minClasse":8,"maxClasse":20},{"devoir":"Dictée Present Simple, Pastime activities","matiere":"ANGLAIS LV1","type":"Devoir surveillé","dateSaisie":"2026-03-26","coef":1,"noteSur":20,"valeur":15,"moyenneClasse":14.87,"minClasse":10,"maxClasse":19.5},{"devoir":"Test connaissances \"je retiens\"","matiere":"SCIENCES DE LA VIE & DE LA TERRE","type":"Devoir surveillé","dateSaisie":"2026-03-23","coef":2,"noteSur":10,"valeur":5,"moyenneClasse":6.73,"minClasse":4,"maxClasse":9.5},{"devoir":"Mr Fox wanted poster","matiere":"ENGLISH BILINGUAL SECTION","type":"Travaux Pratiques","dateSaisie":"2026-03-23","coef":1,"noteSur":20,"valeur":19,"moyenneClasse":16.5,"minClasse":15,"maxClasse":19},{"devoir":"Act Out- Unit 4 Dialogue","matiere":"ANGLAIS LV1","type":"Oral","dateSaisie":"2026-03-26","coef":1,"noteSur":20,"valeur":19,"moyenneClasse":18.79,"minClasse":18,"maxClasse":20},{"devoir":"Course de haies","matiere":"EDUCATION PHYSIQUE ET SPORTIVE","type":"EPS","dateSaisie":"2026-03-26","coef":1,"noteSur":20,"valeur":17,"moyenneClasse":16.18,"minClasse":11,"maxClasse":19},{"devoir":"My Home Vlog","matiere":"ANGLAIS LV1","type":"Oral","dateSaisie":"2026-03-26","coef":2,"noteSur":20,"valeur":18.5,"moyenneClasse":16.53,"minClasse":8,"maxClasse":20},{"devoir":"Gymnastique","matiere":"EDUCATION PHYSIQUE ET SPORTIVE","type":"EPS","dateSaisie":"2026-03-27","coef":1,"noteSur":20,"valeur":19,"moyenneClasse":15.63,"minClasse":11,"maxClasse":19},{"devoir":"Dictée Pastimes","matiere":"ANGLAIS LV1","type":"Devoir surveillé","dateSaisie":"2026-04-01","coef":1,"noteSur":20,"valeur":19.5,"moyenneClasse":18.75,"minClasse":12,"maxClasse":20},{"devoir":"Chapitre 16 : Symétrie axiale","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2026-04-02","coef":1,"noteSur":20,"valeur":19,"moyenneClasse":16.33,"minClasse":11.5,"maxClasse":19.5},{"devoir":"Evaluation vitesse","matiere":"PHYSIQUE-CHIMIE","type":"Devoir surveillé","dateSaisie":"2026-04-27","coef":1,"noteSur":10,"valeur":9,"moyenneClasse":7.19,"minClasse":1.5,"maxClasse":10},{"devoir":"Images and text","matiere":"ENGLISH BILINGUAL SECTION","type":"Écrit","dateSaisie":"2026-04-03","coef":1,"noteSur":20,"valeur":19,"moyenneClasse":17.19,"minClasse":12,"maxClasse":20},{"devoir":"Oral leçon 2","matiere":"HISTOIRE, GEOGRAPHIE & EMC","type":"Oral","dateSaisie":"2026-06-03","coef":2,"noteSur":5,"valeur":4.5,"moyenneClasse":4.42,"minClasse":2,"maxClasse":5},{"devoir":"Chapitre 16 : Ecriture fractionnaire","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2026-04-28","coef":1,"noteSur":20,"valeur":18,"moyenneClasse":14.4,"minClasse":8.5,"maxClasse":19},{"devoir":"Test exercices microorganismes","matiere":"SCIENCES DE LA VIE & DE LA TERRE","type":"Devoir surveillé","dateSaisie":"2026-04-13","coef":2,"noteSur":8,"valeur":6,"moyenneClasse":4.82,"minClasse":1.5,"maxClasse":6.5},{"devoir":"Grammaire: différencier  phrases simples et complexes. Identifier les propositions dans la phrase complexe. ","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2026-04-26","coef":1,"noteSur":26,"valeur":20,"moyenneClasse":20.59,"minClasse":15,"maxClasse":24},{"devoir":"Grammaire: le fonction du sujet","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2026-04-26","coef":1,"noteSur":23,"valeur":21,"moyenneClasse":19.82,"minClasse":12,"maxClasse":23},{"devoir":"Evaluation Histoire ","matiere":"HISTOIRE, GEOGRAPHIE & EMC","type":"Devoir surveillé","dateSaisie":"2026-05-21","coef":2,"noteSur":20,"valeur":14,"moyenneClasse":13.89,"minClasse":7.5,"maxClasse":19},{"devoir":"Rédaction: Inventer un épisode de l'Odyssée","matiere":"FRANCAIS","type":"Écrit","dateSaisie":"2026-05-01","coef":2,"noteSur":20,"valeur":15,"moyenneClasse":15.66,"minClasse":10,"maxClasse":20},{"devoir":"Dissection florale","matiere":"SCIENCES DE LA VIE & DE LA TERRE","type":"Travaux Pratiques","dateSaisie":"2026-05-04","coef":1,"noteSur":20,"valeur":19.5,"moyenneClasse":18.5,"minClasse":16,"maxClasse":20},{"devoir":"Dictée","matiere":"ANGLAIS LV1","type":"Écrit","dateSaisie":"2026-05-18","coef":1,"noteSur":20,"valeur":19.5,"moyenneClasse":17.12,"minClasse":9.5,"maxClasse":19.5},{"devoir":"To be/Have got","matiere":"ENGLISH BILINGUAL SECTION","type":"Écrit","dateSaisie":"2026-05-18","coef":1,"noteSur":10,"valeur":10,"moyenneClasse":8.63,"minClasse":5,"maxClasse":10},{"devoir":"Récitation poème: Sensation d'Arthur Rimbaud","matiere":"FRANCAIS","type":"Oral","dateSaisie":"2026-05-18","coef":1,"noteSur":20,"valeur":18,"moyenneClasse":17.79,"minClasse":10,"maxClasse":20},{"devoir":"Dictée + MUST/CAN'T","matiere":"ANGLAIS LV1","type":"Écrit","dateSaisie":"2026-05-20","coef":1,"noteSur":20,"valeur":16,"moyenneClasse":18.92,"minClasse":14,"maxClasse":20},{"devoir":"Chapitre 18 : Périmètres et aires","matiere":"MATHEMATIQUES","type":"Devoir maison","dateSaisie":"2026-06-02","coef":0.25,"noteSur":20,"valeur":16,"moyenneClasse":16.65,"minClasse":10,"maxClasse":20},{"devoir":"Chapitre 18 : Périmètres et aires de figures planes","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2026-05-22","coef":1,"noteSur":15,"valeur":8.5,"moyenneClasse":8.5,"minClasse":1.5,"maxClasse":14},{"devoir":"Calcul mental","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2026-06-02","coef":0.5,"noteSur":20,"valeur":14,"moyenneClasse":13.76,"minClasse":6,"maxClasse":20},{"devoir":"Activités expérimentales conversions","matiere":"PHYSIQUE-CHIMIE","type":"Travaux Pratiques","dateSaisie":"2026-06-01","coef":1,"noteSur":20,"valeur":12.5,"moyenneClasse":12.67,"minClasse":9.5,"maxClasse":17},{"devoir":"Dictée- Mots interrogatifs","matiere":"ANGLAIS LV1","type":"Écrit","dateSaisie":"2026-06-01","coef":1,"noteSur":20,"valeur":19,"moyenneClasse":16.8,"minClasse":13,"maxClasse":20},{"devoir":"Evaluation énergie","matiere":"PHYSIQUE-CHIMIE","type":"Devoir surveillé","dateSaisie":"2026-06-08","coef":1,"noteSur":23,"valeur":13.5,"moyenneClasse":16.05,"minClasse":7,"maxClasse":20.5},{"devoir":"Listening Final Task","matiere":"ANGLAIS LV1","type":"Écrit","dateSaisie":"2026-05-29","coef":2,"noteSur":20,"valeur":20,"moyenneClasse":17.86,"minClasse":12.5,"maxClasse":20},{"devoir":"Le verbe BE au Préterit","matiere":"ANGLAIS LV1","type":"Écrit","dateSaisie":"2026-06-04","coef":1,"noteSur":20,"valeur":20,"moyenneClasse":19.63,"minClasse":16,"maxClasse":20},{"devoir":"At the restaurant","matiere":"ENGLISH BILINGUAL SECTION","type":"Oral","dateSaisie":"2026-06-02","coef":1,"noteSur":20,"valeur":19,"moyenneClasse":17.86,"minClasse":10,"maxClasse":20},{"devoir":"Handball","matiere":"EDUCATION PHYSIQUE ET SPORTIVE","type":"EPS","dateSaisie":"2026-06-11","coef":1,"noteSur":20,"valeur":12,"moyenneClasse":15.22,"minClasse":12,"maxClasse":20},{"devoir":"Chapitre 20 : Quadrilatères","matiere":"MATHEMATIQUES","type":"Devoir surveillé","dateSaisie":"2026-06-09","coef":1,"noteSur":20,"valeur":17,"moyenneClasse":15.1,"minClasse":8,"maxClasse":19},{"devoir":"Dictée Characters, Actions, Places","matiere":"ANGLAIS LV1","type":"Écrit","dateSaisie":"2026-06-10","coef":1,"noteSur":20,"valeur":16,"moyenneClasse":17.48,"minClasse":14,"maxClasse":20},{"devoir":"Poème: Heureux qui comme Ulysse ","matiere":"FRANCAIS","type":"Oral","dateSaisie":"2026-06-08","coef":1,"noteSur":20,"valeur":18,"moyenneClasse":18.69,"minClasse":14,"maxClasse":20}], __stats:{"EDUCATION PHYSIQUE ET SPORTIVE":{"lo":12.09,"hi":18.46,"classAvg":15.54,"studentAvg":15.13},"FRANCAIS":{"lo":11.45,"hi":18.8,"classAvg":15.96,"studentAvg":17.26},"HISTOIRE, GEOGRAPHIE & EMC":{"lo":10.88,"hi":18.27,"classAvg":14.95,"studentAvg":16.49},"ENS. MORAL & CIVIQUE":{"lo":9.83,"hi":19,"classAvg":15.51,"studentAvg":15},"ANGLAIS LV1":{"lo":13.34,"hi":19.42,"classAvg":17.53,"studentAvg":18.91},"ENGLISH BILINGUAL SECTION":{"lo":13.65,"hi":18.91,"classAvg":17.45,"studentAvg":18.81},"MATHEMATIQUES":{"lo":11.88,"hi":18.74,"classAvg":15.54,"studentAvg":16.86},"PHYSIQUE-CHIMIE":{"lo":8.72,"hi":17.75,"classAvg":14.48,"studentAvg":16.55},"SCIENCES DE LA VIE & DE LA TERRE":{"lo":8.7,"hi":18.17,"classAvg":13.93,"studentAvg":14.1}}, __method:"per20"}}
+];
+// 1) load built-in defaults, then 2) overlay anything you dropped before (localStorage wins)
+BUILTIN.forEach(b=> ingest(b.name, JSON.stringify(b.json)) );
+const saved = loadSaved();
+const savedNames = Object.keys(saved);
+savedNames.forEach(name=> ingest(name, JSON.stringify({__records: saved[name].records, __stats: saved[name].stats||{}, __method: saved[name].method||'per20'}), false));
+
+/* ---------- remote data: fetch the latest published grades on open ----------
+   Pulls CONFIG.DATA_URL (the PC-published bundle), ingests every file in it,
+   persists to localStorage (so it survives offline), and re-renders. Silent
+   no-op when DATA_URL is '' or the network/file is unavailable — the dashboard
+   still shows built-in + previously-saved data. */
+async function fetchRemote(){
+  if(!CONFIG.DATA_URL) return { ok:false, reason:'no-url' };
+  try{
+    // ?role=data tag lets the service worker treat this as network-first data
+    const sep = CONFIG.DATA_URL.includes('?') ? '&' : '?';
+    const url = CONFIG.DATA_URL + sep + 'role=data&t=' + Date.now();
+    const resp = await fetch(url, { cache:'no-store' });
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const payload = await resp.json();
+    let files;
+    if(payload && payload.files && typeof payload.files==='object'){
+      files = payload.files;                         // bundle form {files:{name:json}}
+    } else {
+      files = { [CONFIG.DATA_FILENAME]: payload };    // single raw export
+    }
+    let n=0;
+    for(const [name, json] of Object.entries(files)){
+      const text = typeof json==='string' ? json : JSON.stringify(json);
+      const r = ingest(name, text, true);            // persist=true -> localStorage
+      if(!r.startsWith('⚠')) n++;
+    }
+    if(n){ rebuildUI(); }
+    return { ok:true, count:n, publishedAt: payload && payload.publishedAt || null };
+  }catch(err){
+    return { ok:false, reason: err.message };
+  }
+}
+// expose for the Settings tab / manual re-pull
+window.fetchRemote = fetchRemote;
+
+/* ---------- optional passphrase gate (disabled by default) ----------
+   Speed-bump only: keeps casual eyes out when the app is on a shareable URL.
+   NOT real security — the data URL lives in this file. Enable via
+   CONFIG.AUTH.ENABLED=true and set PASS_HASH to the SHA-256 of your passphrase. */
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function authGate(){
+  if(!CONFIG.AUTH.ENABLED) return true;
+  const SKEY = 'gradesDashboard.auth.ok';
+  if(sessionStorage.getItem(SKEY)==='1') return true;
+  for(let tries=0; tries<3; tries++){
+    const pass = window.prompt('Enter passphrase:');
+    if(pass==null) break;
+    if(await sha256(pass) === CONFIG.AUTH.PASS_HASH){ sessionStorage.setItem(SKEY,'1'); return true; }
+  }
+  document.body.innerHTML = '<div style="max-width:420px;margin:18vh auto;text-align:center;color:var(--muted);font:15px system-ui">🔒 Locked.<br>Reload to try the passphrase again.</div>';
+  return false;
+}
+
+/* ---------- startup ---------- */
+(async function start(){
+  if(!(await authGate())) return;
+  if(Object.keys(store).length){
+    const msg = savedNames.length
+      ? `Loaded your latest data (${savedNames.length} file${savedNames.length>1?'s':''} remembered).`
+      : `Built-in data loaded — drop files above to update.`;
+    document.getElementById('loadedFiles').innerHTML = `<span>${msg}</span>` + (savedNames.length ? resetLink() : '');
+    rebuildUI();
+  }
+  // then try to pull the freshest published data (updates in place if newer)
+  const r = await fetchRemote();
+  if(r.ok && r.count){
+    document.getElementById('loadedFiles').innerHTML =
+      `<span>↻ Updated from published data (${r.count} file${r.count>1?'s':''}).</span>` + resetLink();
+  }
+})();
+
+
+</script>
+</body>
+</html>
