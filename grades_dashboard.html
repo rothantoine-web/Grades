@@ -1085,54 +1085,52 @@ function renderChild(child){
   c.handle = renderDashboard(area, y.data, y.palette, {subjectStats: y.subjectStats, method: y.method, allYears: c.years});
 }
 
-/* ---------- Settings tab: Pronote refresh button + log (needs local server) ---------- */
+/* ---------- Settings tab: published-data pull + manual file load (no server) ---------- */
 function renderSettings(panel){
   panel.innerHTML = `
     <div class="card">
-      <h2>⚙︎ Settings — Pronote (Louis)</h2>
-      <p class="legend-note" style="margin-top:0">Pulls Louis's latest grades from Pronote and updates the dashboard. Requires the local helper to be running (it auto-starts at login).</p>
+      <h2>Latest grades</h2>
+      <p class="legend-note" style="margin-top:0">Pulls the newest grades published from the PC (Louis refreshes automatically each morning; Valentina when you run the EcoleDirecte import). This is what the phone app uses too.</p>
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0">
-        <button id="btnRefresh" style="background:var(--ink);color:var(--bg);border:0;border-radius:10px;padding:10px 18px;font:inherit;font-weight:600;font-size:14px;cursor:pointer">🔄 Refresh Louis now</button>
-        <span id="refreshMsg" style="font-size:13px;color:var(--muted)"></span>
-      </div>
-      <div id="serverWarn" style="display:none;background:rgba(231,76,107,0.12);border:1px solid rgba(231,76,107,0.4);border-radius:10px;padding:12px 14px;font-size:13px;margin-bottom:12px"></div>
-    </div>
-    <div class="card">
-      <h2>Published data (phone / anywhere)</h2>
-      <p class="legend-note" style="margin-top:0">Pulls the latest grades your PC published to the cloud. Works without the local helper — this is what the phone app uses.</p>
-      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0">
-        <button id="btnPull" style="background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 18px;font:inherit;font-weight:600;font-size:14px;cursor:pointer">☁︎ Pull latest published data</button>
+        <button id="btnPull" style="background:var(--ink);color:var(--bg);border:0;border-radius:10px;padding:10px 18px;font:inherit;font-weight:600;font-size:14px;cursor:pointer">☁︎ Pull latest grades</button>
         <span id="pullMsg" style="font-size:13px;color:var(--muted)"></span>
       </div>
+      <div id="pubInfo" style="font-size:13px;color:var(--muted)"></div>
     </div>
     <div class="card">
       <h2>Load files manually</h2>
       <p class="legend-note" style="margin-top:0">Add or replace data by hand — e.g. Valentina's export from the EcoleDirecte bookmarklet. Nothing is uploaded; files stay in this browser.</p>
       <div id="dropSlot"></div>
-    </div>
-    <div class="card">
-      <h2>Refresh log</h2>
-      <div id="refreshLog" style="font-size:13px;color:var(--muted)">Loading…</div>
     </div>`;
 
-  const msg = panel.querySelector('#refreshMsg');
-  const warn = panel.querySelector('#serverWarn');
-  const btn = panel.querySelector('#btnRefresh');
-  const logBox = panel.querySelector('#refreshLog');
-
-  // "Pull latest published data" — uses CONFIG.DATA_URL (works off the local server)
+  // "Pull latest grades" — fetches CONFIG.DATA_URL (the published gist). No local server.
   const pullBtn = panel.querySelector('#btnPull');
   const pullMsg = panel.querySelector('#pullMsg');
+  const pubInfo = panel.querySelector('#pubInfo');
+
+  function showPublishedAt(){
+    if(!CONFIG.DATA_URL){ pubInfo.textContent=''; return; }
+    const sep = CONFIG.DATA_URL.includes('?') ? '&' : '?';
+    fetch(CONFIG.DATA_URL + sep + 'role=data&t=' + Date.now(), {cache:'no-store'})
+      .then(r=>r.json())
+      .then(d=>{
+        const files = d && d.files ? Object.keys(d.files) : [];
+        pubInfo.innerHTML = d && d.publishedAt
+          ? `Last published: <b>${d.publishedAt}</b> · ${files.length} file(s): ${files.map(f=>f.replace(/\.json$/,'')).join(', ')}`
+          : '';
+      }).catch(()=>{ pubInfo.textContent = '(could not reach published data — offline?)'; });
+  }
+
   if(!CONFIG.DATA_URL){
     pullBtn.disabled = true; pullBtn.style.opacity = .5; pullBtn.style.cursor='not-allowed';
-    pullMsg.textContent = 'No published-data URL configured yet.';
+    pullMsg.textContent = 'No published-data URL configured.';
   } else {
     pullBtn.onclick = async ()=>{
       pullBtn.disabled = true; pullBtn.style.opacity = .6; pullMsg.textContent = 'Pulling…';
       const r = await fetchRemote();
       pullBtn.disabled = false; pullBtn.style.opacity = 1;
       if(r.ok){
-        pullMsg.textContent = '✓ Updated '+r.count+' file'+(r.count>1?'s':'')+(r.publishedAt?(' · published '+r.publishedAt):'');
+        pullMsg.textContent = '✓ Updated '+r.count+' file'+(r.count>1?'s':'');
         pullMsg.style.color = '#2ecc9b';
         activeChild = '__settings__'; rebuildUI();   // stay on Settings after re-render
       } else {
@@ -1140,70 +1138,13 @@ function renderSettings(panel){
         pullMsg.style.color = '#e74c6b';
       }
     };
+    showPublishedAt();
   }
-
-  // if opened as a plain file:// (no server), fetch() to /api fails -> guide the user
-  const serverBase = (location.protocol==='http:'||location.protocol==='https:') ? '' : null;
-
-  function showNoServer(){
-    btn.disabled = true; btn.style.opacity = .5; btn.style.cursor = 'not-allowed';
-    warn.style.display = 'block';
-    warn.innerHTML = "Live refresh needs the local helper. Open the dashboard via <b>start_dashboard.bat</b> "
-      + "(at <b>http://127.0.0.1:8099/grades_dashboard.html</b>) instead of double-clicking the file. "
-      + "Everything else works offline.";
-    logBox.textContent = "(log unavailable without the local helper)";
-  }
-
-  function renderLog(entries){
-    if(!entries || !entries.length){ logBox.textContent = "No refreshes yet."; return; }
-    const rows = entries.slice().reverse().map(e=>{
-      const col = e.ok ? '#2ecc9b' : '#e74c6b';
-      const tick = e.ok ? '✓' : '✗';
-      return `<tr>
-        <td style="padding:4px 10px 4px 0;white-space:nowrap">${e.ts||''}</td>
-        <td style="padding:4px 10px;color:${col};font-weight:600">${tick}</td>
-        <td style="padding:4px 10px;white-space:nowrap">${e.student||'—'}</td>
-        <td style="padding:4px 10px;text-align:right">${e.ok?(e.grades+' gr · '+e.subjects+' subj'):''}</td>
-        <td style="padding:4px 0;color:var(--muted)">${(e.message||'').replace(/</g,'&lt;')}</td>
-      </tr>`;
-    }).join('');
-    logBox.innerHTML = `<table style="border-collapse:collapse;width:100%"><tbody>${rows}</tbody></table>`;
-  }
-
-  function loadLog(){
-    if(serverBase===null){ showNoServer(); return; }
-    fetch('/api/log').then(r=>r.json()).then(d=> renderLog(d.log)).catch(showNoServer);
-  }
-
-  btn.onclick = ()=>{
-    if(serverBase===null) return;
-    btn.disabled = true; btn.style.opacity = .6; msg.textContent = 'Refreshing from Pronote…';
-    fetch('/api/refresh', {method:'POST'}).then(r=>r.json()).then(res=>{
-      btn.disabled = false; btn.style.opacity = 1;
-      msg.textContent = (res.ok?'✓ ':'✗ ') + (res.message||'');
-      msg.style.color = res.ok ? '#2ecc9b' : '#e74c6b';
-      if(res.ok && res.filename){
-        // pull the freshly-written file and live-update the dashboard
-        fetch('/input/'+encodeURIComponent(res.filename)+'?t='+Date.now())
-          .then(r=>r.text()).then(text=>{
-            ingest(res.filename, text, true);   // persist to localStorage too
-            activeChild = parseName(res.filename).child;  // jump to Louis
-            rebuildUI();
-          }).catch(()=>{ /* file read failed; log still updated */ loadLog(); });
-      }
-      loadLog();
-    }).catch(err=>{
-      btn.disabled = false; btn.style.opacity = 1;
-      msg.textContent=''; showNoServer();
-    });
-  };
 
   // relocate the live drop zone (with its already-bound handlers) into Settings
   const dropSlot = panel.querySelector('#dropSlot');
   const dropEl = document.getElementById('drop');
   if(dropSlot && dropEl){ dropSlot.appendChild(dropEl); dropEl.style.display=''; }
-
-  loadLog();
 }
 
 /* ---------- file intake ---------- */
