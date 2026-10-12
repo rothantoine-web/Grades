@@ -323,7 +323,12 @@ function fromPronote(json){
 // subjectStats: optional {subject -> {lo,hi,classAvg,studentAvg}} (Pronote supplies it directly).
 // method: how to compute overall averages — 'pool' (Pronote: Σnote/Σbareme×20) or 'per20' (EcoleDirecte).
 function parseFile(json){
-  if(Array.isArray(json.__records)) return {source:"built-in", data:json.__records, subjectStats:json.__stats||{}, method:json.__method||'per20'};
+  if(Array.isArray(json.__records)){
+    // normalize dates to ISO: Pronote compact records carry dd/mm/yyyy, which
+    // new Date() otherwise misreads as mm/dd (21/09 -> invalid, 01/10 -> Jan).
+    const data = json.__records.map(d=> ({...d, dateSaisie: frDate(d.dateSaisie)}));
+    return {source:"built-in", data, subjectStats:json.__stats||{}, method:json.__method||'per20'};
+  }
   const r = (json.dataSec && json.dataSec.data) || json.data || json;
   if(r.listeDevoirs){ const {data,subjectStats}=fromPronote(json); return {source:"Pronote", data, subjectStats, method:'pool'}; }
   if(r.notes || json.notes){ const {data,subjectStats}=fromEcoleDirecte(json); return {source:"EcoleDirecte", data, subjectStats, method:'per20'}; }
