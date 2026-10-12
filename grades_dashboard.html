@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Grades Dashboard</title>
+<!-- browser-tab favicon: reuse the PWA icons -->
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <!-- PWA: installable to the home screen, opens standalone + offline -->
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f1220">
@@ -142,7 +145,7 @@
       <label><input type="checkbox" class="toggleTrend" checked> Show overall trend line</label>
       <label><input type="checkbox" class="toggleCrowns"> 👑 Show top-of-class crowns</label>
       <label>Period: <select class="periodSel" style="background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:4px 8px;font:inherit;font-size:13px"></select></label>
-      <button class="replaySubjBtn" type="button" style="background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:4px 12px;font:inherit;font-size:13px;cursor:pointer">📊 Subjects vs class</button>
+      <label><input type="checkbox" class="toggleSubjVs"> 📊 Subjects vs class</label>
     </div>
     <div class="replayResult"></div>
     <div class="subjlegend"></div>
@@ -499,12 +502,18 @@ function renderDashboard(root, data, palette, opts={}){
             if(ctx.dataset._kind==='class') return `Class average: ${ctx.parsed.y}/20`;
             const typeLine = d.type ? `${d.type} · coef ${d.coef}` : `coef ${d.coef}`;
             return [ `${d.matiere}${d.devoir?' — '+d.devoir:''}`, `Grade: ${d.valeur}/${d.noteSur}  →  ${d.norm}/20`, typeLine,
-              d.normClass!=null ? `Class avg: ${d.normClass}/20 (you ${d.vsClass>=0?'+':''}${d.vsClass})` : '' ].filter(Boolean);
+              d.normClass!=null ? `Class avg: ${d.normClass}/20 (you ${d.vsClass>=0?'+':''}${d.vsClass})` : '',
+              (d.minClasse!=null && d.maxClasse!=null) ? `Class range: ${d.minClasse}–${d.maxClasse}/${d.noteSur} (${d.normMin}–${d.normMax}/20)` : '' ].filter(Boolean);
           } } } }
     }, plugins:[passZone, crownPlugin]
   });
 
-  function refresh(){ chart.data.labels=labelsFor(); chart.data.datasets=datasets(); chart.update(); }
+  function refresh(){
+    // while the "Subjects vs class" box is ticked, every refresh (subject filter,
+    // period change) re-renders the gap view instead of falling back to grades.
+    if(showingGap){ renderGap(); return; }
+    chart.data.labels=labelsFor(); chart.data.datasets=datasets(); chart.update();
+  }
   root.querySelector('.toggleClass').onchange=e=>{showClass=e.target.checked; refresh();};
   root.querySelector('.toggleVsClass').onchange=e=>{colorByVs=e.target.checked; refresh();};
   root.querySelector('.toggleTrend').onchange=e=>{showTrend=e.target.checked; refresh();};
@@ -558,12 +567,15 @@ function renderDashboard(root, data, palette, opts={}){
   renderResult();
 
 
-  /* ---- "Subjects vs class" static view (one-click toggle, no animation) ----
+  /* ---- "Subjects vs class" static view (checkbox toggle, no animation) ----
      Flattens the class average to a horizontal zero line and shows each subject's
      full-year cumulative coef-weighted gap vs class (student − class), clamped ±4.
-     One click swaps the normal /20 trend for this view; click again to return. */
-  const subjBtn = root.querySelector('.replaySubjBtn');
-  if(subjBtn){
+     Stays on until the checkbox is unticked; respects the active subject filter
+     (clicking a subject chip isolates its line instead of dropping back to grades). */
+  const subjBox = root.querySelector('.toggleSubjVs');
+  let showingGap = false;                       // read by refresh() to route rendering
+  function renderGap(){}                         // reassigned below if data supports it
+  if(subjBox){
     const CLAMP = 4;
     const clamp = v => Math.max(-CLAMP, Math.min(CLAMP, v));
     const gapLabels = seqAll.map((d,i)=>{
@@ -584,7 +596,9 @@ function renderDashboard(root, data, palette, opts={}){
     }).filter(x=>x.any);
     const baseline = seqAll.map(()=>0);
     function subjDatasets(){
-      const lines = subjSeries.map(({s,data})=>({
+      // when a subject is isolated, show only its gap line; otherwise show all
+      const shown = activeSubject===null ? subjSeries : subjSeries.filter(x=>x.s===activeSubject);
+      const lines = shown.map(({s,data})=>({
         label:s, data, parsing:true, spanGaps:true,
         borderColor:color(s), borderWidth:2.5, tension:0.3, fill:false,
         pointRadius:0, _kind:"subjgap" }));
@@ -597,26 +611,22 @@ function renderDashboard(root, data, palette, opts={}){
     const gapY = { min:-CLAMP, max:CLAMP, grid:{color:'#2a3150'},
       ticks:{color:'#9aa3c0', stepSize:1, callback:v=> (v>0?'+':'')+v },
       title:{display:true, text:'Gap vs class (pts)', color:'#9aa3c0'} };
-    let showing=false;
-    subjBtn.onclick=()=>{
-      if(!subjSeries.length) return;
-      if(!showing){
-        showing=true; subjBtn.textContent='↩ Back to grades';
-        chart.data.labels = gapLabels;
-        chart.data.datasets = subjDatasets();
-        chart.options.scales.y = gapY;
-        chart.options.plugins.legend.display = false;   // chips already label the colors
-        chart.update();
-      } else {
-        showing=false; subjBtn.textContent='📊 Subjects vs class';
-        chart.options.scales.y = normalY;
-        chart.options.plugins.legend.display = true;
-        refresh();
-      }
+    // render the gap view (also called by refresh() while the box is ticked)
+    renderGap = ()=>{
+      chart.data.labels = gapLabels;
+      chart.data.datasets = subjDatasets();
+      chart.options.scales.y = gapY;
+      chart.options.plugins.legend.display = false;   // chips already label the colors
+      chart.update();
     };
-    // leaving the subjects view if the user changes period while it is shown
-    if(periodSel){ const prev=periodSel.onchange; periodSel.onchange=e=>{ if(showing) subjBtn.onclick(); prev&&prev(e); }; }
+    subjBox.onchange = e=>{
+      showingGap = e.target.checked && subjSeries.length>0;
+      if(e.target.checked && !subjSeries.length){ e.target.checked=false; return; }
+      if(showingGap){ renderGap(); }
+      else { chart.options.scales.y = normalY; chart.options.plugins.legend.display = true; refresh(); }
+    };
   }
+
 
   // stats
   const norms=data.map(d=>d.norm);
