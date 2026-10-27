@@ -180,6 +180,66 @@
     <p class="legend-note" style="margin:0 0 10px">Estimated position within the class on each assessment, from the grade's place on the min→average→max line (50% = class average, 100% = top score, 0% = lowest). A position proxy, <b>not</b> an exact rank.</p>
     <div class="chartbox" style="height:320px"><canvas class="standingChart"></canvas></div>
   </div>
+  <div class="card horizon-card">
+    <h2>Horizon — positionnement national &amp; écoles</h2>
+    <p class="legend-note" style="margin:0 0 10px">
+      <b>Deux repères, honnêtes et distincts.</b>
+      <b>(1) National</b> : la moyenne de l'enfant est placée sur les
+      <b>bandes de mention du brevet</b> (AB&nbsp;12 / B&nbsp;14 / TB&nbsp;16) — le seul
+      vrai repère national sur l'échelle /20 (≥16 ≈ top&nbsp;25%, ≥14 ≈ top&nbsp;48%,
+      ≥12 ≈ top&nbsp;69%). À titre de contexte, au <b>test national de 6ᵉ (sur 300, 2025)</b>
+      la moyenne nationale est d'environ <b>252 en français</b> et <b>248 en maths</b> —
+      mais c'est un test différent de la note Pronote, donc on ne convertit pas l'un en l'autre.
+      <b>(2) Horizon écoles</b> : des profils d'<i>élèves admis</i>, en grande majorité
+      <b>post-bac</b> (prépas, universités) — ce sont des <b>repères lointains, pas des
+      seuils d'admission</b>, et une moyenne de collège <b>ne les prédit pas</b>.
+      Les classes à <b>IPS élevé</b> (secteur privé ≈124 vs public ≈101) tirent la moyenne
+      de classe vers le haut : à garder en tête.
+    </p>
+    <div class="natTestRow" style="margin:0 0 16px">
+      <div class="legend-note" style="margin:0 0 6px;font-weight:600;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+        <span>Évaluation nationale de début de 6ᵉ — sa position dans la distribution (sur 300)</span>
+        <span class="natResultNote" style="font-weight:400;font-size:12px;color:var(--muted)"></span>
+      </div>
+      <div class="chartbox" style="height:300px"><canvas class="horizonNatTest"></canvas></div>
+    </div>
+    <div style="display:flex;gap:18px;flex-wrap:wrap">
+      <div style="flex:1;min-width:280px">
+        <div class="legend-note" style="margin:0 0 6px;font-weight:600">Positionnement national /20 (mention brevet)</div>
+        <div class="chartbox" style="height:260px"><canvas class="horizonNat"></canvas></div>
+      </div>
+      <div style="flex:1;min-width:320px">
+        <div class="legend-note" style="margin:0 0 6px;font-weight:600;display:flex;justify-content:space-between;align-items:center">
+          <span>Horizon écoles (repères indicatifs, pas des seuils)</span>
+          <label style="font-weight:400;font-size:12px"><input type="checkbox" class="toggleIntl"> inclure l'international</label>
+        </div>
+        <div class="chartbox" style="height:420px"><canvas class="horizonLadder"></canvas></div>
+      </div>
+    </div>
+    <div class="amLyceesRow" style="margin:18px 0 0">
+      <div class="legend-note" style="margin:0 0 6px;font-weight:600;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+        <span>Lycées <b>généraux &amp; technologiques</b> des Alpes-Maritimes — classés par <b>valeur ajoutée</b></span>
+        <span style="font-weight:400;font-size:12px;display:flex;gap:12px;flex-wrap:wrap">
+          <label><input type="checkbox" class="toggleLyceeMetric"> trié par réussite au bac</label>
+          <label><input type="checkbox" class="toggleLycee3y"> valeur ajoutée 3 ans</label>
+        </span>
+      </div>
+      <p class="legend-note" style="margin:0 0 8px;font-size:12px;color:var(--muted)">
+        Une barre par lycée. Par défaut, longueur = <b>valeur ajoutée</b> (IVAL, Éducation nationale)
+        = <b>résultat réel − résultat attendu</b> (le résultat attendu est modélisé sur le <b>profil social
+        et le niveau des élèves à l'entrée</b>, note au brevet) ; barres <b>bleu = public, violet = privé</b>,
+        du meilleur (+) en haut au moins bon (−) en bas. C'est le seul critère honnête pour comparer des
+        lycées — un taux brut élevé peut juste refléter un public favorisé. Coche <b>« trié par réussite au
+        bac »</b> pour classer par <b>taux de mention</b>, la barre montrant alors la composition
+        🟡 Assez Bien · 🔵 Bien · 🟢 Très Bien (le taux de réussite reste dans l'infobulle).
+        <b>Une seule année est bruitée</b> (petits effectifs) : <b>« valeur ajoutée 3 ans »</b> est plus
+        fiable. <b>Ni un score Affelnet, ni un seuil d'entrée.</b> Les lycées professionnels n'y figurent pas.
+      </p>
+      <input type="text" class="amFilter" placeholder="🔍 filtrer par nom ou ville (ex. Stanislas, Antibes)…"
+        style="width:100%;box-sizing:border-box;margin:0 0 8px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:6px 10px;font:inherit;font-size:13px">
+      <div class="chartbox" style="height:760px"><canvas class="amLycees"></canvas></div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -361,6 +421,117 @@ function parseName(filename){
   const labelBits = [level, year].filter(Boolean).join(" · ");
   return { child, level, year, label: labelBits || base };
 }
+
+/* ===================================================================
+   Horizon reference data — pre-computed & inlined (offline-first; no runtime
+   fetch, no API key). Sources, all verified live 2026-10-27:
+   · NAT6/NAT4/NAT2 = national "évaluations nationales" (data.education.gouv.fr,
+     dataset fr-en-evaluations_nationales_{6eme_academie,4eme_departement,
+     2degt_region}, 2025, caractéristique "Ensemble", mean-of-academies). Scale
+     /300; bands = groupe_1..6 (% of pupils in each ability band, low→high).
+   · MENTION = DNB mention /20 anchors; pctAtOrAbove = published national shares
+     (AI_ANALYSIS_IDEAS.md §7a): ≥16 ≈ top 25%, ≥14 ≈ top 48%, ≥12 ≈ top 69%.
+   · IPS = national social-position index reference (fr-en-ips-colleges-ap2023).
+   · HORIZON = ~35 top-school admitted-profile bands distilled from benchmarks.json
+     (honesty-tagged). ALL are indicative, NOT entry cutoffs; mostly post-bac.
+   HONESTY: the national eval is a /300 test at the START of the cycle, not the
+   child's Pronote /20 bulletin — treat any mapping as indicative only.
+   =================================================================== */
+const NAT6 = { year:2025, scale:300,
+  Francais:{moy:251.7, sd:48.4, bands:[16.3,15.4,19.1,18.3,13.9,17.1]},
+  Maths:   {moy:248.3, sd:51.9, bands:[19.3,17.9,18.1,15.7,11.9,17.1]} };
+/* Valentina's OWN début-6ᵉ national-test result — fill in from the sheet at home.
+   Two accepted forms (honesty-preserving):
+   · numeric /300:  fr: 265, maths: 258   → exact marker + z-score percentile
+   · band only 1-6: frBand: 5, mathsBand: 6 → marker at band midpoint, flagged approx
+   Leave null to show the national distribution with no personal marker yet. */
+const NAT6_RESULT = { fr:null, maths:null, frBand:null, mathsBand:null };
+const MENTION = { ab:12, b:14, tb:16, pctAtOrAbove:{12:69, 14:48, 16:25} };
+// Normal-CDF → percentile from a z-score (Abramowitz-Stegun 26.2.17 approx).
+function normCdf(z){ const t=1/(1+0.2316419*Math.abs(z)), d=0.3989423*Math.exp(-z*z/2);
+  let p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));
+  return z>0 ? 1-p : p; }
+// top-school horizon rungs, sorted hi→lo; moment ∈ prepa|univ-intl|lycee
+const HORIZON = [
+    {label:"Heidelberg (Médecine, NC)", moment:"univ-intl", lo:18.5, hi:20.0, honesty:"reported", momentFr:"université post-bac (intl.)"},
+    {label:"LMU Munich (Médecine, NC)", moment:"univ-intl", lo:18.0, hi:20.0, honesty:"official", momentFr:"université post-bac (intl.)"},
+    {label:"Prépa Saint-Louis (Paris)", moment:"prepa", lo:17.0, hi:20.0, honesty:"reported", momentFr:"prépa post-bac"},
+    {label:"ETH Zurich", moment:"univ-intl", lo:17.0, hi:20.0, honesty:"official", momentFr:"université post-bac (intl.)"},
+    {label:"UCL (Londres)", moment:"univ-intl", lo:17.0, hi:19.0, honesty:"official", momentFr:"université post-bac (intl.)"},
+    {label:"Waterloo (ingénierie, Canada)", moment:"univ-intl", lo:17.0, hi:19.0, honesty:"official", momentFr:"université post-bac (intl.)"},
+    {label:"Prépa Champollion (Grenoble)", moment:"prepa", lo:16.0, hi:19.0, honesty:"reported", momentFr:"prépa post-bac"},
+    {label:"Prépa Hoche (Versailles)", moment:"prepa", lo:17.5, hi:18.0, honesty:"official", momentFr:"prépa post-bac"},
+    {label:"Prépa du Parc (Lyon)", moment:"prepa", lo:17.0, hi:18.0, honesty:"reported", momentFr:"prépa post-bac"},
+    {label:"Prépa Faidherbe (Lille)", moment:"prepa", lo:17.0, hi:18.0, honesty:"reported", momentFr:"prépa post-bac"},
+    {label:"MIT (profil admis)", moment:"univ-intl", lo:17.0, hi:18.0, honesty:"official", momentFr:"université post-bac (intl.)"},
+    {label:"V LO Cracovie (lycée, PL)", moment:"lycee", lo:17.0, hi:18.0, honesty:"reported", momentFr:"entrée lycée"},
+    {label:"IB → universités top", moment:"univ-intl", lo:17.0, hi:18.0, honesty:"official", momentFr:"université post-bac (intl.)"},
+    {label:"Prépa Descartes (Tours)", moment:"prepa", lo:16.0, hi:18.0, honesty:"official", momentFr:"prépa post-bac"},
+    {label:"LSE (Londres)", moment:"univ-intl", lo:16.0, hi:18.0, honesty:"official", momentFr:"université post-bac (intl.)"},
+    {label:"Prépa Henri-IV (Paris)", moment:"prepa", lo:16.0, hi:17.5, honesty:"official", momentFr:"prépa post-bac"},
+    {label:"Prépa Fénelon (Paris, lettres)", moment:"prepa", lo:16.0, hi:17.5, honesty:"official", momentFr:"prépa post-bac"},
+    {label:"Prépa Fermat (Toulouse)", moment:"prepa", lo:16.0, hi:17.5, honesty:"reported", momentFr:"prépa post-bac"},
+    {label:"Prépa Chateaubriand (Rennes)", moment:"prepa", lo:16.0, hi:17.0, honesty:"official", momentFr:"prépa post-bac"},
+    {label:"Prépa H.-Poincaré (Nancy)", moment:"prepa", lo:16.0, hi:17.0, honesty:"official", momentFr:"prépa post-bac"},
+    {label:"Prépa Thiers (Marseille)", moment:"prepa", lo:16.0, hi:17.0, honesty:"official", momentFr:"prépa post-bac"},
+    {label:"Prépa B.-Pascal (Clermont)", moment:"prepa", lo:16.0, hi:17.0, honesty:"official", momentFr:"prépa post-bac"},
+    {label:"Dauphine (licence sélective)", moment:"univ-intl", lo:16.0, hi:17.0, honesty:"official", momentFr:"université post-bac (intl.)"},
+    {label:"RWTH Aachen", moment:"univ-intl", lo:16.0, hi:17.0, honesty:"reported", momentFr:"université post-bac (intl.)"},
+    {label:"Prépa Lavoisier (Paris)", moment:"prepa", lo:15.0, hi:17.0, honesty:"official", momentFr:"prépa post-bac"},
+    {label:"Prépa Carnot (Dijon)", moment:"prepa", lo:15.0, hi:17.0, honesty:"official", momentFr:"prépa post-bac"},
+    {label:"INSA / Polytech (post-bac)", moment:"univ-intl", lo:15.0, hi:17.0, honesty:"official", momentFr:"université post-bac (intl.)"},
+    {label:"Prépa Kléber (Strasbourg)", moment:"prepa", lo:15.0, hi:16.0, honesty:"official", momentFr:"prépa post-bac"},
+    {label:"Westminster (Londres, sixth form)", moment:"univ-intl", lo:15.0, hi:16.0, honesty:"official", momentFr:"université post-bac (intl.)"},
+    {label:"Prépa Clemenceau (Nantes)", moment:"prepa", lo:14.0, hi:16.0, honesty:"reported", momentFr:"prépa post-bac"},
+    {label:"Gymnase suisse (examen)", moment:"lycee", lo:14.0, hi:16.0, honesty:"official", momentFr:"entrée lycée"},
+    {label:"Eton (sixth form, UK)", moment:"univ-intl", lo:14.0, hi:15.0, honesty:"reported", momentFr:"université post-bac (intl.)"},
+    {label:"U. Toronto", moment:"univ-intl", lo:14.0, hi:15.0, honesty:"official", momentFr:"université post-bac (intl.)"},
+    {label:"UCLouvain / KU Leuven", moment:"univ-intl", lo:13.0, hi:14.5, honesty:"official", momentFr:"université post-bac (intl.)"},
+    {label:"Gymnasium allemand", moment:"lycee", lo:13.0, hi:14.0, honesty:"official", momentFr:"entrée lycée"},
+];
+// Alpes-Maritimes lycées GT — IVAL (indicateurs de valeur ajoutée, data.education.gouv.fr).
+// The HONEST way to compare lycées: va = value added vs the intake the school receives
+// (points above/below expected mention/pass rate). NOT an Affelnet score (which signals
+// address/demand, not quality) and NOT an entry cutoff. Shown only for context, since for
+// a 6ᵉ/5ᵉ no public-lycée grade bar applies (général = secteur; privé = dossier interne).
+const AM_LYCEES = [
+  {"nom": "Lycée Sainte Marie", "ville": "Cannes", "secteur": "prive", "vaMen": 21.0, "vaMen3": 13.0, "men": 93.0, "men3": 83.7, "reu": 100.0, "reu3": 100.0, "bTb": 16, "bB": 27, "bAb": 49, "bSans": 7, "bTb3": 16.7, "bB3": 27.0, "bAb3": 39.7, "bN": 95, "nY": 3},
+  {"nom": "Lycée Saint Joseph", "ville": "Nice", "secteur": "prive", "vaMen": 9.0, "vaMen3": 17.0, "men": 75.0, "men3": 78.7, "reu": 100.0, "reu3": 99.7, "bTb": 8, "bB": 24, "bAb": 42, "bSans": 25, "bTb3": 17.0, "bB3": 25.0, "bAb3": 36.3, "bN": 99, "nY": 3},
+  {"nom": "Lycée International", "ville": "Valbonne", "secteur": "public", "vaMen": 8.0, "vaMen3": 8.3, "men": 94.0, "men3": 92.3, "reu": 99.0, "reu3": 99.3, "bTb": 40, "bB": 37, "bAb": 18, "bSans": 5, "bTb3": 38.0, "bB3": 35.3, "bAb3": 19.3, "bN": 350, "nY": 3},
+  {"nom": "Lycée Fenelon", "ville": "Grasse", "secteur": "prive", "vaMen": 7.0, "vaMen3": 8.3, "men": 88.0, "men3": 87.0, "reu": 100.0, "reu3": 99.7, "bTb": 19, "bB": 32, "bAb": 37, "bSans": 12, "bTb3": 21.0, "bB3": 31.3, "bAb3": 35.0, "bN": 172, "nY": 3},
+  {"nom": "Institution St Joseph Carnoles", "ville": "Roquebrune Cap Martin", "secteur": "prive", "vaMen": 7.0, "vaMen3": 12.3, "men": 78.0, "men3": 79.3, "reu": 100.0, "reu3": 99.7, "bTb": 9, "bB": 31, "bAb": 38, "bSans": 22, "bTb3": 11.7, "bB3": 26.3, "bAb3": 41.3, "bN": 159, "nY": 3},
+  {"nom": "Lycée Leonard De Vinci (général et Techno.)", "ville": "Antibes", "secteur": "public", "vaMen": 7.0, "vaMen3": 4.7, "men": 72.0, "men3": 70.0, "reu": 96.0, "reu3": 95.3, "bTb": 10, "bB": 28, "bAb": 36, "bSans": 25, "bTb3": 10.3, "bB3": 24.3, "bAb3": 38.7, "bN": 165, "nY": 3},
+  {"nom": "Lycée Rene Goscinny", "ville": "Drap", "secteur": "public", "vaMen": 7.0, "vaMen3": 9.7, "men": 54.0, "men3": 54.7, "reu": 97.0, "reu3": 95.7, "bTb": 6, "bB": 17, "bAb": 33, "bSans": 45, "bTb3": 7.3, "bB3": 16.3, "bAb3": 33.3, "bN": 241, "nY": 3},
+  {"nom": "Lycée Mont Saint Jean", "ville": "Antibes", "secteur": "prive", "vaMen": 6.0, "vaMen3": 6.0, "men": 91.0, "men3": 90.7, "reu": 99.0, "reu3": 99.7, "bTb": 22, "bB": 41, "bAb": 29, "bSans": 8, "bTb3": 26.3, "bB3": 35.7, "bAb3": 29.3, "bN": 168, "nY": 3},
+  {"nom": "Lycée Sasserno", "ville": "Nice", "secteur": "prive", "vaMen": 6.0, "vaMen3": 10.3, "men": 89.0, "men3": 90.7, "reu": 100.0, "reu3": 99.3, "bTb": 16, "bB": 41, "bAb": 32, "bSans": 11, "bTb3": 23.0, "bB3": 39.0, "bAb3": 29.3, "bN": 170, "nY": 3},
+  {"nom": "Lycée Parc Imperial", "ville": "Nice", "secteur": "public", "vaMen": 6.0, "vaMen3": 4.7, "men": 57.0, "men3": 54.7, "reu": 92.0, "reu3": 91.0, "bTb": 11, "bB": 19, "bAb": 31, "bSans": 38, "bTb3": 11.0, "bB3": 18.0, "bAb3": 31.0, "bN": 450, "nY": 3},
+  {"nom": "Lycée Stanislas", "ville": "Nice", "secteur": "prive", "vaMen": 5.0, "vaMen3": 5.3, "men": 93.0, "men3": 93.0, "reu": 100.0, "reu3": 100.0, "bTb": 37, "bB": 38, "bAb": 18, "bSans": 7, "bTb3": 35.0, "bB3": 37.7, "bAb3": 20.3, "bN": 128, "nY": 3},
+  {"nom": "Lycée Guillaume Apollinaire", "ville": "Nice", "secteur": "public", "vaMen": 4.0, "vaMen3": 4.7, "men": 43.0, "men3": 42.7, "reu": 90.0, "reu3": 90.7, "bTb": 3, "bB": 15, "bAb": 30, "bSans": 52, "bTb3": 4.3, "bB3": 14.7, "bAb3": 28.0, "bN": 323, "nY": 3},
+  {"nom": "Lycée Simone Veil", "ville": "Valbonne", "secteur": "public", "vaMen": 4.0, "vaMen3": 4.7, "men": 78.0, "men3": 79.0, "reu": 99.0, "reu3": 98.7, "bTb": 18, "bB": 28, "bAb": 33, "bSans": 21, "bTb3": 21.7, "bB3": 28.0, "bAb3": 30.7, "bN": 326, "nY": 3},
+  {"nom": "Lycée Don Bosco", "ville": "Nice", "secteur": "prive", "vaMen": 3.0, "vaMen3": 3.7, "men": 81.0, "men3": 80.7, "reu": 100.0, "reu3": 99.7, "bTb": 11, "bB": 26, "bAb": 44, "bSans": 19, "bTb3": 15.3, "bB3": 27.3, "bAb3": 38.3, "bN": 140, "nY": 3},
+  {"nom": "Lycée Henri Matisse", "ville": "Vence", "secteur": "public", "vaMen": 2.0, "vaMen3": -0.3, "men": 72.0, "men3": 69.7, "reu": 96.0, "reu3": 97.7, "bTb": 15, "bB": 28, "bAb": 32, "bSans": 25, "bTb3": 13.7, "bB3": 24.3, "bAb3": 33.0, "bN": 329, "nY": 3},
+  {"nom": "Lycée Stanislas", "ville": "Cannes", "secteur": "prive", "vaMen": 2.0, "vaMen3": 6.7, "men": 87.0, "men3": 90.0, "reu": 100.0, "reu3": 100.0, "bTb": 26, "bB": 36, "bAb": 25, "bSans": 13, "bTb3": 26.7, "bB3": 36.7, "bAb3": 27.0, "bN": 206, "nY": 3},
+  {"nom": "Lycée Jacques Audiberti", "ville": "Antibes", "secteur": "public", "vaMen": 2.0, "vaMen3": 2.3, "men": 56.0, "men3": 54.7, "reu": 95.0, "reu3": 95.0, "bTb": 8, "bB": 18, "bAb": 33, "bSans": 41, "bTb3": 7.3, "bB3": 18.0, "bAb3": 32.3, "bN": 412, "nY": 3},
+  {"nom": "Lycée Massena", "ville": "Nice", "secteur": "public", "vaMen": 2.0, "vaMen3": 0.3, "men": 76.0, "men3": 73.0, "reu": 98.0, "reu3": 98.3, "bTb": 25, "bB": 29, "bAb": 24, "bSans": 22, "bTb3": 22.0, "bB3": 25.7, "bAb3": 26.3, "bN": 284, "nY": 3},
+  {"nom": "Lycée Melinee et Missak Manouchian", "ville": "Nice", "secteur": "public", "vaMen": 2.0, "vaMen3": -0.7, "men": 51.0, "men3": 47.3, "reu": 92.0, "reu3": 89.7, "bTb": 8, "bB": 18, "bAb": 29, "bSans": 45, "bTb3": 7.3, "bB3": 17.7, "bAb3": 28.3, "bN": 424, "nY": 3},
+  {"nom": "Lycée Regional Hotelier Jeanne et Paul Augier (général et Techno.)", "ville": "Nice", "secteur": "public", "vaMen": 1.0, "vaMen3": -6.0, "men": 54.0, "men3": 53.3, "reu": 93.0, "reu3": 95.3, "bTb": 6, "bB": 21, "bAb": 30, "bSans": 42, "bTb3": 6.3, "bB3": 18.0, "bAb3": 32.0, "bN": 66, "nY": 3},
+  {"nom": "Lycée Honore D'Estienne D'Orves", "ville": "Nice", "secteur": "public", "vaMen": -1.0, "vaMen3": -3.7, "men": 51.0, "men3": 48.7, "reu": 93.0, "reu3": 90.7, "bTb": 7, "bB": 19, "bAb": 29, "bSans": 45, "bTb3": 8.0, "bB3": 17.3, "bAb3": 29.0, "bN": 473, "nY": 3},
+  {"nom": "Lycée Pierre et Marie Curie", "ville": "Menton", "secteur": "public", "vaMen": -2.0, "vaMen3": 2.3, "men": 42.0, "men3": 45.3, "reu": 87.0, "reu3": 89.3, "bTb": 6, "bB": 13, "bAb": 29, "bSans": 52, "bTb3": 6.3, "bB3": 14.3, "bAb3": 30.0, "bN": 259, "nY": 3},
+  {"nom": "Lycée Amiral De Grasse", "ville": "Grasse", "secteur": "public", "vaMen": -2.0, "vaMen3": -3.7, "men": 61.0, "men3": 56.3, "reu": 96.0, "reu3": 94.0, "bTb": 9, "bB": 21, "bAb": 34, "bSans": 37, "bTb3": 8.7, "bB3": 20.3, "bAb3": 31.0, "bN": 316, "nY": 3},
+  {"nom": "Lycée Albert Calmette", "ville": "Nice", "secteur": "public", "vaMen": -2.0, "vaMen3": 0.3, "men": 62.0, "men3": 61.7, "reu": 95.0, "reu3": 93.3, "bTb": 15, "bB": 20, "bAb": 30, "bSans": 35, "bTb3": 16.3, "bB3": 20.3, "bAb3": 29.3, "bN": 381, "nY": 3},
+  {"nom": "Lycée Auguste Renoir", "ville": "Cagnes Sur Mer", "secteur": "public", "vaMen": -2.0, "vaMen3": -3.7, "men": 61.0, "men3": 62.0, "reu": 96.0, "reu3": 95.7, "bTb": 8, "bB": 21, "bAb": 34, "bSans": 37, "bTb3": 12.0, "bB3": 22.0, "bAb3": 30.7, "bN": 513, "nY": 3},
+  {"nom": "Lycée Carnot", "ville": "Cannes", "secteur": "public", "vaMen": -3.0, "vaMen3": -1.3, "men": 51.0, "men3": 52.3, "reu": 94.0, "reu3": 93.3, "bTb": 8, "bB": 19, "bAb": 28, "bSans": 45, "bTb3": 8.0, "bB3": 19.0, "bAb3": 29.7, "bN": 368, "nY": 3},
+  {"nom": "Lycée La Providence", "ville": "Nice", "secteur": "prive", "vaMen": -3.0, "vaMen3": -7.0, "men": 45.0, "men3": 42.3, "reu": 89.0, "reu3": 90.0, "bTb": 9, "bB": 17, "bAb": 26, "bSans": 49, "bTb3": 5.0, "bB3": 12.0, "bAb3": 30.3, "bN": 47, "nY": 3},
+  {"nom": "Lycée De La Montagne (général et Techno.)", "ville": "Valdeblore", "secteur": "public", "vaMen": -4.0, "vaMen3": -3.7, "men": 63.0, "men3": 61.3, "reu": 97.0, "reu3": 97.7, "bTb": 8, "bB": 20, "bAb": 37, "bSans": 36, "bTb3": 11.0, "bB3": 21.0, "bAb3": 31.0, "bN": 76, "nY": 3},
+  {"nom": "Lycée Bristol", "ville": "Cannes", "secteur": "public", "vaMen": -5.0, "vaMen3": -1.3, "men": 33.0, "men3": 35.7, "reu": 86.0, "reu3": 87.3, "bTb": 3, "bB": 9, "bAb": 26, "bSans": 62, "bTb3": 2.7, "bB3": 12.3, "bAb3": 26.0, "bN": 268, "nY": 3},
+  {"nom": "Lycée Alexis De Tocqueville", "ville": "Grasse", "secteur": "public", "vaMen": -5.0, "vaMen3": -6.0, "men": 57.0, "men3": 55.0, "reu": 95.0, "reu3": 94.0, "bTb": 10, "bB": 21, "bAb": 29, "bSans": 40, "bTb3": 9.7, "bB3": 19.3, "bAb3": 29.3, "bN": 306, "nY": 3},
+  {"nom": "Lycée Jules Ferry", "ville": "Cannes", "secteur": "public", "vaMen": -5.0, "vaMen3": 0.7, "men": 64.0, "men3": 67.3, "reu": 93.0, "reu3": 95.3, "bTb": 17, "bB": 25, "bAb": 27, "bSans": 31, "bTb3": 16.7, "bB3": 26.7, "bAb3": 27.0, "bN": 277, "nY": 3},
+  {"nom": "Lycée Les Eucalyptus", "ville": "Nice", "secteur": "public", "vaMen": -7.0, "vaMen3": -2.0, "men": 57.0, "men3": 64.0, "reu": 93.0, "reu3": 94.3, "bTb": 9, "bB": 25, "bAb": 27, "bSans": 39, "bTb3": 11.3, "bB3": 27.7, "bAb3": 28.7, "bN": 205, "nY": 3},
+  {"nom": "Lycée Saint Barthelemy", "ville": "Nice", "secteur": "prive", "vaMen": 0.0, "vaMen3": 1.0, "men": 86.0, "men3": 81.0, "reu": 100.0, "reu3": 100.0, "bTb": 14, "bB": 40, "bAb": 33, "bSans": 14, "bTb3": 14.7, "bB3": 33.7, "bAb3": 33.0, "bN": 88, "nY": 3},
+  {"nom": "Lycée Les Fauvettes", "ville": "Cannes", "secteur": "prive", "vaMen": null, "vaMen3": -5.0, "men": 50.0, "men3": 44.0, "reu": 90.0, "reu3": 87.0, "bTb": 4, "bB": 15, "bAb": 37, "bSans": 44, "bTb3": 2.3, "bB3": 15.7, "bAb3": 33.0, "bN": 27, "nY": 3},
+  {"nom": "Lycée Or Torah", "ville": "Nice", "secteur": "prive", "vaMen": null, "vaMen3": null, "men": 63.0, "men3": 69.0, "reu": 93.0, "reu3": 96.5, "bTb": 12, "bB": 32, "bAb": 24, "bSans": 32, "bTb3": 15.0, "bB3": 26.5, "bAb3": 30.0, "bN": 25, "nY": 2},
+];
+const AM_LYCEES_YEAR = 2025;   // single-year fields; *3 = moyenne 2023-2025
 
 /* ===================================================================
    Dashboard renderer (one trend line, clickable legend, weighted trend)
@@ -879,16 +1050,22 @@ function renderDashboard(root, data, palette, opts={}){
       y.data.forEach(d=>{
         if(!d.noteSur) return;
         const k = canon(d.matiere);
-        (byFam[k] = byFam[k] || {label:d.matiere, recs:[]}).recs.push(d);
+        const f = (byFam[k] = byFam[k] || {labels:new Set(), recs:[]});
+        f.labels.add(d.matiere); f.recs.push(d);
         if(!famLabel[k]) famLabel[k] = d.matiere;
       });
       const pct = {};
       Object.keys(byFam).forEach(k=>{
-        const {label, recs} = byFam[k];
-        const st = stats[label];
+        const {labels, recs} = byFam[k];
+        // a family can bundle several raw subjects (e.g. LLC1 + LLC2 -> "English").
+        // Average the authoritative class stats across every bundled subject that
+        // carries them, so no course is silently dropped; derive from records only
+        // when none of them has stats.
+        const sts = [...labels].map(l=>stats[l]).filter(st=> st && st.studentAvg!=null && st.lo!=null && st.hi!=null);
         let you, lo, hi;
-        if(st && st.studentAvg!=null && st.lo!=null && st.hi!=null){ you=st.studentAvg; lo=st.lo; hi=st.hi; }  // authoritative
-        else {                                                                                                 // derive from records
+        if(sts.length){                                                                                        // authoritative
+          you = mean(sts.map(s=>s.studentAvg)); lo = mean(sts.map(s=>s.lo)); hi = mean(sts.map(s=>s.hi));
+        } else {                                                                                               // derive from records
           you = mean(recs.map(d=>d.norm));
           const mins = recs.filter(d=>d.normMin!=null).map(d=>d.normMin);
           const maxes = recs.filter(d=>d.normMax!=null).map(d=>d.normMax);
@@ -1018,8 +1195,267 @@ function renderDashboard(root, data, palette, opts={}){
     });
   })();
 
+  /* ---- Horizon: national positioning (left) + hedged school ladder (right) ----
+     Honesty is the whole point. The national chart maps the child's own-level
+     Français/Maths averages onto the NATIONAL début-6ᵉ distribution (/300 test,
+     indicative only — NOT the Pronote /20), plus the overall /20 on the DNB
+     mention bands. The ladder shows admitted-student profile bands (mostly
+     post-bac) as indicative references, never cutoffs. */
+  (function drawHorizon(){
+    const you = overallAvg(data);                       // same number as the "Weighted avg" tile
+
+    // === TOP: her position in the national 6ᵉ-test distribution (/300) ===
+    // Bell curve per subject from the national mean+SD; her result (NAT6_RESULT,
+    // filled from the official sheet) drawn as a marker with a z-score percentile.
+    // If only an ability band (1-6) is known, the marker sits at the band midpoint
+    // and is flagged approximate. The national test is a DIFFERENT instrument from
+    // the Pronote /20 — we never convert one into the other.
+    const natTestEl = root.querySelector('.horizonNatTest');
+    const natResultNote = root.querySelector('.natResultNote');
+    const natTestRow = root.querySelector('.natTestRow');
+    // The only national distribution we hold is the début-6ᵉ eval, so this chart
+    // is shown ONLY on 6ᵉ data. Other years (e.g. 5ᵉ) have no matching national
+    // dataset yet — hide the row rather than draw a result on the wrong curve.
+    const is6eme = /6\s*e|sixi/i.test(opts.level||'');
+    if(natTestRow) natTestRow.style.display = is6eme ? '' : 'none';
+    if(natTestEl && is6eme){
+      // band 1-6 → representative /300 score (midpoint of the band on the national scale)
+      const bandMid = (nat, band) => {
+        // split the /300 range into 6 equal slices around the mean±2.5sd span
+        const lo = nat.moy - 2.5*nat.sd, hi = nat.moy + 2.5*nat.sd, w=(hi-lo)/6;
+        return lo + w*(band-0.5);
+      };
+      const resolve = (nat, num, band) => {
+        if(num!=null) return {score:num, approx:false};
+        if(band!=null) return {score:bandMid(nat,band), approx:true, band};
+        return null;
+      };
+      const subs = [
+        {key:'Français', nat:NAT6.Francais, col:'#6ea8fe', r:resolve(NAT6.Francais, NAT6_RESULT.fr, NAT6_RESULT.frBand)},
+        {key:'Maths',    nat:NAT6.Maths,    col:'#2ecc9b', r:resolve(NAT6.Maths, NAT6_RESULT.maths, NAT6_RESULT.mathsBand)},
+      ];
+      // x domain spans both subjects
+      const xmin = Math.min(...subs.map(s=>s.nat.moy-2.6*s.nat.sd));
+      const xmax = Math.max(...subs.map(s=>s.nat.moy+2.6*s.nat.sd));
+      const N = 60, curve = (nat)=>{ const pts=[]; for(let i=0;i<=N;i++){ const x=xmin+(xmax-xmin)*i/N;
+        const y=Math.exp(-0.5*Math.pow((x-nat.moy)/nat.sd,2)); pts.push({x, y}); } return pts; };
+      const datasets = subs.map(s=>({
+        label:s.key, data:curve(s.nat), parsing:false, borderColor:s.col, borderWidth:2,
+        tension:0.35, pointRadius:0, fill:true, backgroundColor:hexA(s.col,0.08) }));
+      new Chart(natTestEl, {
+        type:'line', data:{datasets},
+        options:{ maintainAspectRatio:false, interaction:{mode:'nearest'},
+          scales:{
+            x:{type:'linear', min:xmin, max:xmax, grid:{color:'#2a3150'},
+               ticks:{color:'#9aa3c0', callback:v=>Math.round(v)}, title:{display:true,text:'score /300',color:'#9aa3c0'}},
+            y:{display:false, min:0, max:1.05}
+          },
+          plugins:{ legend:{display:true, labels:{color:'#e8ecf7'}},
+            tooltip:{enabled:false} }},
+        plugins:[{ id:'natmarkers', afterDraw(c){
+          const xs=c.scales.x, a=c.chartArea, ctx=c.ctx;
+          subs.forEach(s=>{ if(!s.r) return; const px=xs.getPixelForValue(s.r.score);
+            const z=(s.r.score-s.nat.moy)/s.nat.sd, top=Math.max(1,Math.min(99,Math.round((1-normCdf(z))*100)));
+            ctx.save(); ctx.strokeStyle=s.col; ctx.lineWidth=2.5; ctx.setLineDash(s.r.approx?[4,3]:[]);
+            ctx.beginPath(); ctx.moveTo(px,a.top+6); ctx.lineTo(px,a.bottom); ctx.stroke();
+            ctx.setLineDash([]); ctx.fillStyle=s.col; ctx.font='bold 11px sans-serif';
+            ctx.textAlign = px>(a.left+a.right)/2?'right':'left';
+            ctx.fillText(`★ ${s.key} ~top ${top}%${s.r.approx?' (approx.)':''}`, px+(ctx.textAlign==='right'?-5:5), a.top+16);
+            ctx.restore(); });
+        }}]
+      });
+      // notes
+      const have = subs.some(s=>s.r);
+      if(natResultNote){
+        natResultNote.textContent = have
+          ? (subs.some(s=>s.r&&s.r.approx) ? 'position indicative (bande seule — pas le score exact)' : `réf. nationale ${NAT6.year}`)
+          : '⚠ résultat de l’enfant pas encore saisi — renseigne NAT6_RESULT quand tu as la feuille';
+      }
+    }
+
+    // === LEFT: national positioning — only the HONEST /20→national bridge ===
+    // The DNB mention bands are a real national /20 anchor; we place the child's
+    // overall average on them. We DO NOT fake a /20→/300-eval conversion (different
+    // instruments); the national 6ᵉ distribution is shown separately as context.
+    const natEl = root.querySelector('.horizonNat');
+    if(natEl){
+      const topPct = you>=MENTION.tb ? MENTION.pctAtOrAbove[16]
+                   : you>=MENTION.b  ? MENTION.pctAtOrAbove[14]
+                   : you>=MENTION.ab ? MENTION.pctAtOrAbove[12] : 85;
+      const mentionLab = you>=16?'Très Bien':you>=14?'Bien':you>=12?'Assez Bien':'(sous AB)';
+      // Horizontal "mention ladder": fixed rungs 12/14/16/20 + a ★ YOU line.
+      new Chart(natEl, {
+        type:'bar',
+        data:{ labels:['Mention Très Bien ≥16','Mention Bien ≥14','Mention AB ≥12'],
+          datasets:[{ data:[[16,20],[14,16],[12,14]],
+            backgroundColor:['rgba(46,204,155,0.45)','rgba(110,168,254,0.4)','rgba(199,146,234,0.35)'],
+            borderColor:['#2ecc9b','#6ea8fe','#c792ea'], borderWidth:1, borderRadius:3, barPercentage:0.6 }]},
+        options:{ maintainAspectRatio:false, indexAxis:'y',
+          scales:{
+            x:{min:8,max:20, grid:{color:'#2a3150'}, ticks:{color:'#9aa3c0', stepSize:2, callback:v=>v+'/20'}},
+            y:{grid:{display:false}, ticks:{color:'#e8ecf7', font:{size:11}}}
+          },
+          plugins:{ legend:{display:false},
+            tooltip:{callbacks:{
+              title:()=>`Repère national · éval. 6ᵉ ${NAT6.year} : Fr ${NAT6.Francais.moy}/300, Maths ${NAT6.Maths.moy}/300`,
+              label:ctx=>{ const b=[['≥16','~top 25%'],['≥14','~top 48%'],['≥12','~top 69%']][ctx.dataIndex];
+              return [`Mention à ${b[0]}/20`, `nationalement ${b[1]} des candidats au brevet`]; } }}
+          }},
+        plugins:[{ id:'younat', afterDraw(c){ const xs=c.scales.x,a=c.chartArea; if(!xs)return;
+          const px=xs.getPixelForValue(you), ctx=c.ctx; ctx.save();
+          ctx.strokeStyle='#ffd166'; ctx.lineWidth=2.5; ctx.beginPath();
+          ctx.moveTo(px,a.top); ctx.lineTo(px,a.bottom); ctx.stroke();
+          ctx.fillStyle='#ffd166'; ctx.font='bold 11px sans-serif';
+          ctx.textAlign = px>(a.left+a.right)/2?'right':'left';
+          ctx.fillText(`★ ${you.toFixed(1)} → ${mentionLab} · ~top ${topPct}%`, px+(ctx.textAlign==='right'?-6:6), a.top+12);
+          ctx.restore(); } }]
+      });
+    }
+
+    // === RIGHT: hedged school ladder ===
+    const ladEl = root.querySelector('.horizonLadder');
+    const intlToggle = root.querySelector('.toggleIntl');
+    let ladderChart = null;
+    const momentColor = m => m==='prepa' ? '#6ea8fe' : m==='lycee' ? '#2ecc9b' : '#c792ea';
+    function buildLadder(){
+      if(ladderChart){ ladderChart.destroy(); ladderChart=null; }
+      const showIntl = intlToggle && intlToggle.checked;
+      const rungs = HORIZON.filter(r=> showIntl || r.moment!=='univ-intl');
+      new Chart(ladEl, {
+        type:'bar',
+        data:{ labels: rungs.map(r=>r.label), datasets:[
+          { label:'bande indicative', data: rungs.map(r=>[r.lo,r.hi]),
+            backgroundColor: rungs.map(r=>hexA(momentColor(r.moment),0.55)),
+            borderColor: rungs.map(r=>momentColor(r.moment)), borderWidth:1, borderRadius:3, barPercentage:0.7 }
+        ]},
+        options:{ maintainAspectRatio:false, indexAxis:'y',
+          scales:{
+            x:{min:8, max:20, grid:{color:'#2a3150'}, ticks:{color:'#9aa3c0', stepSize:2, callback:v=>v+'/20'}},
+            y:{grid:{display:false}, ticks:{color:'#e8ecf7', font:{size:10}}}
+          },
+          plugins:{ legend:{display:false},
+            annotation: undefined,   // (no plugin) — draw YOU via a thin dataset below
+            tooltip:{callbacks:{ label:ctx=>{ const r=rungs[ctx.dataIndex];
+              return [`${r.label}`, `profil admis indicatif ≈ ${r.lo}–${r.hi}/20`,
+                      `${r.momentFr} · source ${r.honesty==='official'?'officielle':'rapportée'}`,
+                      `⚠ repère, PAS un seuil d'admission`]; } }}
+          }},
+        plugins:[{
+          id:'youline', afterDraw(c){
+            const xs=c.scales.x, a=c.chartArea; if(!xs) return;
+            const px=xs.getPixelForValue(you);
+            const ctx=c.ctx; ctx.save();
+            ctx.strokeStyle='#ffffff'; ctx.lineWidth=2; ctx.setLineDash([4,3]);
+            ctx.beginPath(); ctx.moveTo(px,a.top); ctx.lineTo(px,a.bottom); ctx.stroke();
+            ctx.setLineDash([]); ctx.fillStyle='#ffffff'; ctx.font='bold 11px sans-serif';
+            ctx.textAlign = px > (a.left+a.right)/2 ? 'right':'left';
+            ctx.fillText(`★ ${you.toFixed(1)}/20`, px + (ctx.textAlign==='right'?-6:6), a.top+12);
+            ctx.restore();
+          }
+        }]
+      });
+      ladderChart = Chart.getChart(ladEl);
+    }
+    if(ladEl){ buildLadder(); if(intlToggle) intlToggle.addEventListener('change', buildLadder); }
+
+    // === BOTTOM: Alpes-Maritimes lycées ranked by value added (honest) ===
+    const amEl = root.querySelector('.amLycees');
+    const amToggle = root.querySelector('.toggleLyceeMetric');
+    const am3yToggle = root.querySelector('.toggleLycee3y');
+    const amFilter = root.querySelector('.amFilter');
+    let amChart = null;
+    function buildAM(){
+      if(amChart){ amChart.destroy(); amChart=null; }
+      // Two modes, each its own bar style:
+      //  · default (valeur ajoutée): ONE bar, length = va (2025 or 3-yr), coloured by
+      //    secteur (bleu = public, violet = privé). Sorted best→worst.
+      //  · "réussite au bac": STACKED bar AB→B→TB (🟡→🔵→🟢), length = taux de mention.
+      //    Sorted by total mention rate, highest first.
+      const byReussite = amToggle && amToggle.checked;
+      const use3y = am3yToggle && am3yToggle.checked;
+      const per = use3y ? '3 ans (2023-25)' : String(AM_LYCEES_YEAR);
+      const vaKey  = use3y ? 'vaMen3' : 'vaMen';
+      const menKey = use3y ? 'men3'   : 'men';
+      const reuKey = use3y ? 'reu3'   : 'reu';
+      const abKey = use3y?'bAb3':'bAb', bKey = use3y?'bB3':'bB', tbKey = use3y?'bTb3':'bTb';
+      const q = (amFilter && amFilter.value || '').trim().toLowerCase();
+      const sortVal = l => byReussite ? (l[menKey]==null?null:l[menKey]) : (l[vaKey]==null?null:l[vaKey]);
+      const rows = AM_LYCEES.filter(l=> sortVal(l)!=null
+          && (!q || (l.nom+' '+l.ville).toLowerCase().includes(q)))
+        .slice().sort((a,b)=> sortVal(b)-sortVal(a));
+      const SECTOR = l => l.secteur==='public' ? '#6ea8fe' : '#c792ea';
+      const MENT = { ab:'#ffd166', b:'#6ea8fe', tb:'#2ecc9b' };
+      const f  = v => v==null ? 'n/d' : (v>=0?'+':'')+v;
+      const f0 = v => v==null ? 'n/d' : v;
+
+      let cfg;
+      if(byReussite){
+        // stacked AB→B→TB (left→right). Rescale the count-based segments so their
+        // sum equals the official taux_men_total of the active period (2025 or 3-yr
+        // avg): keeps each mention's proportion, bar length = published rate exactly.
+        const seg = (l,key)=>{ const raw=(l[abKey]||0)+(l[bKey]||0)+(l[tbKey]||0), men=l[menKey];
+          return raw>0 && men!=null ? +(l[key]*men/raw).toFixed(1) : 0; };
+        const mk = (key,label,color)=>({ label, data: rows.map(l=>seg(l,key)),
+          backgroundColor: color, borderWidth:0, stack:'m', barPercentage:0.84 });
+        cfg = {
+          type:'bar',
+          data:{ labels: rows.map(l=>`${l.nom} · ${l.ville}`),
+            datasets:[ mk(abKey,'Assez Bien',MENT.ab), mk(bKey,'Bien',MENT.b), mk(tbKey,'Très Bien',MENT.tb) ]},
+          options:{ maintainAspectRatio:false, indexAxis:'y',
+            scales:{
+              x:{ stacked:true, min:0, max:100, grid:{color:'#2a3150'}, ticks:{color:'#9aa3c0', callback:v=>v+'%'},
+                  title:{display:true, color:'#9aa3c0', text:`taux de mention au bac — ${per} (🟡AB · 🔵B · 🟢TB)`}},
+              y:{ stacked:true, grid:{display:false}, ticks:{color:'#e8ecf7', font:{size:10}, autoSkip:false}}
+            },
+            plugins:{ legend:{display:true, labels:{color:'#e8ecf7', boxWidth:12, font:{size:11}}},
+              tooltip:{callbacks:{
+                title:items=>{ const l=rows[items[0].dataIndex]; return `${l.nom} (${l.ville})`; },
+                label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.x}%`,
+                afterBody:items=>{ const l=rows[items[0].dataIndex];
+                  return [`${l.secteur==='public'?'public':'privé sous contrat'} · ${l.bN} élèves`,
+                    `Mention totale ${f0(l[menKey])}% · Réussite ${f0(l[reuKey])}% (${per})`,
+                    `Valeur ajoutée — 2025 ${f(l.vaMen)} · 3 ans ${f(l.vaMen3)}`]; }
+              }}
+            }}
+        };
+      } else {
+        // single bar = valeur ajoutée (2025 or 3-yr), coloured by secteur
+        cfg = {
+          type:'bar',
+          data:{ labels: rows.map(l=>`${l.nom} · ${l.ville}`),
+            datasets:[{ data: rows.map(l=>l[vaKey]),
+              backgroundColor: rows.map(l=>hexA(SECTOR(l),0.75)),
+              borderColor: rows.map(SECTOR), borderWidth:1, borderRadius:3, barPercentage:0.84 }]},
+          options:{ maintainAspectRatio:false, indexAxis:'y',
+            scales:{
+              x:{ grid:{color:'#2a3150'}, ticks:{color:'#9aa3c0', callback:v=>(v>0?'+':'')+v+' pts'},
+                  title:{display:true, color:'#9aa3c0',
+                   text:`valeur ajoutée mention — ${per} (pts) · bleu=public, violet=privé`}},
+              y:{ grid:{display:false}, ticks:{color:'#e8ecf7', font:{size:10}, autoSkip:false}}
+            },
+            plugins:{ legend:{display:false},
+              tooltip:{callbacks:{
+                title:items=>{ const l=rows[items[0].dataIndex]; return `${l.nom} (${l.ville})`; },
+                label:ctx=>{ const l=rows[ctx.dataIndex];
+                  return [`${l.secteur==='public'?'public':'privé sous contrat'} · ${l.bN} élèves`,
+                    `Valeur ajoutée — 2025 ${f(l.vaMen)} · 3 ans ${f(l.vaMen3)}`,
+                    `Taux de mention ${f0(l[menKey])}% · Réussite ${f0(l[reuKey])}% (${per})`,
+                    `Mentions ${per}: 🟢TB ${f0(l[tbKey])}% · 🔵B ${f0(l[bKey])}% · 🟡AB ${f0(l[abKey])}%`]; }
+              }}
+            }}
+        };
+      }
+      new Chart(amEl, cfg);
+      amChart = Chart.getChart(amEl);
+    }
+    if(amEl){ buildAM();
+      [amToggle, am3yToggle].forEach(t=> t && t.addEventListener('change', buildAM));
+      if(amFilter) amFilter.addEventListener('input', buildAM); }
+  })();
+
   return { chart, barChart, radarChart, standingChart,
-    destroy(){ [chart,barChart,radarChart,standingChart].forEach(c=>c&&c.destroy&&c.destroy()); } };
+    destroy(){ [chart,barChart,radarChart,standingChart].forEach(c=>c&&c.destroy&&c.destroy());
+      [root.querySelector('.horizonNatTest'),root.querySelector('.horizonNat'),root.querySelector('.horizonLadder'),root.querySelector('.amLycees')].forEach(el=>{ const c=el&&Chart.getChart(el); if(c)c.destroy(); }); } };
 }
 
 /* ===================================================================
@@ -1097,7 +1533,7 @@ function renderChild(child){
   if(c.handle){ c.handle.destroy(); c.holder.innerHTML=''; }
   const area=document.createElement('div'); area.appendChild(tpl.content.cloneNode(true)); c.holder.appendChild(area);
   const y=c.years.find(x=>x.key===c.year);
-  c.handle = renderDashboard(area, y.data, y.palette, {subjectStats: y.subjectStats, method: y.method, allYears: c.years});
+  c.handle = renderDashboard(area, y.data, y.palette, {subjectStats: y.subjectStats, method: y.method, allYears: c.years, level: y.level});
 }
 
 /* ---------- Settings tab: published-data pull + manual file load (no server) ---------- */
