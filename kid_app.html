@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Masterix</title>
+<title>Koompa</title>
 <style>
   :root{
     --bg:#1a1033; --bg2:#2a1a4d; --card:#2d1f52; --card2:#372a63;
@@ -79,6 +79,27 @@
   /* ---- subject card with ring ---- */
   .subjcard{background:var(--card); border:1px solid var(--line); border-radius:20px; padding:16px; display:flex; gap:16px; align-items:center;
     box-shadow:0 5px 0 rgba(0,0,0,.22); position:relative; overflow:hidden}
+
+  /* ---- global trophy card ---- */
+  .trophycard{background:var(--card); border:1px solid var(--line); border-radius:20px; padding:16px; box-shadow:0 5px 0 rgba(0,0,0,.22)}
+  .streak-hero{display:flex; align-items:center; gap:14px; padding-bottom:14px; margin-bottom:14px; border-bottom:1px solid var(--line)}
+  .streak-hero .sh-flame{font-size:44px; line-height:1}
+  .streak-hero .sh-count{font-size:15px; font-weight:800}
+  .streak-hero .sh-count b{font-size:22px; color:var(--flame2)}
+  .streak-hero .sh-best{font-size:12px; color:var(--muted); font-weight:700; margin-top:2px}
+  .streak-hero .sh-rec{margin-top:6px; font-size:12px; font-weight:800; color:var(--flame2);
+    background:linear-gradient(90deg,rgba(255,138,61,.18),rgba(255,210,61,.18)); border:1px solid var(--flame); border-radius:10px; padding:5px 9px}
+  .trophygrid{display:grid; grid-template-columns:1fr 1fr; gap:11px}
+  .trophy-tile{background:var(--card2); border:1px solid var(--line); border-radius:16px; padding:13px 10px 11px; text-align:center; position:relative}
+  .trophy-tile.earned{border-color:var(--crown); background:linear-gradient(160deg,#3a2f1a,#2d2550); box-shadow:0 0 0 1px rgba(255,210,61,.4)}
+  .trophy-tile.locked{opacity:.62}
+  .trophy-tile .tico{font-size:28px; line-height:1; display:block; margin-bottom:5px}
+  .trophy-tile.locked .tico{filter:grayscale(1) brightness(.7)}
+  .trophy-tile .tnm{font-size:12.5px; font-weight:800; line-height:1.15}
+  .trophy-tile .thow{font-size:10px; color:var(--muted); font-weight:700; margin-top:3px; line-height:1.2}
+  .trophy-tile .tprog{margin-top:6px; font-size:11px; font-weight:900; color:var(--flame2)}
+  .trophy-tile .tlock{position:absolute; top:7px; right:8px; font-size:12px; opacity:.6}
+  .trophy-tile .tmedal{position:absolute; top:5px; right:7px; font-size:17px}
   .ring{position:relative; width:92px; height:92px; flex:0 0 auto}
   .ring svg{transform:rotate(-90deg)}
   .ring .num{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center}
@@ -112,6 +133,14 @@
     border:0; border-radius:999px; padding:14px 24px; font-size:16px; font-weight:900; color:#2a1a4d;
     background:linear-gradient(90deg,#6ad8ff,#8a7dff); box-shadow:0 5px 0 #3a7aa8; cursor:pointer; transition:transform .08s}
   .fab:active{transform:translateX(-50%) translateY(3px); box-shadow:0 2px 0 #3a7aa8}
+  /* new-grade signal: glowing pulse to pull the kid's eye */
+  .fab.has-new{ background:linear-gradient(90deg,#ffd23d,#ff6bd6); color:#2a1a4d; box-shadow:0 5px 0 #b0417a;
+    animation:newpulse 1.2s ease-in-out infinite }
+  @keyframes newpulse{ 0%,100%{ transform:translateX(-50%) scale(1); filter:drop-shadow(0 0 0 rgba(255,210,61,.0)) }
+    50%{ transform:translateX(-50%) scale(1.06); filter:drop-shadow(0 0 14px rgba(255,210,61,.7)) } }
+  /* prediction payoff line inside the reveal card */
+  .gradecard .predpayoff{ margin-top:10px; font-size:13px; font-weight:800; color:#2a7a52; background:#e3fff1;
+    border:1px solid #9fe8c4; border-radius:12px; padding:8px 11px; line-height:1.25 }
 
   /* overlay reveal */
   .overlay{position:fixed; inset:0; z-index:40; display:none; align-items:center; justify-content:center;
@@ -245,9 +274,9 @@
   </div>
 
   <div class="hero">
-    <div class="bubble" id="bubble">Bienvenue sur Masterix&nbsp;! ⭐</div>
+    <div class="bubble" id="bubble">Bienvenue sur Koompa&nbsp;! ⭐</div>
     <div class="mascot" id="mascot" aria-label="mascotte"></div>
-    <div class="level-chip" id="levelChip">Niveau 1 · Apprentie</div>
+    <div class="level-chip" id="levelChip">Niveau 1 · Étincelle</div>
     <button class="changeMascot" id="changeMascot">🔄 changer de compagnon</button>
   </div>
 
@@ -259,23 +288,17 @@
     <div class="xpbar"><div class="xpfill" id="xpfill"></div></div>
   </div>
 
-  <div class="sec">Ta meilleure matière 💪</div>
-  <div class="subjcard">
-    <div class="ring">
-      <svg width="92" height="92" viewBox="0 0 92 92">
-        <circle cx="46" cy="46" r="40" fill="none" stroke="var(--ring-bg)" stroke-width="10"/>
-        <circle id="ringfill" cx="46" cy="46" r="40" fill="none" stroke="url(#rg)" stroke-width="10" stroke-linecap="round"
-          stroke-dasharray="251.2" stroke-dashoffset="251.2" style="transition:stroke-dashoffset 1.2s cubic-bezier(.2,.9,.3,1)"/>
-        <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#3ddc9b"/><stop offset="100%" stop-color="#6aa0ff"/></linearGradient></defs>
-      </svg>
-      <div class="num"><b id="subjAvg">—</b><span>/20</span></div>
+  <div class="sec">Tes trophées 🏆</div>
+  <div class="trophycard">
+    <div class="streak-hero" id="streakHero">
+      <div class="sh-flame" id="shFlame">🔥</div>
+      <div class="sh-body">
+        <div class="sh-count"><b id="shNow">0</b> d'affilée au-dessus de la classe</div>
+        <div class="sh-best" id="shBest">record : 0</div>
+        <div class="sh-rec hidden" id="shRec">🚀 Zone record ! chaque note en plus rapporte un bonus</div>
+      </div>
     </div>
-    <div class="subjinfo">
-      <h3 id="subjName">—</h3>
-      <div class="sub" id="subjSub">—</div>
-      <div class="badges" id="subjBadges"></div>
-    </div>
+    <div class="trophygrid" id="trophyGrid"></div>
   </div>
 
   <div class="sec">Toutes tes matières — gagne tous les badges&nbsp;! 🏅</div>
@@ -293,6 +316,7 @@
       <div class="score" id="gScore">20<small>/20</small></div>
       <div class="cmp" id="gCmp">+4 au-dessus de la classe 🚀</div>
       <div class="nudge hidden" id="gNudge"></div>
+      <div class="predpayoff hidden" id="gPred"></div>
       <div class="xpgain" id="gXp">+120 XP</div>
     </div>
   </div>
@@ -386,7 +410,8 @@ function computeXP(list){
 }
 // level ladder: each level needs more than the last. Tuned so ~1 term of grades ≈ level 3–4,
 // leaving plenty of headroom to climb across the full year (and years).
-const LVL_NAMES=["Apprentie","Exploratrice","Aventurière","Experte","Championne","Maîtresse","Légende","Étoile ⭐"];
+// neutral (non-gendered) ladder — a space theme, works for any kid
+const LVL_NAMES=["Étincelle","Comète","Météore","Planète","Étoile","Galaxie","Supernova ⭐","Univers 🌌"];
 function levelFor(xp){
   let lvl=1, need=4000, acc=0;
   while(xp >= acc+need){ acc+=need; lvl++; need=Math.round(need*1.55); }
@@ -449,7 +474,9 @@ function subjAvgs(seq){ const rated=seq.filter(r=>r.cls!=null); if(!rated.length
   const w=rated.reduce((a,b)=>a+b.coef,0); return {ya:rated.reduce((a,b)=>a+b.you*b.coef,0)/w, ca:rated.reduce((a,b)=>a+b.cls*b.coef,0)/w}; }
 function countTop(seq){ return seq.filter(r=>r.max!=null && r.you>=r.max-0.001).length; }   // top-of-class finishes
 function countPerfect(seq){ return seq.filter(r=>r.you>=20-0.001).length; }
-function hasRecord(seq){ let b=null; for(const r of seq){ if(b!=null && r.you>b) return true; b=(b==null?r.you:Math.max(b,r.you)); } return false; }
+// Nouveau record: a 20/20 is always a record (you hit the ceiling — can't do better, even on
+// the first grade), OR any later grade that strictly beats your previous best in the subject.
+function hasRecord(seq){ let b=null; for(const r of seq){ if(r.you>=20-0.001) return true; if(b!=null && r.you>b) return true; b=(b==null?r.you:Math.max(b,r.you)); } return false; }
 function hasJump3(seq){ let p=null; for(const r of seq){ if(p!=null && r.you-p>=3) return true; p=r.you; } return false; }
 // La remontada (rule A, REPEATABLE): count each time a below-class grade is IMMEDIATELY
 // followed by a grade back above (or equal to) the class average. Adjacent only.
@@ -469,7 +496,7 @@ const BADGES = [
   {id:'streak10', ico:'⚡', name:'Imparable', how:'10 notes d’affilée au-dessus de la classe',
     test:s=>{const L=longestAboveRun(s); return {earned:L>=10, have:Math.min(L,10), need:10};}},
   // ---- tiered/counted badges (bronze/silver/gold) ----
-  {id:'king', ico:'👑', name:'Reine de la classe', how:'Finir meilleure note de la classe', tiered:true,
+  {id:'king', ico:'👑', name:'N°1 de la classe', how:'Finir meilleure note de la classe', tiered:true,
     test:s=>{const c=countTop(s); return {count:c, earned:c>=1};}},
   {id:'perfect', ico:'💯', name:'Score parfait', how:'Décrocher un 20/20', tiered:true,
     test:s=>{const c=countPerfect(s); return {count:c, earned:c>=1};}},
@@ -482,8 +509,14 @@ const BADGES = [
     test:s=>({earned:hasJump3(s), have:hasJump3(s)?1:0, need:1})},
   {id:'headclass', ico:'🎯', name:'Tête de classe', how:'Ta moyenne au-dessus de la classe',
     test:s=>{const{ya,ca}=subjAvgs(s); return {earned:ya!=null&&ya>ca, have:(ya!=null&&ya>ca)?1:0, need:1};}},
-  {id:'expert', ico:'🧠', name:'Experte', how:'Moyenne de 16/20 ou plus',
-    test:s=>{const{ya}=subjAvgs(s); return {earned:ya!=null&&ya>=16, have:(ya!=null&&ya>=16)?1:0, need:1};}},
+  {id:'avg12', ico:'🥉', name:'Moyenne 12+', how:'Moyenne de la matière ≥ 12',
+    test:s=>{const{ya}=subjAvgs(s); return {earned:ya!=null&&ya>=12, have:ya!=null?Math.min(ya,12):0, need:12};}},
+  {id:'avg14', ico:'🥈', name:'Moyenne 14+', how:'Moyenne de la matière ≥ 14',
+    test:s=>{const{ya}=subjAvgs(s); return {earned:ya!=null&&ya>=14, have:ya!=null?Math.min(ya,14):0, need:14};}},
+  {id:'avg16', ico:'🥇', name:'Moyenne 16+', how:'Moyenne de la matière ≥ 16',
+    test:s=>{const{ya}=subjAvgs(s); return {earned:ya!=null&&ya>=16, have:ya!=null?Math.min(ya,16):0, need:16};}},
+  {id:'avg18', ico:'💎', name:'Moyenne 18+', how:'Moyenne de la matière ≥ 18',
+    test:s=>{const{ya}=subjAvgs(s); return {earned:ya!=null&&ya>=18, have:ya!=null?Math.min(ya,18):0, need:18};}},
   {id:'flawless', ico:'🛡️', name:'Sans faute', how:'Jamais sous la classe (≥2 notes)',
     test:s=>{const rated=s.filter(r=>r.cls!=null); return {earned:rated.length>=2 && rated.every(r=>r.you>=r.cls),
       have:rated.length, need:Math.max(2,rated.length)};}},
@@ -495,7 +528,7 @@ function evalSubjectBadges(seq){ return BADGES.map(b=>({...b, ...b.test(seq)}));
    'possible'   = also needs the future test's class/max (streak/top/beat/headclass/flawless/recovery).
    For TIERED badges we also surface a "level-up" even when already earned: if appending V pushes
    the count across a new medal threshold (🥉1/🥈3/🥇5), we tag it with the medal being chased.    */
-const OWN_VALUE_BADGES = new Set(['perfect','record','jump3','expert']);  // guaranteed by the kid's value
+const OWN_VALUE_BADGES = new Set(['perfect','record','jump3','avg12','avg14','avg16','avg18']);  // guaranteed by the kid's value
 const CLASS_TIERED = new Set(['king','recovery']);                        // tiered but need class context
 function aimableBadges(subj, V){
   const seq = GRADES.filter(g=>g.subj===subj);
@@ -558,11 +591,15 @@ function stageScore(pred, real){
 }
 const COMBO_BONUS=20;        // for logging BOTH stages
 
-// resolve a subject's open predictions against a real grade -> {before, after, combo, total, breakdown}
+// resolve a subject's open predictions against a real grade -> {before, after, combo, total}
+// stage values are stored as {val, ts}; a bare number is also tolerated.
+const predVal = s => s==null ? null : (typeof s==='object' ? s.val : s);
 function scorePrediction(pred, real){
-  const bs = pred && pred.before!=null ? stageScore(pred.before, real) : 0;
-  const as = pred && pred.after !=null ? stageScore(pred.after , real) : 0;
-  const combo = (pred && pred.before!=null && pred.after!=null) ? COMBO_BONUS : 0;
+  const bv = pred ? predVal(pred.before) : null;
+  const av = pred ? predVal(pred.after)  : null;
+  const bs = bv!=null ? stageScore(bv, real) : 0;
+  const as = av!=null ? stageScore(av, real) : 0;
+  const combo = (bv!=null && av!=null) ? COMBO_BONUS : 0;
   return {before:bs, after:as, combo, total:bs+as+combo};
 }
 
@@ -571,7 +608,6 @@ function scorePrediction(pred, real){
 const $ = s=>document.querySelector(s);
 // data-derived values — assigned in init() once grades arrive via postMessage
 let totalXP=0, flameStreak=0, records=0, priorBests=[], subj={}, L=null;
-let bestSubj=null, bestEdge=-99;
 function computeDerived(){
   totalXP = computeXP(GRADES_ALL);      // cumulative across ALL years
   flameStreak = aboveClassStreak(GRADES);
@@ -579,15 +615,28 @@ function computeDerived(){
   priorBests = bestBefore(GRADES);
   subj = bySubject(GRADES);
   L = levelFor(totalXP);
-  bestSubj=null; bestEdge=-99;
-  for(const k in subj){ const o=subj[k]; const avgCls = GRADES.filter(g=>g.subj===k&&g.cls!=null);
-    if(!avgCls.length) continue; const ce=avgCls.reduce((a,b)=>a+b.cls*b.coef,0)/avgCls.reduce((a,b)=>a+b.coef,0);
-    const edge=o.avg-ce; if(edge>bestEdge){bestEdge=edge; bestSubj=k;} }
 }
 
-// pick strongest subject by how much she beats the class on average
-// (computed in computeDerived once grades arrive)
-
+/* ---- GLOBAL (all-subjects) trophy metrics ---- */
+// longest above-class run anywhere this year (for the streak tiers)
+function longestGlobalStreak(){ let L=0,c=0; for(const g of GRADES){ if(g.cls==null) continue; if(g.you>g.cls){c++;L=Math.max(L,c);} else c=0; } return L; }
+// how many DISTINCT subjects she currently beats the class in (coef-weighted subject avg > class avg)
+function breadthBeaten(){
+  let n=0, total=0;
+  for(const k in subj){ const rows=GRADES.filter(g=>g.subj===k && g.cls!=null); if(!rows.length) continue;
+    total++; const w=rows.reduce((a,b)=>a+b.coef,0);
+    const ya=rows.reduce((a,b)=>a+b.you*b.coef,0)/w, ca=rows.reduce((a,b)=>a+b.cls*b.coef,0)/w;
+    if(ya>ca) n++; }
+  return {beaten:n, total};
+}
+const GLOBAL_BADGES = [
+  {id:'gstreak', ico:'🔥', name:'Série de feu', how:'Notes d’affilée au-dessus de la classe', tiered:true,
+    steps:[{n:5,medal:'🥉'},{n:10,medal:'🥈'},{n:20,medal:'🥇'}], val:()=>longestGlobalStreak()},
+  {id:'breadth', ico:'🌈', name:'Touche-à-tout', how:'Battre la classe dans plusieurs matières', tiered:true,
+    steps:[{n:3,medal:'🥉'},{n:5,medal:'🥈'}], val:()=>breadthBeaten().beaten,
+    goldWhen:()=>{const b=breadthBeaten(); return b.total>0 && b.beaten>=b.total;}, goldMedal:'🥇', goldLabel:'Grand chelem'},
+];
+function medalForSteps(steps, v){ let m=null; for(const s of steps){ if(v>=s.n) m=s; } return m; }
 function animateCount(el, to, dur=1100, suffix=""){
   const start=performance.now(), from=0;
   function tick(t){ const p=Math.min(1,(t-start)/dur); const v=from+(to-from)*(1-Math.pow(1-p,3));
@@ -606,23 +655,48 @@ function render(){
   const pct = (totalXP-L.floor)/(L.next-L.floor)*100;
   setTimeout(()=>{ $("#xpfill").style.width = pct.toFixed(1)+"%"; }, 150);
 
-  // subject card
-  const o=subj[bestSubj];
-  $("#subjName").textContent = nn(bestSubj);
-  $("#subjSub").textContent = `${o.n} notes · tu bats la classe ${o.beat}/${o.beatN} fois`;
-  setTimeout(()=>animateCount($("#subjAvg"), o.avg, 1100), 300);
-  const circ=251.2, off=circ*(1-o.avg/20);
-  setTimeout(()=>{ $("#ringfill").style.strokeDashoffset=off; }, 300);
-  const b=$("#subjBadges"); b.innerHTML="";
-  if(bestEdge>0) b.innerHTML += `<span class="badge win">+${bestEdge.toFixed(1)} vs classe 🚀</span>`;
-  if(o.crowns>0) b.innerHTML += `<span class="badge king">${o.crowns}× top 👑</span>`;
-  if(o.prevUp) b.innerHTML += `<span class="badge up">en progrès 📈</span>`;
+  // --- global trophies: streak hero + breadth/streak tiles ---
+  const curStreak = flameStreak;                      // current run from the end (year-scoped)
+  const longest = longestGlobalStreak();
+  const prevBest = +(LS.get("bestStreak")||0);
+  // record territory: award escalating bonus XP for each NEW record length reached (once each)
+  if(longest > prevBest){
+    let bonus=0;
+    for(let k=prevBest+1; k<=longest; k++){ if(k>=5) bonus += 10 + 5*(k-5); }  // kicks in from a 5-streak up
+    if(bonus>0){ addBonusXP(bonus); }
+    LS.set("bestStreak", String(longest));
+  }
+  const best = Math.max(prevBest, longest);
+  $("#shNow").textContent = curStreak;
+  $("#shBest").textContent = `record : ${best}`;
+  $("#shFlame").style.opacity = curStreak>0 ? 1 : .4;
+  // "record territory" banner: the current run IS the all-time-best run and is live
+  $("#shRec").classList.toggle("hidden", !(curStreak>0 && curStreak===longest && longest>=best && best>=5));
+
+  const grid=$("#trophyGrid"); grid.innerHTML="";
+  for(const gb of GLOBAL_BADGES){
+    const v=gb.val();
+    const gold = gb.goldWhen && gb.goldWhen();
+    const medal = gold ? gb.goldMedal : (medalForSteps(gb.steps, v)||{}).medal;
+    const earned = !!medal;
+    const nextStep = gb.steps.find(s=>v<s.n);
+    const prog = gold ? (gb.goldLabel||'max')
+                 : (nextStep ? `${v}/${nextStep.n}` : `${v} ✓`);
+    const t=document.createElement("div");
+    t.className="trophy-tile "+(earned?"earned":"locked");
+    t.innerHTML = (earned?`<span class="tmedal">${medal}</span>`:`<span class="tlock">🔒</span>`)
+      + `<span class="tico">${gb.ico}</span>`
+      + `<div class="tnm">${gold&&gb.goldLabel?gb.goldLabel:gb.name}</div>`
+      + `<div class="thow">${gb.how}</div>`
+      + `<div class="tprog">${prog}</div>`;
+    grid.appendChild(t);
+  }
 
   // bubble reacts to the latest grade
   const last=GRADES[GRADES.length-1];
-  let msg = "Prête pour aujourd'hui&nbsp;? 💜";
+  let msg = "On y va&nbsp;? 💜";
   if(last.cls!=null && last.you>last.cls) msg = `Bravo pour ${nn(last.subj)}&nbsp;! Tu as battu la classe 🎉`;
-  if(last.max!=null && last.you>=last.max-0.001) msg = `👑 Tu es la meilleure en ${nn(last.subj)}&nbsp;!`;
+  if(last.max!=null && last.you>=last.max-0.001) msg = `👑 Meilleure note de la classe en ${nn(last.subj)}&nbsp;!`;
   $("#bubble").innerHTML = msg;
 }
 // (render() is called from init() once data arrives)
@@ -718,8 +792,9 @@ function renderPredPanel(s){
   $("#predHint").innerHTML = has
     ? "Prédictions enregistrées — elles seront comparées à ta prochaine note&nbsp;!"
     : "Gagne des points bonus en devinant juste&nbsp;! 🔮 avant + 💭 après = bonus combo";
-  // show the simulate button only if there's at least one prediction to resolve
-  $("#simGrade").classList.toggle("hidden", !has);
+  // the "simulate" button is retired — predictions now resolve automatically when the real
+  // grade arrives (in the new-grade reveal). Keep it hidden.
+  $("#simGrade").classList.add("hidden");
   // clear any previous result card
   const old=document.querySelector(".predresult"); if(old) old.remove();
 }
@@ -909,68 +984,127 @@ $("#changeMascot").addEventListener("click", openPicker);
 /* ---- mascot tap = signature move + sparkle ---- */
 $("#mascot").addEventListener("click", ()=>{ mascotSignature(); burst(12); });
 
-/* ---- reveal: latest grade as a flip card, celebration tiered by how special it is ---- */
+/* ---- reveal: NEW grades only, tapped to discover, with prediction payoff ---- */
 const overlay=$("#overlay");
-let revealIdx = GRADES.length-1;   // cycles newest→oldest on each tap, so all tiers are demoable
 const TIER = {
   perfect:{banner:"SCORE PARFAIT !", medal:"💯", cmp:"La note maximale 🌟", cls:"king", conf:90},
   top:    {banner:"MEILLEURE DE LA CLASSE !", medal:"👑", cmp:"Personne n'a fait mieux 🏆", cls:"king", conf:70},
   record: {banner:"NOUVEAU RECORD !", medal:"📈", cmp:null, cls:"win", conf:55},  // cmp filled with subject
   beat:   {banner:null, medal:null, cmp:null, cls:"win", conf:40},
   // below-class tiers: NO confetti, NO cheer — encouraging, never a party
-  effort: {banner:null, medal:"💪", cmp:"La classe aussi a trouvé ça dur — tu n'es pas seule 💪", cls:"", conf:0},
+  effort: {banner:null, medal:"💪", cmp:"La classe aussi a trouvé ça dur — tu n'es pas seul·e 💪", cls:"", conf:0},
   tough:  {banner:null, medal:"💪", cmp:null, cls:"", conf:0}   // cmp built live with a remontada nudge
 };
 const GOOD = t => (t==='perfect'||t==='top'||t==='record'||t==='beat');  // gets the party
-$("#revealBtn").addEventListener("click", ()=>{
-  // cycle through grades so every celebration tier is demoable (newest first)
-  const g=GRADES[revealIdx];
-  const t = tierOf(g, priorBests[revealIdx]);
-  revealIdx = (revealIdx-1+GRADES.length)%GRADES.length;
+
+/* --- seen-grades set (persisted per kid+year) + new-grade detection --- */
+const gradeId = g => `${g.subj}|${g.date}|${g.you}`;
+const loadSeen = ()=> JSON.parse(LS.get("seenGrades")||"[]");
+const saveSeen = arr => LS.set("seenGrades", JSON.stringify(arr));
+function newGradeQueue(){
+  const seen = new Set(loadSeen());
+  return GRADES.filter(g=> !seen.has(gradeId(g)));   // GRADES is chronological (oldest→newest)
+}
+function markSeen(g){ const a=loadSeen(); const id=gradeId(g); if(!a.includes(id)){ a.push(id); saveSeen(a); } }
+// baseline: first ever run for this kid+year -> mark everything seen silently (no avalanche),
+// and seed bestStreak to the current longest so existing history doesn't mint a retroactive bonus.
+function baselineSeenIfFirstRun(){
+  if(LS.get("seenGrades")===null){
+    saveSeen(GRADES.map(gradeId));
+    if(LS.get("bestStreak")===null) LS.set("bestStreak", String(longestGlobalStreak()));
+  }
+}
+// prior best in a subject strictly BEFORE grade g (correct per-reveal tiering)
+function priorBestInSubjectBefore(g){
+  let b=null;
+  for(const r of GRADES){ if(r===g) break; if(r.subj===g.subj){ b = b==null ? r.you : Math.max(b,r.you); } }
+  return b;
+}
+
+let revealQueue=[];       // new grades still to show this session
+
+function showReveal(g){
+  const t = tierOf(g, priorBestInSubjectBefore(g));
   const T = TIER[t];
   $("#gSubj").textContent = nn(g.subj).toUpperCase();
   $("#gScore").innerHTML = `${g.you}<small>/20</small>`;
 
-  // banner + medal
   const banner=$("#gBanner"), medal=$("#gMedal");
   if(T.banner){ banner.textContent=T.banner; banner.className="tier-banner "+t; banner.classList.remove("hidden"); }
   else banner.classList.add("hidden");
   if(T.medal){ medal.textContent=T.medal; medal.classList.remove("hidden"); }
   else medal.classList.add("hidden");
 
-  // comparison line
   const cmp=$("#gCmp");
   if(t==='record'){ cmp.className="cmp win"; cmp.textContent=`Ton meilleur score en ${nn(g.subj)} 📈`; }
   else if(t==='beat'){ cmp.className="cmp win"; cmp.textContent=`+${(g.you-g.cls).toFixed(1)} au-dessus de la classe 🚀`; }
   else if(t==='tough'){ cmp.className="cmp"; cmp.textContent="Pas ton meilleur jour — vise la remontada 🦸"; }
   else { cmp.className="cmp "+T.cls; cmp.textContent=T.cmp; }
 
-  // remontada nudge on any below-class grade (turns a low point into a quest)
   const nudge=$("#gNudge");
   if(!GOOD(t)){ nudge.textContent="🦸 Prochain défi : repasser au-dessus de la classe → badge La remontada"; nudge.classList.remove("hidden"); }
   else nudge.classList.add("hidden");
 
-  // XP preview (always positive — a bad grade just earns less, never negative)
+  // XP preview (always positive)
   let x=20+g.you*4; if(g.cls!=null&&g.you>g.cls)x+=(g.you-g.cls)*8; if(g.max!=null&&g.you>=g.max-0.001)x+=50;
   $("#gXp").textContent = `+${Math.round(x*g.coef)} XP`;
 
-  // tier styling on the card
+  // --- prediction payoff: resolve any open prediction for this subject, right here ---
+  const predLine=$("#gPred");
+  const preds=loadPreds(); const p=preds[g.subj];
+  const pb = p ? predVal(p.before) : null, pa = p ? predVal(p.after) : null;
+  if(p && (pb!=null || pa!=null)){
+    const sc=scorePrediction(p, g.you);
+    addBonusXP(sc.total);
+    const parts=[];
+    if(pb!=null) parts.push(`🔮 ${pb}`);
+    if(pa!=null) parts.push(`💭 ${pa}`);
+    predLine.innerHTML = `${parts.join(" · ")} → réel <b>${g.you}</b> · <b>+${sc.total} XP</b> 🎯`;
+    predLine.classList.remove("hidden");
+    delete preds[g.subj]; savePreds(preds);               // prediction consumed
+  } else {
+    predLine.classList.add("hidden");
+  }
+
   const gc=$("#gradecard");
   gc.className="gradecard"+(GOOD(t)&&t!=='beat'?(" "+t):"");
-  gc.style.animation="none"; void gc.offsetWidth; gc.style.animation="";   // replay flip
+  gc.style.animation="none"; void gc.offsetWidth; gc.style.animation="";
 
   overlay.classList.add("on");
-  // celebration ONLY for good grades; below-class = calm, determined, no confetti
   if(GOOD(t)){
     const m=$("#mascot"); m.classList.remove("cheer"); void m.offsetWidth; m.classList.add("cheer");
-    mascotSignature();                                          // + the animal's signature move
+    mascotSignature();
     setTimeout(()=>burst(T.conf), 500);
-    if(t==='perfect'||t==='top') setTimeout(()=>burst(T.conf), 1100);   // double burst for the big ones
+    if(t==='perfect'||t==='top') setTimeout(()=>burst(T.conf), 1100);
   } else {
-    $("#mascot").classList.remove("cheer");   // no cheer on a low grade
+    $("#mascot").classList.remove("cheer");
   }
+  markSeen(g);              // once shown, it's seen
+}
+
+// reveal the next queued new grade
+function revealNext(){
+  if(revealQueue.length===0){ renderRevealButton(); return; }
+  showReveal(revealQueue.shift());
+}
+overlay.addEventListener("click", ()=>{
+  overlay.classList.remove("on");
+  if(revealQueue.length>0){ setTimeout(revealNext, 180); }                       // chain to next new grade
+  else { computeDerived(); render(); renderSubjList(); renderRevealButton(); }    // refresh stats after the batch
 });
-overlay.addEventListener("click", ()=> overlay.classList.remove("on"));
+
+// the reveal button reflects how many new grades are waiting
+function renderRevealButton(){
+  const btn=$("#revealBtn");
+  revealQueue = newGradeQueue();
+  const n=revealQueue.length;
+  if(n===0){ btn.classList.add("hidden"); btn.classList.remove("has-new"); }
+  else {
+    btn.classList.remove("hidden"); btn.classList.add("has-new");
+    btn.textContent = `✨ ${n} nouvelle${n>1?'s':''} note${n>1?'s':''} !`;
+  }
+}
+$("#revealBtn").addEventListener("click", revealNext);
 
 /* ---- confetti ---- */
 function burst(n){
@@ -998,9 +1132,11 @@ function init(payload){
   if(payload.title) document.title = payload.title;
   if(GRADES.length===0){ $("#bubble").innerHTML = "Pas encore de notes pour cette année 📚"; return; }
   computeDerived();
+  baselineSeenIfFirstRun();   // first run: baseline seen-grades + bestStreak BEFORE any render/bonus
   render();
   renderSubjList();
   initMascot();
+  renderRevealButton();       // show "N nouvelles notes" only if there are genuinely new grades
 }
 // listen for the parent's data message (and tell the parent we're ready)
 window.addEventListener("message", (e)=>{
