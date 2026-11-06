@@ -629,12 +629,33 @@ function breadthBeaten(){
     if(ya>ca) n++; }
   return {beaten:n, total};
 }
+// longest run of consecutive PASSING grades (>=10/20), any subject
+function longestPassingStreak(){ let L=0,c=0; for(const g of GRADES){ if(g.you>=10){c++;L=Math.max(L,c);} else c=0; } return L; }
+// count of calendar ISO-weeks where EVERY graded assessment beat the class (>=2 grades that week)
+function perfectWeeks(){
+  const wk={};
+  for(const g of GRADES){ if(g.cls==null) continue;
+    const d=new Date(g.date); if(isNaN(d)) continue;
+    // ISO week key: year + week number
+    const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+    const day=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-day+3);
+    const wkKey=t.getUTCFullYear()+'-'+Math.ceil((((t-Date.UTC(t.getUTCFullYear(),0,1))/86400000)+1)/7);
+    (wk[wkKey]=wk[wkKey]||[]).push(g.you>g.cls);
+  }
+  let n=0;
+  for(const k in wk){ const arr=wk[k]; if(arr.length>=2 && arr.every(Boolean)) n++; }
+  return n;
+}
 const GLOBAL_BADGES = [
   {id:'gstreak', ico:'🔥', name:'Série de feu', how:'Notes d’affilée au-dessus de la classe', tiered:true,
     steps:[{n:5,medal:'🥉'},{n:10,medal:'🥈'},{n:20,medal:'🥇'}], val:()=>longestGlobalStreak()},
   {id:'breadth', ico:'🌈', name:'Touche-à-tout', how:'Battre la classe dans plusieurs matières', tiered:true,
     steps:[{n:3,medal:'🥉'},{n:5,medal:'🥈'}], val:()=>breadthBeaten().beaten,
     goldWhen:()=>{const b=breadthBeaten(); return b.total>0 && b.beaten>=b.total;}, goldMedal:'🥇', goldLabel:'Grand chelem'},
+  {id:'passing', ico:'🛡️', name:'Sans fausse note', how:'Notes d’affilée au-dessus de 10/20', tiered:true,
+    steps:[{n:10,medal:'🥉'},{n:20,medal:'🥈'},{n:40,medal:'🥇'}], val:()=>longestPassingStreak()},
+  {id:'perfweek', ico:'🌟', name:'Semaine parfaite', how:'Toutes tes notes d’une semaine au-dessus de la classe', tiered:true,
+    steps:[{n:1,medal:'🥉'},{n:3,medal:'🥈'},{n:6,medal:'🥇'}], val:()=>perfectWeeks()},
 ];
 function medalForSteps(steps, v){ let m=null; for(const s of steps){ if(v>=s.n) m=s; } return m; }
 function animateCount(el, to, dur=1100, suffix=""){
