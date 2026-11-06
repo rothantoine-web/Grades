@@ -97,6 +97,16 @@
   .yearbar .cnt { opacity:.6; font-size:11px; margin-left:4px; }
   .yearbar .future-year { margin-left:auto; border-style:dashed; }
   .yearbar .future-year.active { background:#2a3150; color:var(--ink); font-weight:600; border-color:#3a4573; border-style:solid; }
+  .yearbar .playful-btn { border:0; border-radius:999px; padding:6px 14px; font:inherit; font-weight:700; font-size:13px; cursor:pointer;
+    color:#fff; background:linear-gradient(90deg,#b06bff,#ff6bd6); box-shadow:0 2px 0 #7a3fb0; }
+  .yearbar .playful-btn:active { transform:translateY(2px); box-shadow:0 0 0 #7a3fb0; }
+  /* kid-app full-screen iframe overlay */
+  #kidOverlay { position:fixed; inset:0; z-index:200; display:none; background:#1a1033; }
+  #kidOverlay.on { display:block; }
+  #kidOverlay iframe { width:100%; height:100%; border:0; display:block; }
+  #kidClose { position:fixed; top:12px; right:14px; z-index:201; width:40px; height:40px; border-radius:50%; border:0;
+    background:rgba(255,255,255,.14); color:#fff; font-size:20px; font-weight:800; cursor:pointer; backdrop-filter:blur(4px); }
+  #kidClose:active { transform:scale(.92); }
   /* drop zone */
   .drop { border:2px dashed var(--line); border-radius:14px; padding:26px; text-align:center; color:var(--muted); transition:.15s; margin-bottom:22px; cursor:pointer; }
   .drop:hover, .drop.over { border-color:#4a9df0; color:var(--ink); background:#141a2e; }
@@ -152,7 +162,7 @@
     <div class="replayResult"></div>
     <div class="subjlegend"></div>
     <div class="chartbox"><canvas class="chart"></canvas></div>
-    <p class="legend-note"><b>Click a subject above</b> to isolate it. <b>Circle size = coefficient</b>. White line = coefficient-weighted trend. Red zone (&lt;10/20) = below-passing. 👑 = top of class on that assessment. Hover any point for details.</p>
+    <p class="legend-note"><b>Click a subject above</b> to isolate it. <b>Circle size = coefficient</b>. White line = coefficient-weighted trend. Red zone (&lt;10/20) = below-passing. 👑 = top of class on that assessment. Hover any point for details.<br><span style="opacity:.75"><b>Vs-class here is per test:</b> the gap to the class is the coefficient-weighted average of each test's gap, using the class average printed on that test. It can differ slightly from EcoleDirecte's official subject average (shown in the per-subject range below), because the official class average weights by the pupils who actually sat each test — so varying attendance shifts it. Trust the per-subject range for the official standing.</span></p>
   </div>
   <div class="card">
     <h2>At a glance</h2>
@@ -1065,6 +1075,34 @@ function renderDashboard(root, data, palette, opts={}){
     ctx.restore();
   }};
 
+  // On the isolated-subject view only, draw a translucent vertical band per exam from
+  // the class MIN to MAX (/20), in the subject color — echoes the horizontal range widget
+  // so you can see where her dot / the class avg sit inside the class spread each exam.
+  // beforeDatasetsDraw => sits behind the lines & dots. Guards keep it off the full view
+  // and off the "gap vs class" view (y rescaled, max<20). hex→rgba inlined to avoid the
+  // temporal-dead-zone on hexA (a const defined later in this scope).
+  const examRangePlugin = { id:'examRange', beforeDatasetsDraw(c){
+    if(activeSubject===null) return;
+    const {ctx, scales:{y}} = c;
+    if(y.max<20) return;                                      // only the /20 grade axis
+    const meta = c.getDatasetMeta(0); if(!meta || !meta.data) return;
+    const hex = color(activeSubject).replace('#','');
+    const n = hex.length===3 ? hex.split('').map(ch=>ch+ch).join('') : hex;
+    const r=parseInt(n.slice(0,2),16), g=parseInt(n.slice(2,4),16), b=parseInt(n.slice(4,6),16);
+    const half = 8;
+    ctx.save();
+    meta.data.forEach((pt,i)=>{
+      const d=seq[i];
+      if(!d || !visible(d) || d.normMin==null || d.normMax==null || !pt || pt.skip) return;
+      const yTop=y.getPixelForValue(d.normMax), yBot=y.getPixelForValue(d.normMin);
+      ctx.fillStyle=`rgba(${r},${g},${b},0.18)`;
+      ctx.fillRect(pt.x-half, yTop, half*2, yBot-yTop);
+      ctx.strokeStyle=`rgba(${r},${g},${b},0.5)`; ctx.lineWidth=1;
+      ctx.strokeRect(pt.x-half, yTop, half*2, yBot-yTop);
+    });
+    ctx.restore();
+  }};
+
   const legendEl = root.querySelector('.subjlegend');
   const gapInk = g=> g==null? 'var(--muted)' : g>=0 ? '#2ecc9b' : '#e74c6b';
   // per-subject coef-weighted gap vs class for the active period (seq) — class-rated grades only
@@ -1109,7 +1147,7 @@ function renderDashboard(root, data, palette, opts={}){
               d.normClass!=null ? `Class avg: ${d.normClass}/20 (you ${d.vsClass>=0?'+':''}${d.vsClass})` : '',
               (d.minClasse!=null && d.maxClasse!=null) ? `Class range: ${d.minClasse}–${d.maxClasse}/${d.noteSur} (${d.normMin}–${d.normMax}/20)` : '' ].filter(Boolean);
           } } } }
-    }, plugins:[passZone, crownPlugin]
+    }, plugins:[passZone, examRangePlugin, crownPlugin]
   });
 
   function refresh(){
@@ -1157,14 +1195,29 @@ function renderDashboard(root, data, palette, opts={}){
     if(!resultBox) return;
     const rows = seq;                                   // active period view (filter-aware)
     const full = (rows===seqAll) || rows.length===seqAll.length;
-    let sNum=0,sW=0,cNum=0,cW=0;
-    rows.forEach(d=>{ sNum+=d.norm*d.coef; sW+=d.coef;
-      if(d.normClass!=null){ cNum+=d.normClass*d.coef; cW+=d.coef; } });
-    const you = sW? sNum/sW : null, cls = cW? cNum/cW : null;
+    // Match the "At a glance" overall tile: pooled for Pronote, per-20 weighted otherwise.
+    const m = opts.method || 'per20';
+    let you=null, cls=null;
+    if(m==='pool'){
+      const se=rows.reduce((s,d)=>s+d.valeur*d.coef,0), sp=rows.reduce((s,d)=>s+d.noteSur*d.coef,0);
+      you = sp>0 ? se/sp*20 : null;
+      const cr=rows.filter(d=>d.normClass!=null);
+      const ce=cr.reduce((s,d)=>s+d.moyenneClasse*d.coef,0), cp=cr.reduce((s,d)=>s+d.noteSur*d.coef,0);
+      cls = cp>0 ? ce/cp*20 : null;
+    } else {
+      let sNum=0,sW=0,cNum=0,cW=0;
+      rows.forEach(d=>{ sNum+=d.norm*d.coef; sW+=d.coef;
+        if(d.normClass!=null){ cNum+=d.normClass*d.coef; cW+=d.coef; } });
+      you = sW? sNum/sW : null; cls = cW? cNum/cW : null;
+    }
     const fmt1 = v=> v==null? '—' : v.toFixed(1);
     const gap = (you!=null && cls!=null) ? you-cls : null;
     const gapCol = g=> g==null? 'var(--muted)' : g>=0 ? 'rgba(46,204,155,0.22)' : 'rgba(231,76,107,0.22)';
-    resultBox.innerHTML = `<span class="rr-year">${full?'Year':'Period'}: <b>You ${fmt1(you)}</b> <span class="rr-cls">· Class ${fmt1(cls)}</span>`
+    // Pooled class figure is an estimate: we only have each test's class average, not every
+    // pupil's raw points, so a true pooled class average can't be reconstructed. Mark it "~".
+    const clsApprox = (m==='pool' && cls!=null);
+    const clsTitle = clsApprox ? ' title="Estimate — pooled from each test’s class average; true pooled class average needs per-pupil data we don’t have"' : '';
+    resultBox.innerHTML = `<span class="rr-year">${full?'Year':'Period'}: <b>You ${fmt1(you)}</b> <span class="rr-cls"${clsTitle}>· Class ${clsApprox?'~':''}${fmt1(cls)}</span>`
       + (gap!=null ? ` <span class="rr-gap" style="background:${gapCol(gap)};color:${gapInk(gap)}">${gap>=0?'+':''}${gap.toFixed(1)}</span>` : '')
       + `</span>`;
   }
@@ -2319,8 +2372,11 @@ function rebuildUI(){
     // yearbar = real years, then a "Planning the future" pseudo-year forced rightmost.
     yearbar.innerHTML = c.years.map(y=>
       `<button data-key="${y.key}" class="${y.key===c.year?'active':''}">${y.label} <span class="cnt">${y.count}</span></button>`).join('')
-      + `<button data-key="__future__" class="future-year${c.year==='__future__'?' active':''}">🎓 Planning the future</button>`;
+      + `<button data-key="__future__" class="future-year${c.year==='__future__'?' active':''}">🎓 Planning the future</button>`
+      + `<button class="playful-btn" data-playful="1"${c.year==='__future__'?' style="display:none"':''}>⭐ Masterix</button>`;
     yearbar.querySelectorAll('button[data-key]').forEach(b=>b.onclick=()=>{ c.year=b.dataset.key; renderChild(child); });
+    const pb=yearbar.querySelector('button[data-playful]');
+    if(pb) pb.onclick=()=> launchKidApp(child);
 
     if(child===activeChild) renderChild(child);
   });
@@ -2360,6 +2416,58 @@ function renderChild(child){
   c.handle = renderDashboard(area, y.data, y.palette, {subjectStats: y.subjectStats, method: y.method, allYears: c.years, level: y.level, natEval: y.natEval, uai: y.uai, school: y.school});
 }
 
+/* ---------- Playful kid-app launch ----------
+   Adapts the dashboard's normalized records to the kid app's shape and posts them to the
+   iframe. Selected year -> streak/badges/prediction; all years -> cumulative XP.          */
+function kidAdapt(data){
+  // y.data holds RAW records (matiere, valeur, noteSur, moyenneClasse, maxClasse, coef, dateSaisie).
+  // renderDashboard computes norm/normClass/normMax on a COPY, so we must normalize here ourselves.
+  const to20 = (v, sur) => (v!=null && sur) ? +(v/sur*20).toFixed(2) : null;
+  return (data||[])
+    .map(d=>{
+      const sur = d.noteSur;
+      return {
+        subj: d.matiere,
+        you:  to20(d.valeur, sur),
+        cls:  d.moyenneClasse!=null ? to20(d.moyenneClasse, sur) : null,
+        max:  d.maxClasse!=null ? to20(d.maxClasse, sur) : null,
+        coef: (d.coef!=null ? d.coef : 1),
+        date: d.dateSaisie
+      };
+    })
+    .filter(r=> r.subj && r.you!=null)
+    .sort((a,b)=> String(a.date).localeCompare(String(b.date)));
+}
+function launchKidApp(child){
+  const c=store[child]; if(!c) return;
+  if(c.year==='__future__') return;                       // no real grades on the Planning pseudo-year
+  const y=c.years.find(x=>x.key===c.year); if(!y) return;
+  const grades = kidAdapt(y.data);
+  const gradesAll = c.years.reduce((acc,yr)=> acc.concat(kidAdapt(yr.data)), []);  // cumulative XP
+  const payload = { type:'kidapp:init', child, yearKey:y.key, yearLabel:y.label, title:`Masterix — ${child}`,
+                    grades, gradesAll };
+  const overlay=document.getElementById('kidOverlay');
+  const frame=document.getElementById('kidFrame');
+  // wait for the iframe to announce readiness, then send the data (handshake avoids a race)
+  let sent=false;
+  const onReady = (e)=>{ if(e.data && e.data.type==='kidapp:ready'){ frame.contentWindow.postMessage(payload,'*'); sent=true; } };
+  window.addEventListener('message', onReady);
+  frame.onload = ()=>{ if(!sent) frame.contentWindow.postMessage(payload,'*'); };  // fallback if ready missed
+  frame.src = 'kid_app.html?t='+Date.now();               // reload fresh each launch
+  overlay.classList.add('on');
+  // stash the listener so close can remove it
+  overlay._onReady = onReady;
+  // wire the close button lazily (overlay markup lives after this script in the DOM)
+  const closeBtn=document.getElementById('kidClose');
+  if(closeBtn && !closeBtn._wired){
+    closeBtn._wired=true;
+    closeBtn.onclick=()=>{
+      overlay.classList.remove('on');
+      if(overlay._onReady){ window.removeEventListener('message', overlay._onReady); overlay._onReady=null; }
+      frame.src='about:blank';
+    };
+  }
+}
 /* ---------- Settings tab: published-data pull + manual file load (no server) ---------- */
 function renderSettings(panel){
   panel.innerHTML = `
@@ -2562,5 +2670,10 @@ async function authGate(){
 
 
 </script>
+<!-- Playful kid-app overlay (iframe isolates the kid app's CSS/JS) -->
+<div id="kidOverlay">
+  <button id="kidClose" title="Fermer">✕</button>
+  <iframe id="kidFrame" title="Masterix"></iframe>
+</div>
 </body>
 </html>

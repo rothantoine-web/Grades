@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Masterix</title>
+<style>
+  :root{
+    --bg:#1a1033; --bg2:#2a1a4d; --card:#2d1f52; --card2:#372a63;
+    --ink:#f4f0ff; --muted:#b9aee0; --line:#4a3a7a;
+    --flame:#ff8a3d; --flame2:#ffd23d; --crown:#ffd23d;
+    --good:#3ddc9b; --mid:#6aa0ff; --purp:#b06bff; --pink:#ff6bd6;
+    --ring-bg:#3a2a66;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; background:
+    radial-gradient(1200px 600px at 20% -10%, #3a1f6e 0%, transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, #5a2a8a 0%, transparent 55%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+    background-attachment:fixed;
+    color:var(--ink); font-family:'Baloo 2','Segoe UI Rounded','Nunito',system-ui,sans-serif;
+    font-weight:600; min-height:100vh; overflow-x:hidden}
+  .wrap{max-width:460px; margin:0 auto; padding:18px 16px 90px; position:relative}
+
+  /* ---- top bar: streaks + gems ---- */
+  .topbar{display:flex; gap:10px; align-items:center; justify-content:space-between; margin-bottom:14px}
+  .pill{display:flex; align-items:center; gap:6px; background:var(--card); border:1px solid var(--line);
+    padding:7px 12px; border-radius:999px; font-size:17px; font-weight:800; box-shadow:0 3px 0 rgba(0,0,0,.25)}
+  .pill .ico{font-size:20px; line-height:1}
+  .pill.flame{color:var(--flame2)} .pill.crown{color:var(--crown)} .pill.gem{color:#6ad8ff}
+  .pill .lbl{font-size:11px; color:var(--muted); font-weight:700; margin-left:2px}
+
+  /* ---- hero: mascot + bubble ---- */
+  .hero{display:flex; flex-direction:column; align-items:center; margin:6px 0 10px; position:relative}
+  .bubble{background:#fff; color:#2a1a4d; border-radius:18px; padding:11px 15px; font-size:15px; font-weight:800;
+    max-width:300px; text-align:center; position:relative; box-shadow:0 6px 0 rgba(0,0,0,.18); animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
+  .bubble:after{content:''; position:absolute; bottom:-9px; left:50%; transform:translateX(-50%);
+    border:10px solid transparent; border-top-color:#fff; border-bottom:0}
+  .mascot{margin-top:14px; width:150px; height:150px; cursor:pointer; transform-origin:center bottom}
+  .mascot svg{width:100%; height:100%; display:block}
+  /* idle = gentle breathe on the whole creature; the svg may override with a signature idle */
+  .mascot{animation:breathe 3.2s ease-in-out infinite}
+  .mascot.cheer{animation:cheer .8s cubic-bezier(.2,1.3,.4,1)}
+  .mascot.sig{animation:none}                 /* signature move runs on inner parts */
+  .level-chip{margin-top:6px; background:linear-gradient(90deg,var(--purp),var(--pink)); color:#fff;
+    padding:4px 14px; border-radius:999px; font-weight:800; font-size:14px; box-shadow:0 3px 0 rgba(0,0,0,.25)}
+  .changeMascot{margin-top:8px; background:none; border:0; color:var(--muted); font:inherit; font-size:12px; font-weight:700;
+    cursor:pointer; opacity:.8}
+  .changeMascot:active{transform:translateY(1px)}
+
+  /* per-part signature animations (classes referenced inside each mascot SVG) */
+  .m-blink{animation:blink 4.5s infinite}
+  @keyframes blink{0%,94%,100%{transform:scaleY(1)} 97%{transform:scaleY(.1)}}
+  .sigWaddle{animation:waddle 1s ease-in-out}            /* penguin */
+  @keyframes waddle{0%,100%{transform:rotate(0)} 25%{transform:rotate(-9deg)} 75%{transform:rotate(9deg)}}
+  .sigTail{animation:tailflick .9s ease-in-out; transform-origin:left center}   /* squirrel */
+  @keyframes tailflick{0%,100%{transform:rotate(0)} 30%{transform:rotate(-18deg)} 60%{transform:rotate(10deg)}}
+  .sigPounce{animation:pounce .8s cubic-bezier(.3,1.3,.4,1)}                     /* cat/fox */
+  @keyframes pounce{0%{transform:translateY(0) scaleX(1)} 30%{transform:translateY(6px) scaleX(1.1) scaleY(.9)} 60%{transform:translateY(-26px) scaleX(.95)} 100%{transform:translateY(0)}}
+  .sigCharge{animation:charge .7s ease-in-out}                                  /* boar */
+  @keyframes charge{0%{transform:translateX(0)} 25%{transform:translateX(-10px) rotate(-4deg)} 55%{transform:translateX(12px) rotate(3deg)} 100%{transform:translateX(0)}}
+
+  /* ---- XP bar ---- */
+  .xpcard{background:var(--card); border:1px solid var(--line); border-radius:20px; padding:15px 16px; margin:12px 0;
+    box-shadow:0 5px 0 rgba(0,0,0,.22)}
+  .xptop{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:9px}
+  .xptop .big{font-size:26px; font-weight:900}
+  .xptop .next{font-size:12px; color:var(--muted); font-weight:700}
+  .xpbar{height:18px; background:var(--ring-bg); border-radius:999px; overflow:hidden; position:relative; border:1px solid var(--line)}
+  .xpfill{height:100%; width:0%; border-radius:999px;
+    background:linear-gradient(90deg,var(--flame),var(--flame2)); transition:width 1.1s cubic-bezier(.2,.9,.3,1);
+    box-shadow:0 0 14px rgba(255,180,60,.6)}
+  .xpfill:after{content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);
+    transform:translateX(-100%); animation:shimmer 2.4s infinite}
+
+  /* ---- section title ---- */
+  .sec{font-size:13px; color:var(--muted); font-weight:800; text-transform:uppercase; letter-spacing:.5px; margin:16px 4px 8px}
+
+  /* ---- subject card with ring ---- */
+  .subjcard{background:var(--card); border:1px solid var(--line); border-radius:20px; padding:16px; display:flex; gap:16px; align-items:center;
+    box-shadow:0 5px 0 rgba(0,0,0,.22); position:relative; overflow:hidden}
+  .ring{position:relative; width:92px; height:92px; flex:0 0 auto}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .num{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center}
+  .ring .num b{font-size:24px; font-weight:900; line-height:1}
+  .ring .num span{font-size:10px; color:var(--muted); font-weight:700}
+  .subjinfo{flex:1; min-width:0}
+  .subjinfo h3{margin:0 0 3px; font-size:16px; font-weight:900}
+  .subjinfo .sub{font-size:12px; color:var(--muted); font-weight:700}
+  .subjinfo .badges{margin-top:9px; display:flex; gap:7px; flex-wrap:wrap}
+  .badge{font-size:12px; font-weight:800; padding:4px 9px; border-radius:999px; background:var(--card2); border:1px solid var(--line)}
+  .badge.win{color:var(--good)} .badge.king{color:var(--crown)} .badge.up{color:var(--mid)}
+
+  /* ---- prediction ---- */
+  .predcard{background:linear-gradient(135deg,#3a2a66,#4a2f7a); border:1px solid var(--line); border-radius:20px; padding:16px; margin-top:12px;
+    box-shadow:0 5px 0 rgba(0,0,0,.22)}
+  .predcard h3{margin:0 0 3px; font-size:16px; font-weight:900}
+  .predcard p{margin:0 0 12px; font-size:12.5px; color:var(--muted); font-weight:700}
+  .predrow{display:flex; align-items:center; gap:12px}
+  .predrow input[type=range]{flex:1; -webkit-appearance:none; height:10px; border-radius:999px;
+    background:linear-gradient(90deg,#ff6b6b,#ffd23d 50%,#3ddc9b); outline:none}
+  .predrow input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:28px; height:28px; border-radius:50%;
+    background:#fff; border:3px solid var(--purp); box-shadow:0 2px 6px rgba(0,0,0,.4); cursor:pointer}
+  .predval{font-size:26px; font-weight:900; width:56px; text-align:center}
+  .predbtn{margin-top:13px; width:100%; border:0; border-radius:14px; padding:13px; font-size:16px; font-weight:900; color:#2a1a4d;
+    background:linear-gradient(90deg,var(--flame2),var(--flame)); box-shadow:0 4px 0 #c9631f; cursor:pointer; transition:transform .08s}
+  .predbtn:active{transform:translateY(3px); box-shadow:0 1px 0 #c9631f}
+  .predbtn.done{background:linear-gradient(90deg,var(--good),#2fb47f); box-shadow:0 4px 0 #1e7a55; color:#fff}
+
+  /* ---- reveal / dev controls ---- */
+  .fab{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:30;
+    border:0; border-radius:999px; padding:14px 24px; font-size:16px; font-weight:900; color:#2a1a4d;
+    background:linear-gradient(90deg,#6ad8ff,#8a7dff); box-shadow:0 5px 0 #3a7aa8; cursor:pointer; transition:transform .08s}
+  .fab:active{transform:translateX(-50%) translateY(3px); box-shadow:0 2px 0 #3a7aa8}
+
+  /* overlay reveal */
+  .overlay{position:fixed; inset:0; z-index:40; display:none; align-items:center; justify-content:center;
+    background:rgba(15,8,34,.78); backdrop-filter:blur(3px)}
+  .overlay.on{display:flex}
+  .card3d{perspective:900px}
+  .gradecard{width:260px; background:linear-gradient(160deg,#fff,#eadcff); color:#2a1a4d; border-radius:24px; padding:26px 22px; text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.5); transform:rotateY(90deg); animation:flipin .7s .1s cubic-bezier(.2,1.1,.3,1) forwards}
+  .gradecard .subj{font-size:13px; font-weight:800; color:#6a4aa0; text-transform:uppercase; letter-spacing:.5px}
+  .gradecard .score{font-size:62px; font-weight:900; margin:6px 0; line-height:1}
+  .gradecard .score small{font-size:24px; color:#9a86c0}
+  .gradecard .cmp{font-size:15px; font-weight:800; margin-top:4px}
+  .gradecard .nudge{margin-top:10px; font-size:12.5px; font-weight:800; color:#6a4aa0; background:#efe6ff;
+    border:1px solid #d8c6ff; border-radius:12px; padding:8px 11px; line-height:1.25}
+  .gradecard .cmp.win{color:#1e9e6e} .gradecard .cmp.king{color:#c99a00}
+  /* tiered reveal flourishes */
+  .gradecard.perfect{background:linear-gradient(160deg,#fff7d6,#ffe08a); box-shadow:0 0 0 4px #ffd23d, 0 20px 60px rgba(0,0,0,.5)}
+  .gradecard.top{background:linear-gradient(160deg,#fff,#ffeec2); box-shadow:0 0 0 3px #ffcf4d, 0 20px 60px rgba(0,0,0,.5)}
+  .gradecard.record{box-shadow:0 0 0 3px #6aa0ff, 0 20px 60px rgba(0,0,0,.5)}
+  .tier-banner{font-size:15px; font-weight:900; margin-bottom:4px; letter-spacing:.3px}
+  .tier-banner.perfect{color:#c99a00} .tier-banner.top{color:#c99a00} .tier-banner.record{color:#3a6ad0}
+  .medal{font-size:46px; line-height:1; margin-bottom:4px; animation:pop .5s .15s both}
+  .gradecard.perfect .score{animation:pulse 1.4s .6s infinite}
+  @keyframes pulse{0%,100%{transform:scale(1)} 50%{transform:scale(1.07)}}
+  .gradecard .xpgain{margin-top:14px; display:inline-block; background:linear-gradient(90deg,var(--flame2),var(--flame)); color:#2a1a4d;
+    padding:6px 16px; border-radius:999px; font-weight:900; font-size:16px; animation:pop .4s .6s both}
+  .tapaway{position:absolute; bottom:40px; left:0; right:0; text-align:center; color:#cfc2ff; font-size:13px; font-weight:700; animation:pop .4s 1s both}
+
+  /* confetti */
+  .confetti{position:fixed; top:-10px; width:10px; height:14px; z-index:45; pointer-events:none; border-radius:2px}
+
+  @keyframes breathe{0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-6px) scale(1.02)}}
+  @keyframes cheer{0%{transform:translateY(0) rotate(0)} 25%{transform:translateY(-22px) rotate(-8deg) scale(1.08)}
+    50%{transform:translateY(-10px) rotate(8deg)} 75%{transform:translateY(-16px) rotate(-4deg)} 100%{transform:translateY(0)}}
+  @keyframes pop{0%{transform:scale(.6); opacity:0} 100%{transform:scale(1); opacity:1}}
+  @keyframes shimmer{to{transform:translateX(100%)}}
+  @keyframes flipin{to{transform:rotateY(0)}}
+  @keyframes fall{to{transform:translateY(105vh) rotate(720deg); opacity:.9}}
+  .hidden{display:none !important}
+
+  /* ---- mascot picker ---- */
+  .pick-scrim{position:fixed; inset:0; z-index:60; background:rgba(15,8,34,.85); backdrop-filter:blur(3px);
+    display:none; align-items:center; justify-content:center; padding:20px}
+  .pick-scrim.on{display:flex}
+  .pick{width:100%; max-width:430px; text-align:center}
+  .pick h2{margin:0 0 4px; font-size:22px; font-weight:900}
+  .pick-sub{margin:0 0 18px; color:var(--muted); font-weight:700; font-size:13px}
+  .pickgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+  .pickcell{background:var(--card); border:2px solid var(--line); border-radius:18px; padding:12px 6px 10px; cursor:pointer;
+    transition:transform .1s, border-color .1s}
+  .pickcell:active{transform:scale(.95)}
+  .pickcell:hover{border-color:var(--purp)}
+  .pickcell svg{width:74px; height:74px}
+  .pickcell .pn{font-size:12px; font-weight:800; margin-top:4px}
+
+  /* ---- subject list rows ---- */
+  .subjrow{display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line);
+    border-radius:16px; padding:12px 14px; margin-bottom:9px; cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,.2); transition:transform .08s}
+  .subjrow:active{transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.2)}
+  .subjrow .dot{width:12px; height:12px; border-radius:50%; flex:0 0 auto}
+  .subjrow .nm{flex:1; min-width:0; font-weight:800; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .subjrow .av{font-weight:900; font-size:16px}
+  .subjrow .bc{font-size:12px; font-weight:800; color:var(--crown); background:var(--card2); border:1px solid var(--line);
+    padding:3px 9px; border-radius:999px; white-space:nowrap}
+  .subjrow .chev{color:var(--muted); font-size:18px}
+
+  /* ---- bottom sheet ---- */
+  .sheet-scrim{position:fixed; inset:0; z-index:50; background:rgba(15,8,34,.6); backdrop-filter:blur(2px);
+    display:none; align-items:flex-end; justify-content:center}
+  .sheet-scrim.on{display:flex}
+  .sheet{width:100%; max-width:460px; background:linear-gradient(180deg,var(--card2),var(--card));
+    border-radius:26px 26px 0 0; border:1px solid var(--line); border-bottom:0; padding:12px 16px 26px; max-height:82vh; overflow-y:auto;
+    transform:translateY(100%); transition:transform .32s cubic-bezier(.2,.9,.3,1)}
+  .sheet-scrim.on .sheet{transform:translateY(0)}
+  .sheet-grip{width:42px; height:5px; border-radius:999px; background:var(--line); margin:2px auto 14px}
+  .sheet-head{display:flex; align-items:center; gap:12px; margin-bottom:16px}
+  .sheet-dot{width:18px; height:18px; border-radius:50%; flex:0 0 auto}
+  .sheet-head h2{margin:0; font-size:19px; font-weight:900}
+  .sheet-sub{font-size:12px; color:var(--muted); font-weight:700}
+  .sheet-count{margin-left:auto; font-weight:900; font-size:15px; color:var(--crown); background:var(--card); border:1px solid var(--line);
+    padding:6px 12px; border-radius:999px}
+  .badgegrid{display:grid; grid-template-columns:repeat(3,1fr); gap:11px}
+  .badge-tile{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:13px 8px 11px; text-align:center; position:relative}
+  .badge-tile.earned{border-color:var(--crown); background:linear-gradient(160deg,#3a2f1a,#2d2550); box-shadow:0 0 0 1px rgba(255,210,61,.4)}
+  .badge-tile.locked{opacity:.62}
+  .badge-tile .bico{font-size:30px; line-height:1; display:block; margin-bottom:6px}
+  .badge-tile.locked .bico{filter:grayscale(1) brightness(.7)}
+  .badge-tile .bnm{font-size:11.5px; font-weight:800; line-height:1.15}
+  .badge-tile .bhow{font-size:10px; color:var(--muted); font-weight:700; margin-top:4px; line-height:1.2}
+  .badge-tile .bprog{margin-top:6px; font-size:10px; font-weight:900; color:var(--flame2)}
+  .badge-tile .lock{position:absolute; top:7px; right:8px; font-size:12px; opacity:.6}
+  .badge-tile .bmedal{position:absolute; top:5px; right:7px; font-size:17px}
+  .badge-tile.just{animation:unlockpop .7s cubic-bezier(.2,1.4,.4,1)}
+  @keyframes unlockpop{0%{transform:scale(.5) rotate(-12deg); opacity:0} 60%{transform:scale(1.15) rotate(6deg)} 100%{transform:scale(1) rotate(0); opacity:1}}
+
+  /* ---- prediction panel (inside sheet) ---- */
+  .predpanel{background:linear-gradient(135deg,#3a2a66,#4a2f7a); border:1px solid var(--line); border-radius:18px;
+    padding:14px; margin-bottom:16px}
+  .predpanel-title{font-weight:900; font-size:15px; margin-bottom:2px}
+  .predpanel-sub{font-size:12px; color:var(--muted); font-weight:700; margin-bottom:11px}
+  .predstages{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .predstage{display:flex; flex-direction:column; align-items:center; gap:3px; background:var(--card); border:1px solid var(--line);
+    border-radius:14px; padding:11px 8px; cursor:pointer; color:var(--ink); font-family:inherit; transition:transform .08s}
+  .predstage:active{transform:translateY(2px)}
+  .predstage.set{border-color:var(--flame2); background:linear-gradient(160deg,#3a2f1a,#2d2550)}
+  .predstage.locked{opacity:.5; pointer-events:none}
+  .predstage .ps-ico{font-size:22px}
+  .predstage .ps-lbl{font-size:11px; font-weight:800; color:var(--muted)}
+  .predstage .ps-val{font-size:18px; font-weight:900}
+  .predEditor{margin-top:12px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px}
+  .predEditor-q{font-size:13px; font-weight:800; margin-bottom:8px}
+  .aimrow{margin:10px 0 2px; display:flex; flex-wrap:wrap; gap:6px; min-height:2px}
+  .aimrow .aim-head{width:100%; font-size:11px; font-weight:800; color:var(--muted); margin-bottom:1px}
+  .aim-chip{font-size:11.5px; font-weight:800; padding:4px 9px; border-radius:999px; border:1px solid var(--line); background:var(--card2)}
+  .aim-chip.got{border-color:var(--crown); color:var(--crown); background:linear-gradient(160deg,#3a2f1a,#2d2550);
+    animation:pop .3s ease}
+  .aim-chip.maybe{color:var(--muted); opacity:.9}
+  .aim-chip.maybe:before{content:"≈ "}
+  .predbtn.sim{margin-top:11px; background:linear-gradient(90deg,#6ad8ff,#8a7dff); box-shadow:0 4px 0 #3a7aa8; color:#2a1a4d}
+  .predbtn.sim:active{box-shadow:0 1px 0 #3a7aa8}
+  .predresult{margin-top:11px; background:var(--card); border:1px solid var(--good); border-radius:14px; padding:12px; text-align:center; font-weight:800}
+  .predresult .big{font-size:20px; font-weight:900; color:var(--good); display:block; margin-top:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="pill flame"><span class="ico">🔥</span><span id="flameN">0</span><span class="lbl">au-dessus de la classe</span></div>
+    <div class="pill crown"><span class="ico">🏅</span><span id="recordN">0</span><span class="lbl">records</span></div>
+    <div class="pill gem"><span class="ico">💎</span><span id="gemN">0</span></div>
+  </div>
+
+  <div class="hero">
+    <div class="bubble" id="bubble">Bienvenue sur Masterix&nbsp;! ⭐</div>
+    <div class="mascot" id="mascot" aria-label="mascotte"></div>
+    <div class="level-chip" id="levelChip">Niveau 1 · Apprentie</div>
+    <button class="changeMascot" id="changeMascot">🔄 changer de compagnon</button>
+  </div>
+
+  <div class="xpcard">
+    <div class="xptop">
+      <div class="big"><span id="xpNow">0</span> <span style="font-size:14px;color:var(--muted)">XP</span></div>
+      <div class="next" id="xpNext">— XP vers Niveau 2</div>
+    </div>
+    <div class="xpbar"><div class="xpfill" id="xpfill"></div></div>
+  </div>
+
+  <div class="sec">Ta meilleure matière 💪</div>
+  <div class="subjcard">
+    <div class="ring">
+      <svg width="92" height="92" viewBox="0 0 92 92">
+        <circle cx="46" cy="46" r="40" fill="none" stroke="var(--ring-bg)" stroke-width="10"/>
+        <circle id="ringfill" cx="46" cy="46" r="40" fill="none" stroke="url(#rg)" stroke-width="10" stroke-linecap="round"
+          stroke-dasharray="251.2" stroke-dashoffset="251.2" style="transition:stroke-dashoffset 1.2s cubic-bezier(.2,.9,.3,1)"/>
+        <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#3ddc9b"/><stop offset="100%" stop-color="#6aa0ff"/></linearGradient></defs>
+      </svg>
+      <div class="num"><b id="subjAvg">—</b><span>/20</span></div>
+    </div>
+    <div class="subjinfo">
+      <h3 id="subjName">—</h3>
+      <div class="sub" id="subjSub">—</div>
+      <div class="badges" id="subjBadges"></div>
+    </div>
+  </div>
+
+  <div class="sec">Toutes tes matières — gagne tous les badges&nbsp;! 🏅</div>
+  <div id="subjList"></div>
+</div>
+
+<button class="fab" id="revealBtn">✨ Révéler une note&nbsp;!</button>
+
+<div class="overlay" id="overlay">
+  <div class="card3d">
+    <div class="gradecard" id="gradecard">
+      <div class="medal hidden" id="gMedal">🏅</div>
+      <div class="tier-banner hidden" id="gBanner"></div>
+      <div class="subj" id="gSubj">MATHÉMATIQUES</div>
+      <div class="score" id="gScore">20<small>/20</small></div>
+      <div class="cmp" id="gCmp">+4 au-dessus de la classe 🚀</div>
+      <div class="nudge hidden" id="gNudge"></div>
+      <div class="xpgain" id="gXp">+120 XP</div>
+    </div>
+  </div>
+  <div class="tapaway">touche pour continuer</div>
+</div>
+
+<!-- per-subject badge wall (bottom sheet) -->
+<div class="sheet-scrim" id="sheetScrim">
+  <div class="sheet" id="sheet">
+    <div class="sheet-grip"></div>
+    <div class="sheet-head">
+      <div class="sheet-dot" id="sheetDot"></div>
+      <div>
+        <h2 id="sheetTitle">Matière</h2>
+        <div class="sheet-sub" id="sheetSub">—</div>
+      </div>
+      <div class="sheet-count" id="sheetCount">0/0</div>
+    </div>
+
+    <!-- prediction panel for this subject -->
+    <div class="predpanel" id="predPanel">
+      <div class="predpanel-title">🔮 Prédis ta prochaine note</div>
+      <div class="predpanel-sub" id="predHint">Gagne des points bonus en devinant juste&nbsp;!</div>
+      <div class="predstages">
+        <button class="predstage" id="stBefore" data-stage="before">
+          <span class="ps-ico">🔮</span><span class="ps-lbl">Avant l'exam</span><span class="ps-val" id="stBeforeVal">—</span>
+        </button>
+        <button class="predstage" id="stAfter" data-stage="after">
+          <span class="ps-ico">💭</span><span class="ps-lbl">Après l'exam</span><span class="ps-val" id="stAfterVal">—</span>
+        </button>
+      </div>
+      <!-- inline slider editor -->
+      <div class="predEditor hidden" id="predEditor">
+        <div class="predEditor-q" id="predEditorQ">Ta note&nbsp;?</div>
+        <div class="predrow">
+          <input type="range" id="predSlider" min="0" max="20" step="0.5" value="14">
+          <div class="predval" id="predSliderVal">14</div>
+        </div>
+        <div class="aimrow" id="aimRow"></div>
+        <button class="predbtn" id="predSave">Valider 🎲</button>
+      </div>
+      <button class="predbtn sim hidden" id="simGrade">🎬 Simuler la prochaine note</button>
+    </div>
+
+    <div class="badgegrid" id="badgeGrid"></div>
+  </div>
+</div>
+
+<!-- mascot picker -->
+<div class="pick-scrim" id="pickScrim">
+  <div class="pick">
+    <h2>Choisis ton compagnon&nbsp;! 🐾</h2>
+    <p class="pick-sub">Il fêtera tes réussites avec toi.</p>
+    <div class="pickgrid" id="pickGrid"></div>
+  </div>
+</div>
+
+<script>
+/* ---- data arrives via postMessage from the parent dashboard ----
+   GRADES     = the SELECTED year's grades (streak, badges, prediction, reveal)
+   GRADES_ALL = every year's grades concatenated (cumulative XP/level only)      */
+let GRADES = [];
+let GRADES_ALL = [];
+let NS = "kid:default:";      // localStorage namespace for this kid+year (set from message)
+let NS_KID = "kid:default:";  // per-kid namespace (mascot lives here, shared across years)
+const LS = {
+  get:(k)=>localStorage.getItem(NS+k),
+  set:(k,v)=>localStorage.setItem(NS+k,v),
+  getKid:(k)=>localStorage.getItem(NS_KID+k),
+  setKid:(k,v)=>localStorage.setItem(NS_KID+k,v),
+};
+const nice = {"MATHEMATIQUES":"Maths","FRANCAIS":"Français","ANGLAIS LV1":"Anglais","ESPAGNOL LV2":"Espagnol",
+  "PHYSIQUE-CHIMIE":"Physique-Chimie","SCIENCES DE LA VIE & DE LA TERRE":"SVT","HISTOIRE, GEOGRAPHIE & EMC":"Histoire-Géo",
+  "ARTS PLASTIQUES":"Arts plastiques","ENGLISH BILINGUAL SECTION":"English Bilingual"};
+const nn = s => nice[s] || s;
+
+/* ---- XP model: blend of performance + improvement, only ever goes up ---- */
+// base XP per grade, scaled by how good it is + bonuses for beating class, crown, personal best, big jump
+function computeXP(list){
+  let xp=0; const seenBySubj={}; const firstSeen={};
+  for(const g of list){
+    let x = 20 + g.you*4;                                  // base: better grade = more, but floor keeps effort rewarded
+    if(g.cls!=null && g.you>g.cls) x += (g.you-g.cls)*8;   // performance: beat the class
+    if(g.max!=null && g.you>=g.max-0.001) x += 50;         // crown: top of class
+    const prev = seenBySubj[g.subj];
+    if(prev!=null && g.you>prev) x += (g.you-prev)*10;     // improvement: beat your own last grade in this subject
+    seenBySubj[g.subj]=g.you;
+    xp += Math.round(x*g.coef);
+  }
+  return xp;
+}
+// level ladder: each level needs more than the last. Tuned so ~1 term of grades ≈ level 3–4,
+// leaving plenty of headroom to climb across the full year (and years).
+const LVL_NAMES=["Apprentie","Exploratrice","Aventurière","Experte","Championne","Maîtresse","Légende","Étoile ⭐"];
+function levelFor(xp){
+  let lvl=1, need=4000, acc=0;
+  while(xp >= acc+need){ acc+=need; lvl++; need=Math.round(need*1.55); }
+  return {lvl, floor:acc, next:acc+need, name:LVL_NAMES[Math.min(lvl-1,LVL_NAMES.length-1)]};
+}
+
+/* ---- hero streak: consecutive grades above the class average (from the end) ---- */
+function aboveClassStreak(list){
+  const rated=list.filter(g=>g.cls!=null);
+  let s=0;
+  for(let i=rated.length-1;i>=0;i--){ if(rated[i].you>rated[i].cls) s++; else break; }
+  return s;
+}
+
+/* ---- best-grade classifier: tiers a grade into a celebration level ----
+   Needs the running per-subject best BEFORE this grade to detect a new record.   */
+function bestBefore(list){
+  const b={}; const out=[];
+  for(const g of list){ out.push(b[g.subj]!=null ? b[g.subj] : null);
+    if(b[g.subj]==null || g.you>b[g.subj]) b[g.subj]=g.you; }
+  return out;   // out[i] = her best in that subject before grade i (null if first)
+}
+// tier: 'perfect' > 'top' > 'record' > 'beat' > 'effort' > 'tough'
+//  effort = below class but the CLASS also struggled (low class avg) -> supportive, honest
+//  tough  = below class and the class did fine -> a genuine low point; calm, no party, comeback nudge
+function tierOf(g, priorBest){
+  if(g.you>=20-0.001) return 'perfect';
+  if(g.max!=null && g.you>=g.max-0.001) return 'top';
+  if(priorBest!=null && g.you>priorBest) return 'record';
+  if(g.cls!=null && g.you>g.cls) return 'beat';
+  // below class (or no class data): split by whether the class also found it hard
+  if(g.cls!=null && g.cls < 11) return 'effort';   // class avg low -> everyone struggled
+  return 'tough';                                  // class did ok, so this was a hard one for you
+}
+// count of "record-worthy" moments all year (perfect + top + new record), for the 🏅 pill
+function recordCount(list){
+  const pb=bestBefore(list); let n=0;
+  list.forEach((g,i)=>{ const t=tierOf(g,pb[i]); if(t==='perfect'||t==='top'||t==='record') n++; });
+  return n;
+}
+
+/* ---- per-subject stats (coef-weighted) ---- */
+function bySubject(list){
+  const m={};
+  for(const g of list){ (m[g.subj]=m[g.subj]||{n:0,w:0,sum:0,beat:0,beatN:0,crowns:0,last:null,prevUp:false}); const o=m[g.subj];
+    o.sum+=g.you*g.coef; o.w+=g.coef; o.n++;
+    if(g.cls!=null){ o.beatN++; if(g.you>g.cls)o.beat++; }
+    if(g.max!=null && g.you>=g.max-0.001) o.crowns++;
+    if(o.last!=null && g.you>o.last) o.prevUp=true; else if(o.last!=null) o.prevUp=false;
+    o.last=g.you; }
+  for(const k in m){ m[k].avg=m[k].sum/m[k].w; }
+  return m;
+}
+
+/* ---- BADGE ENGINE (per subject) ----
+   Each badge: {id, ico, name, how, test(seq)->{earned, have, need}} so locked badges
+   can show progress ("3/5"). seq = that subject's grades, oldest→newest.            */
+function longestAboveRun(seq){ let L=0,c=0; for(const r of seq){ if(r.cls==null) continue; if(r.you>r.cls){c++;L=Math.max(L,c);} else c=0; } return L; }
+function subjAvgs(seq){ const rated=seq.filter(r=>r.cls!=null); if(!rated.length) return {ya:null,ca:null};
+  const w=rated.reduce((a,b)=>a+b.coef,0); return {ya:rated.reduce((a,b)=>a+b.you*b.coef,0)/w, ca:rated.reduce((a,b)=>a+b.cls*b.coef,0)/w}; }
+function countTop(seq){ return seq.filter(r=>r.max!=null && r.you>=r.max-0.001).length; }   // top-of-class finishes
+function countPerfect(seq){ return seq.filter(r=>r.you>=20-0.001).length; }
+function hasRecord(seq){ let b=null; for(const r of seq){ if(b!=null && r.you>b) return true; b=(b==null?r.you:Math.max(b,r.you)); } return false; }
+function hasJump3(seq){ let p=null; for(const r of seq){ if(p!=null && r.you-p>=3) return true; p=r.you; } return false; }
+// La remontada (rule A, REPEATABLE): count each time a below-class grade is IMMEDIATELY
+// followed by a grade back above (or equal to) the class average. Adjacent only.
+function countRecovery(seq){ let n=0; for(let i=1;i<seq.length;i++){ const prev=seq[i-1],cur=seq[i];
+  if(prev.cls!=null && cur.cls!=null && prev.you<prev.cls && cur.you>=cur.cls) n++; } return n; }
+
+// medal tiers for COUNTED badges: 🥉1 · 🥈3 · 🥇5
+const TIER_STEPS=[{n:5,medal:'🥇',label:'Or'},{n:3,medal:'🥈',label:'Argent'},{n:1,medal:'🥉',label:'Bronze'}];
+function medalFor(count){ for(const t of TIER_STEPS) if(count>=t.n) return t; return null; }
+function nextStep(count){ for(let i=TIER_STEPS.length-1;i>=0;i--) if(count<TIER_STEPS[i].n) return TIER_STEPS[i]; return null; }
+
+const BADGES = [
+  {id:'streak3', ico:'🔥', name:'Sur une lancée', how:'3 notes d’affilée au-dessus de la classe',
+    test:s=>{const L=longestAboveRun(s); return {earned:L>=3, have:Math.min(L,3), need:3};}},
+  {id:'streak5', ico:'🔥', name:'En feu', how:'5 notes d’affilée au-dessus de la classe',
+    test:s=>{const L=longestAboveRun(s); return {earned:L>=5, have:Math.min(L,5), need:5};}},
+  {id:'streak10', ico:'⚡', name:'Imparable', how:'10 notes d’affilée au-dessus de la classe',
+    test:s=>{const L=longestAboveRun(s); return {earned:L>=10, have:Math.min(L,10), need:10};}},
+  // ---- tiered/counted badges (bronze/silver/gold) ----
+  {id:'king', ico:'👑', name:'Reine de la classe', how:'Finir meilleure note de la classe', tiered:true,
+    test:s=>{const c=countTop(s); return {count:c, earned:c>=1};}},
+  {id:'perfect', ico:'💯', name:'Score parfait', how:'Décrocher un 20/20', tiered:true,
+    test:s=>{const c=countPerfect(s); return {count:c, earned:c>=1};}},
+  {id:'recovery', ico:'🦸', name:'La remontada', how:'Repasser au-dessus de la classe juste après une chute', tiered:true,
+    test:s=>{const c=countRecovery(s); return {count:c, earned:c>=1};}},
+  // ---- one-shot badges ----
+  {id:'record', ico:'📈', name:'Nouveau record', how:'Battre ton meilleur score dans la matière',
+    test:s=>({earned:hasRecord(s), have:hasRecord(s)?1:0, need:1})},
+  {id:'jump3', ico:'🚀', name:'+3 d’un coup', how:'3 points de plus que ta note précédente',
+    test:s=>({earned:hasJump3(s), have:hasJump3(s)?1:0, need:1})},
+  {id:'headclass', ico:'🎯', name:'Tête de classe', how:'Ta moyenne au-dessus de la classe',
+    test:s=>{const{ya,ca}=subjAvgs(s); return {earned:ya!=null&&ya>ca, have:(ya!=null&&ya>ca)?1:0, need:1};}},
+  {id:'expert', ico:'🧠', name:'Experte', how:'Moyenne de 16/20 ou plus',
+    test:s=>{const{ya}=subjAvgs(s); return {earned:ya!=null&&ya>=16, have:(ya!=null&&ya>=16)?1:0, need:1};}},
+  {id:'flawless', ico:'🛡️', name:'Sans faute', how:'Jamais sous la classe (≥2 notes)',
+    test:s=>{const rated=s.filter(r=>r.cls!=null); return {earned:rated.length>=2 && rated.every(r=>r.you>=r.cls),
+      have:rated.length, need:Math.max(2,rated.length)};}},
+];
+function evalSubjectBadges(seq){ return BADGES.map(b=>({...b, ...b.test(seq)})); }
+
+/* ---- which locked badges a PREDICTED grade value V could aim at, for a subject ----
+   'guaranteed' = unlockable by the kid's own value alone (perfect/record/jump3/expert).
+   'possible'   = also needs the future test's class/max (streak/top/beat/headclass/flawless/recovery).
+   For TIERED badges we also surface a "level-up" even when already earned: if appending V pushes
+   the count across a new medal threshold (🥉1/🥈3/🥇5), we tag it with the medal being chased.    */
+const OWN_VALUE_BADGES = new Set(['perfect','record','jump3','expert']);  // guaranteed by the kid's value
+const CLASS_TIERED = new Set(['king','recovery']);                        // tiered but need class context
+function aimableBadges(subj, V){
+  const seq = GRADES.filter(g=>g.subj===subj);
+  const current = evalSubjectBadges(seq);
+  const already = new Set(current.filter(b=>b.earned && !b.tiered).map(b=>b.id));  // only one-shot earned are "done"
+  const curCount = {}; current.forEach(b=>{ if(b.tiered) curCount[b.id]=b.count; });
+  const coef = 1;
+  const gOwn = [...seq, {subj, coef, you:V, cls:null, max:null}];                  // no class context
+  const gOpt = [...seq, {subj, coef, you:V, cls:Math.max(0,V-0.01), max:V}];       // optimistic: you beat/top class
+  const guaranteed=[], possible=[];
+  for(const b of BADGES){
+    if(b.tiered){
+      // does V raise the count, and does it cross a NEW medal step?
+      const ctx = CLASS_TIERED.has(b.id) ? gOpt : gOwn;   // perfect is own-value; king/recovery need class
+      const after = b.test(ctx).count;
+      const before = curCount[b.id]||0;
+      if(after>before){
+        const beforeMedal = medalFor(before);             // may be null
+        const afterMedal  = medalFor(after);
+        const steppedUp = afterMedal && (!beforeMedal || afterMedal.medal!==beforeMedal.medal);
+        if(steppedUp){
+          const tag = {...b, _medal:afterMedal.medal, _medalLabel:afterMedal.label, _levelUp:before>=1};
+          if(CLASS_TIERED.has(b.id)) possible.push(tag); else guaranteed.push(tag);
+        }
+      }
+      continue;
+    }
+    if(already.has(b.id)) continue;                        // one-shot already earned
+    if(OWN_VALUE_BADGES.has(b.id)){ if(b.test(gOwn).earned) guaranteed.push(b); }
+    else { if(b.test(gOpt).earned) possible.push(b); }
+  }
+  return {guaranteed, possible};
+}
+
+
+/* ================= PREDICTION ENGINE =================
+   Two stages logged BEFORE the next official grade exists:
+     before ("avant l'exam", confidence) · after ("après l'exam", feeling)
+   The NEXT official grade in the subject resolves open predictions.
+   Scoring: same closeness curve for each stage (equal weight); a combo bonus
+   if BOTH stages were logged; each stage scored independently. No pred → no bonus.
+   Live-ready: state persists in localStorage; only the "next grade" is simulated
+   here via a demo button (real system feeds it the actual new grade).          */
+const PRED_KEY="predictions_v1";            // { [subject]: {before:{val,ts}|null, after:{val,ts}|null} }
+const LEDGER_KEY="predLedger_v1";           // [{subj, real, before, after, xp, ts}]
+const loadPreds = ()=> JSON.parse(LS.get(PRED_KEY)||"{}");
+const savePreds = p => LS.set(PRED_KEY, JSON.stringify(p));
+const loadLedger= ()=> JSON.parse(LS.get(LEDGER_KEY)||"[]");
+const addBonusXP= n => { const cur=+(LS.get("bonusXP")||0); LS.set("bonusXP", cur+n); return cur+n; };
+const getBonusXP= ()=> +(LS.get("bonusXP")||0);
+
+// closeness curve: how many XP a single stage earns vs the real grade
+function stageScore(pred, real){
+  if(pred==null) return 0;
+  const d=Math.abs(pred-real);
+  if(d<=0.5) return 40;      // spot on
+  if(d<=1.5) return 22;      // close
+  if(d<=3)   return 10;      // ballpark
+  return 4;                  // played but off — small consolation, never zero
+}
+const COMBO_BONUS=20;        // for logging BOTH stages
+
+// resolve a subject's open predictions against a real grade -> {before, after, combo, total, breakdown}
+function scorePrediction(pred, real){
+  const bs = pred && pred.before!=null ? stageScore(pred.before, real) : 0;
+  const as = pred && pred.after !=null ? stageScore(pred.after , real) : 0;
+  const combo = (pred && pred.before!=null && pred.after!=null) ? COMBO_BONUS : 0;
+  return {before:bs, after:as, combo, total:bs+as+combo};
+}
+
+
+/* ---- render ---- */
+const $ = s=>document.querySelector(s);
+// data-derived values — assigned in init() once grades arrive via postMessage
+let totalXP=0, flameStreak=0, records=0, priorBests=[], subj={}, L=null;
+let bestSubj=null, bestEdge=-99;
+function computeDerived(){
+  totalXP = computeXP(GRADES_ALL);      // cumulative across ALL years
+  flameStreak = aboveClassStreak(GRADES);
+  records = recordCount(GRADES);
+  priorBests = bestBefore(GRADES);
+  subj = bySubject(GRADES);
+  L = levelFor(totalXP);
+  bestSubj=null; bestEdge=-99;
+  for(const k in subj){ const o=subj[k]; const avgCls = GRADES.filter(g=>g.subj===k&&g.cls!=null);
+    if(!avgCls.length) continue; const ce=avgCls.reduce((a,b)=>a+b.cls*b.coef,0)/avgCls.reduce((a,b)=>a+b.coef,0);
+    const edge=o.avg-ce; if(edge>bestEdge){bestEdge=edge; bestSubj=k;} }
+}
+
+// pick strongest subject by how much she beats the class on average
+// (computed in computeDerived once grades arrive)
+
+function animateCount(el, to, dur=1100, suffix=""){
+  const start=performance.now(), from=0;
+  function tick(t){ const p=Math.min(1,(t-start)/dur); const v=from+(to-from)*(1-Math.pow(1-p,3));
+    el.textContent = (to%1===0?Math.round(v):v.toFixed(1))+suffix; if(p<1) requestAnimationFrame(tick); }
+  requestAnimationFrame(tick);
+}
+
+function render(){
+  $("#flameN").textContent=flameStreak;
+  $("#recordN").textContent=records;
+  $("#gemN").textContent = getBonusXP();   // prediction bonus XP earned (namespaced)
+
+  $("#levelChip").textContent = `Niveau ${L.lvl} · ${L.name}`;
+  $("#xpNext").textContent = `${L.next-totalXP} XP vers Niveau ${L.lvl+1}`;
+  animateCount($("#xpNow"), totalXP, 1300);
+  const pct = (totalXP-L.floor)/(L.next-L.floor)*100;
+  setTimeout(()=>{ $("#xpfill").style.width = pct.toFixed(1)+"%"; }, 150);
+
+  // subject card
+  const o=subj[bestSubj];
+  $("#subjName").textContent = nn(bestSubj);
+  $("#subjSub").textContent = `${o.n} notes · tu bats la classe ${o.beat}/${o.beatN} fois`;
+  setTimeout(()=>animateCount($("#subjAvg"), o.avg, 1100), 300);
+  const circ=251.2, off=circ*(1-o.avg/20);
+  setTimeout(()=>{ $("#ringfill").style.strokeDashoffset=off; }, 300);
+  const b=$("#subjBadges"); b.innerHTML="";
+  if(bestEdge>0) b.innerHTML += `<span class="badge win">+${bestEdge.toFixed(1)} vs classe 🚀</span>`;
+  if(o.crowns>0) b.innerHTML += `<span class="badge king">${o.crowns}× top 👑</span>`;
+  if(o.prevUp) b.innerHTML += `<span class="badge up">en progrès 📈</span>`;
+
+  // bubble reacts to the latest grade
+  const last=GRADES[GRADES.length-1];
+  let msg = "Prête pour aujourd'hui&nbsp;? 💜";
+  if(last.cls!=null && last.you>last.cls) msg = `Bravo pour ${nn(last.subj)}&nbsp;! Tu as battu la classe 🎉`;
+  if(last.max!=null && last.you>=last.max-0.001) msg = `👑 Tu es la meilleure en ${nn(last.subj)}&nbsp;!`;
+  $("#bubble").innerHTML = msg;
+}
+// (render() is called from init() once data arrives)
+
+/* ---- per-subject color (stable, by subject name) ---- */
+const SUBJ_COLORS=["#6aa0ff","#3ddc9b","#b06bff","#ff6bd6","#ffb23d","#ff7a6b","#6ad8ff","#ffd23d","#9affa0"];
+const colorOf=(()=>{ const m={}; let i=0; return s=>{ if(!m[s]) m[s]=SUBJ_COLORS[i++%SUBJ_COLORS.length]; return m[s]; }; })();
+
+/* ---- subject list (tap → badge wall) ---- */
+function renderSubjList(){
+  const host=$("#subjList"); host.innerHTML="";
+  // order: most grades first, then alpha — feels fuller at the top
+  const names=Object.keys(subj).sort((a,b)=> subj[b].n-subj[a].n || a.localeCompare(b));
+  for(const s of names){
+    const seq=GRADES.filter(g=>g.subj===s);
+    const badges=evalSubjectBadges(seq);
+    const earned=badges.filter(b=>b.earned).length;
+    const row=document.createElement("div"); row.className="subjrow";
+    row.innerHTML=`<span class="dot" style="background:${colorOf(s)}"></span>`
+      +`<span class="nm">${nn(s)}</span>`
+      +`<span class="av">${subj[s].avg.toFixed(1)}</span>`
+      +`<span class="bc">🏅 ${earned}/${badges.length}</span>`
+      +`<span class="chev">›</span>`;
+    row.addEventListener("click", ()=> openSheet(s));
+    host.appendChild(row);
+  }
+}
+// (renderSubjList() is called from init() once data arrives)
+
+/* ---- badge wall sheet ---- */
+const scrim=$("#sheetScrim");
+// remember which badges were seen earned, to pop newly-unlocked ones (per browser)
+const seenKey = s=>"seen_"+s;
+function openSheet(s){
+  const seq=GRADES.filter(g=>g.subj===s);
+  const badges=evalSubjectBadges(seq);
+  const earned=badges.filter(b=>b.earned).length;
+  const {ya,ca}=subjAvgs(seq);
+  $("#sheetDot").style.background=colorOf(s);
+  $("#sheetTitle").textContent=nn(s);
+  $("#sheetSub").textContent = ya!=null
+    ? `Moyenne ${ya.toFixed(1)}/20 · classe ${ca.toFixed(1)}/20`
+    : `${seq.length} note${seq.length>1?'s':''}`;
+  $("#sheetCount").textContent=`🏅 ${earned}/${badges.length}`;
+
+  const prevSeen = JSON.parse(LS.get(seenKey(s))||"[]");
+  const grid=$("#badgeGrid"); grid.innerHTML="";
+  badges.forEach(b=>{
+    const t=document.createElement("div");
+    const isNew = b.earned && !prevSeen.includes(b.id);
+    t.className="badge-tile "+(b.earned?"earned":"locked")+(isNew?" just":"");
+    let medalHtml="", progHtml="";
+    if(b.tiered){
+      const m=medalFor(b.count), nx=nextStep(b.count);
+      if(b.earned){
+        medalHtml=`<span class="bmedal">${m.medal}</span>`;                       // current medal
+        progHtml = `<div class="bprog">${b.count}× ${nx?`· ${nx.medal} à ${nx.n}`:'· max 🥇'}</div>`;
+      } else {
+        progHtml=`<div class="bprog">${b.count}/1</div>`;                           // not yet earned
+      }
+    } else if(!b.earned && b.need>1){
+      progHtml=`<div class="bprog">${b.have}/${b.need}</div>`;
+    }
+    t.innerHTML = (b.earned?"":`<span class="lock">🔒</span>`)
+      + medalHtml
+      + `<span class="bico">${b.ico}</span>`
+      + `<div class="bnm">${b.name}</div>`
+      + `<div class="bhow">${b.how}</div>`
+      + progHtml;
+    grid.appendChild(t);
+  });
+  // persist seen-earned set so the pop only happens once
+  LS.set(seenKey(s), JSON.stringify(badges.filter(b=>b.earned).map(b=>b.id)));
+  renderPredPanel(s);
+  scrim.classList.add("on");
+}
+scrim.addEventListener("click", e=>{ if(e.target===scrim) scrim.classList.remove("on"); });
+
+/* ---- prediction panel wiring (per subject, inside the sheet) ---- */
+let predSubject=null;     // subject currently open in the sheet
+let editStage=null;       // 'before' | 'after' while the slider editor is open
+function renderPredPanel(s){
+  predSubject=s; editStage=null;
+  const preds=loadPreds(); const p=preds[s]||{before:null,after:null};
+  const fmt=o=> o && o.val!=null ? o.val.toFixed(1) : "—";
+  $("#stBeforeVal").textContent=fmt(p.before);
+  $("#stAfterVal").textContent =fmt(p.after);
+  $("#stBefore").classList.toggle("set", !!(p.before&&p.before.val!=null));
+  $("#stAfter").classList.toggle("set",  !!(p.after &&p.after.val!=null));
+  $("#predEditor").classList.add("hidden");
+  // hint reflects state
+  const has = (p.before&&p.before.val!=null) || (p.after&&p.after.val!=null);
+  $("#predHint").innerHTML = has
+    ? "Prédictions enregistrées — elles seront comparées à ta prochaine note&nbsp;!"
+    : "Gagne des points bonus en devinant juste&nbsp;! 🔮 avant + 💭 après = bonus combo";
+  // show the simulate button only if there's at least one prediction to resolve
+  $("#simGrade").classList.toggle("hidden", !has);
+  // clear any previous result card
+  const old=document.querySelector(".predresult"); if(old) old.remove();
+}
+// open the slider editor for a stage
+function openEditor(stage){
+  editStage=stage;
+  const preds=loadPreds(); const p=preds[predSubject]||{};
+  const cur = p[stage]&&p[stage].val!=null ? p[stage].val : 14;
+  $("#predSlider").value=cur; $("#predSliderVal").textContent=cur;
+  $("#predEditorQ").textContent = stage==='before'
+    ? "🔮 Avant l'exam — à ton avis, tu auras combien ?"
+    : "💭 Après l'exam — maintenant, tu sens que tu as eu combien ?";
+  $("#predEditor").classList.remove("hidden");
+  renderAimRow(+$("#predSlider").value);
+}
+$("#stBefore").addEventListener("click", ()=>openEditor("before"));
+$("#stAfter").addEventListener("click", ()=>openEditor("after"));
+$("#predSlider").addEventListener("input", e=>{ $("#predSliderVal").textContent=(+e.target.value).toString(); renderAimRow(+e.target.value); });
+
+// live "badges you could aim at" row, updates as the slider moves
+function renderAimRow(V){
+  if(!predSubject) return;
+  const {guaranteed, possible} = aimableBadges(predSubject, V);
+  const row=$("#aimRow");
+  if(!guaranteed.length && !possible.length){ row.innerHTML=`<div class="aim-head">Vise plus haut pour débloquer des badges ✨</div>`; return; }
+  // label a chip: brand-new unlock vs levelling a tiered badge up to the next medal
+  const label = b => b._medal
+    ? (b._levelUp ? `${b.ico} ${b.name} → ${b._medal} ${b._medalLabel}`   // already have it, chasing next medal
+                  : `${b._medal} ${b.ico} ${b.name}`)                     // first time, with its medal
+    : `${b.ico} ${b.name}`;
+  let html=`<div class="aim-head">À cette note, tu peux gagner :</div>`;
+  html += guaranteed.map(b=>`<span class="aim-chip got">${label(b)}</span>`).join("");
+  html += possible.map(b=>`<span class="aim-chip maybe">${label(b)} <small>(si tu bats la classe)</small></span>`).join("");
+  row.innerHTML=html;
+}
+$("#predSave").addEventListener("click", ()=>{
+  if(!predSubject||!editStage) return;
+  const preds=loadPreds(); const p=preds[predSubject]||{before:null,after:null};
+  p[editStage]={val:+$("#predSlider").value, ts:Date.now()};
+  preds[predSubject]=p; savePreds(preds);
+  burst(8);
+  renderPredPanel(predSubject);   // refresh chips + hint
+});
+// DEMO: simulate the next official grade arriving -> resolve predictions, score, reveal
+$("#simGrade").addEventListener("click", ()=>{
+  const preds=loadPreds(); const p=preds[predSubject];
+  if(!p) return;
+  // fake a plausible "next grade": a touch above this subject's current average, clamped
+  const avg = (subj[predSubject]?.avg) ?? 14;
+  const real = Math.max(0, Math.min(20, Math.round((avg + (Math.random()*4-1.5))*2)/2));
+  const sc = scorePrediction(p, real);
+  const newBonus = addBonusXP(sc.total);
+  // clear this subject's open predictions (resolved)
+  delete preds[predSubject]; savePreds(preds);
+  // show a result card
+  const old=document.querySelector(".predresult"); if(old) old.remove();
+  const card=document.createElement("div"); card.className="predresult";
+  const parts=[];
+  if(p.before&&p.before.val!=null) parts.push(`🔮 prédit ${p.before.val} → +${sc.before}`);
+  if(p.after &&p.after.val!=null)  parts.push(`💭 puis ${p.after.val} → +${sc.after}`);
+  if(sc.combo) parts.push(`🎯 combo +${sc.combo}`);
+  card.innerHTML = `Note réelle : <b>${real}/20</b><br>${parts.join(" · ")}<span class="big">+${sc.total} XP bonus !</span>`;
+  $("#predPanel").appendChild(card);
+  renderPredPanelAfterSim();
+  burst(sc.total>40?60:25);
+});
+function renderPredPanelAfterSim(){
+  // after resolution the chips reset to empty; keep the result card visible
+  const preds=loadPreds(); const p=preds[predSubject]||{before:null,after:null};
+  $("#stBeforeVal").textContent="—"; $("#stAfterVal").textContent="—";
+  $("#stBefore").classList.remove("set"); $("#stAfter").classList.remove("set");
+  $("#predEditor").classList.add("hidden"); $("#simGrade").classList.add("hidden");
+  $("#predHint").innerHTML="Prédictions résolues ✓ — rejoue dès ta prochaine note&nbsp;!";
+}
+
+/* ---- MASCOTS: 5 selectable animated SVG creatures, one consistent kawaii style ----
+   Each has big blinking eyes (.m-blink), blush, and a 'signature part' that animates on cheer.  */
+function face(){ return `
+  <ellipse class="m-blink" cx="43" cy="60" rx="6" ry="7" fill="#2a1a2a"/>
+  <ellipse class="m-blink" cx="71" cy="60" rx="6" ry="7" fill="#2a1a2a"/>
+  <circle cx="45" cy="57" r="2" fill="#fff"/><circle cx="73" cy="57" r="2" fill="#fff"/>
+  <circle cx="34" cy="68" r="5" fill="#ff8aa6" opacity=".5"/><circle cx="80" cy="68" r="5" fill="#ff8aa6" opacity=".5"/>
+  <path d="M50 71 Q57 77 64 71" stroke="#2a1a2a" stroke-width="2.6" fill="none" stroke-linecap="round"/>`; }
+
+const MASCOTS = {
+  penguin:{ name:"Pingouin", sig:"sigWaddle", svg:`
+    <ellipse cx="57" cy="110" rx="26" ry="5" fill="rgba(0,0,0,.25)"/>
+    <g class="SIG">
+      <ellipse cx="57" cy="62" rx="33" ry="40" fill="#2b3a55"/>
+      <ellipse cx="57" cy="66" rx="22" ry="32" fill="#fdfdff"/>
+      <path d="M22 58 Q10 70 24 80 Z" fill="#2b3a55"/><path d="M92 58 Q104 70 90 80 Z" fill="#2b3a55"/>
+      <path d="M48 78 L66 78 L57 90 Z" fill="#ffb23d"/>
+      ${face()}
+      <path d="M44 48 Q57 40 70 48" stroke="#2b3a55" stroke-width="0" fill="none"/>
+      <ellipse cx="46" cy="104" rx="9" ry="4" fill="#ffb23d"/><ellipse cx="68" cy="104" rx="9" ry="4" fill="#ffb23d"/>
+    </g>`},
+  squirrel:{ name:"Écureuil", sig:"sigTail", svg:`
+    <ellipse cx="57" cy="110" rx="26" ry="5" fill="rgba(0,0,0,.25)"/>
+    <path class="SIG" d="M84 90 Q118 78 104 44 Q98 22 80 34 Q98 40 92 62 Q86 82 70 86 Z" fill="#c9793e"/>
+    <g>
+      <ellipse cx="57" cy="66" rx="30" ry="34" fill="#d98a4e"/>
+      <ellipse cx="57" cy="72" rx="19" ry="24" fill="#f4dcc0"/>
+      <path d="M36 36 Q30 20 44 26 Q48 34 44 42 Z" fill="#d98a4e"/>
+      <path d="M78 36 Q84 20 70 26 Q66 34 70 42 Z" fill="#d98a4e"/>
+      ${face()}
+      <path d="M53 78 L61 78 L57 83 Z" fill="#8a4a2a"/>
+    </g>`},
+  cat:{ name:"Chat", sig:"sigPounce", svg:`
+    <ellipse cx="57" cy="110" rx="26" ry="5" fill="rgba(0,0,0,.25)"/>
+    <g class="SIG">
+      <path d="M34 34 L30 14 L50 30 Z" fill="#9b8cff"/><path d="M80 34 L84 14 L64 30 Z" fill="#9b8cff"/>
+      <path d="M36 32 L34 20 L46 30 Z" fill="#ffb6d5"/><path d="M78 32 L80 20 L68 30 Z" fill="#ffb6d5"/>
+      <ellipse cx="57" cy="64" rx="33" ry="36" fill="#9b8cff"/>
+      ${face()}
+      <path d="M57 74 L52 79 M57 74 L62 79" stroke="#2a1a2a" stroke-width="2" stroke-linecap="round"/>
+      <path d="M20 66 H38 M22 72 H38" stroke="#fff" stroke-width="1.6" opacity=".7"/>
+      <path d="M94 66 H76 M92 72 H76" stroke="#fff" stroke-width="1.6" opacity=".7"/>
+    </g>`},
+  boar:{ name:"Sanglier", sig:"sigCharge", svg:`
+    <ellipse cx="57" cy="110" rx="27" ry="5" fill="rgba(0,0,0,.25)"/>
+    <g class="SIG">
+      <path d="M30 30 L36 44 L24 44 Z" fill="#6b5545"/><path d="M84 30 L78 44 L90 44 Z" fill="#6b5545"/>
+      <ellipse cx="57" cy="66" rx="34" ry="35" fill="#7a6453"/>
+      <path d="M30 40 Q40 30 52 36" stroke="#5a463a" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M84 40 Q74 30 62 36" stroke="#5a463a" stroke-width="4" fill="none" stroke-linecap="round"/>
+      ${face()}
+      <ellipse cx="57" cy="80" rx="15" ry="11" fill="#8a7462"/>
+      <circle cx="51" cy="80" r="2.6" fill="#3a2a22"/><circle cx="63" cy="80" r="2.6" fill="#3a2a22"/>
+      <path d="M44 88 Q40 94 46 94" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M70 88 Q74 94 68 94" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    </g>`},
+  fox:{ name:"Renard", sig:"sigPounce", svg:`
+    <ellipse cx="57" cy="110" rx="26" ry="5" fill="rgba(0,0,0,.25)"/>
+    <g class="SIG">
+      <path d="M30 32 L24 10 L46 28 Z" fill="#ff7a3d"/><path d="M84 32 L90 10 L68 28 Z" fill="#ff7a3d"/>
+      <path d="M32 30 L28 16 L42 28 Z" fill="#2a1a2a"/><path d="M82 30 L86 16 L72 28 Z" fill="#2a1a2a"/>
+      <ellipse cx="57" cy="62" rx="33" ry="35" fill="#ff8a4d"/>
+      <path d="M57 96 Q34 88 30 70 Q44 86 57 86 Q70 86 84 70 Q80 88 57 96 Z" fill="#fff"/>
+      <ellipse cx="57" cy="74" rx="18" ry="16" fill="#fff"/>
+      ${face()}
+      <path d="M57 76 L53 80 M57 76 L61 80" stroke="#2a1a2a" stroke-width="2" stroke-linecap="round"/>
+    </g>`}
+};
+const MASCOT_ORDER = ["penguin","squirrel","cat","fox","boar"];
+
+function mascotSvg(key){
+  const m=MASCOTS[key]||MASCOTS.penguin;
+  return `<svg viewBox="0 0 114 118">${m.svg.replace('class="SIG"','class="sigpart"')}</svg>`;
+}
+function currentMascot(){ return LS.getKid("mascot") || null; }
+function applyMascot(key){
+  $("#mascot").innerHTML = mascotSvg(key);
+}
+// play the selected mascot's signature move on its .sigpart group
+function mascotSignature(){
+  const key=currentMascot()||"penguin"; const sig=MASCOTS[key].sig;
+  const part=$("#mascot").querySelector(".sigpart");
+  if(!part) return;
+  part.classList.remove("sigWaddle","sigTail","sigPounce","sigCharge");
+  void part.offsetWidth; part.classList.add(sig);
+}
+
+/* ---- mascot picker ---- */
+const pickScrim=$("#pickScrim");
+function openPicker(){
+  const grid=$("#pickGrid"); grid.innerHTML="";
+  MASCOT_ORDER.forEach(key=>{
+    const cell=document.createElement("div"); cell.className="pickcell";
+    cell.innerHTML = mascotSvg(key) + `<div class="pn">${MASCOTS[key].name}</div>`;
+    cell.addEventListener("click", ()=>{
+      LS.setKid("mascot", key);
+      applyMascot(key);
+      pickScrim.classList.remove("on");
+      mascotSignature(); burst(20);
+    });
+    grid.appendChild(cell);
+  });
+  pickScrim.classList.add("on");
+}
+function initMascot(){
+  const cur=currentMascot();
+  if(cur){ applyMascot(cur); } else { openPicker(); applyMascot("penguin"); }  // first run -> choose
+}
+// (initMascot() is called from init() once data arrives)
+$("#changeMascot").addEventListener("click", openPicker);
+
+/* ---- mascot tap = signature move + sparkle ---- */
+$("#mascot").addEventListener("click", ()=>{ mascotSignature(); burst(12); });
+
+/* ---- reveal: latest grade as a flip card, celebration tiered by how special it is ---- */
+const overlay=$("#overlay");
+let revealIdx = GRADES.length-1;   // cycles newest→oldest on each tap, so all tiers are demoable
+const TIER = {
+  perfect:{banner:"SCORE PARFAIT !", medal:"💯", cmp:"La note maximale 🌟", cls:"king", conf:90},
+  top:    {banner:"MEILLEURE DE LA CLASSE !", medal:"👑", cmp:"Personne n'a fait mieux 🏆", cls:"king", conf:70},
+  record: {banner:"NOUVEAU RECORD !", medal:"📈", cmp:null, cls:"win", conf:55},  // cmp filled with subject
+  beat:   {banner:null, medal:null, cmp:null, cls:"win", conf:40},
+  // below-class tiers: NO confetti, NO cheer — encouraging, never a party
+  effort: {banner:null, medal:"💪", cmp:"La classe aussi a trouvé ça dur — tu n'es pas seule 💪", cls:"", conf:0},
+  tough:  {banner:null, medal:"💪", cmp:null, cls:"", conf:0}   // cmp built live with a remontada nudge
+};
+const GOOD = t => (t==='perfect'||t==='top'||t==='record'||t==='beat');  // gets the party
+$("#revealBtn").addEventListener("click", ()=>{
+  // cycle through grades so every celebration tier is demoable (newest first)
+  const g=GRADES[revealIdx];
+  const t = tierOf(g, priorBests[revealIdx]);
+  revealIdx = (revealIdx-1+GRADES.length)%GRADES.length;
+  const T = TIER[t];
+  $("#gSubj").textContent = nn(g.subj).toUpperCase();
+  $("#gScore").innerHTML = `${g.you}<small>/20</small>`;
+
+  // banner + medal
+  const banner=$("#gBanner"), medal=$("#gMedal");
+  if(T.banner){ banner.textContent=T.banner; banner.className="tier-banner "+t; banner.classList.remove("hidden"); }
+  else banner.classList.add("hidden");
+  if(T.medal){ medal.textContent=T.medal; medal.classList.remove("hidden"); }
+  else medal.classList.add("hidden");
+
+  // comparison line
+  const cmp=$("#gCmp");
+  if(t==='record'){ cmp.className="cmp win"; cmp.textContent=`Ton meilleur score en ${nn(g.subj)} 📈`; }
+  else if(t==='beat'){ cmp.className="cmp win"; cmp.textContent=`+${(g.you-g.cls).toFixed(1)} au-dessus de la classe 🚀`; }
+  else if(t==='tough'){ cmp.className="cmp"; cmp.textContent="Pas ton meilleur jour — vise la remontada 🦸"; }
+  else { cmp.className="cmp "+T.cls; cmp.textContent=T.cmp; }
+
+  // remontada nudge on any below-class grade (turns a low point into a quest)
+  const nudge=$("#gNudge");
+  if(!GOOD(t)){ nudge.textContent="🦸 Prochain défi : repasser au-dessus de la classe → badge La remontada"; nudge.classList.remove("hidden"); }
+  else nudge.classList.add("hidden");
+
+  // XP preview (always positive — a bad grade just earns less, never negative)
+  let x=20+g.you*4; if(g.cls!=null&&g.you>g.cls)x+=(g.you-g.cls)*8; if(g.max!=null&&g.you>=g.max-0.001)x+=50;
+  $("#gXp").textContent = `+${Math.round(x*g.coef)} XP`;
+
+  // tier styling on the card
+  const gc=$("#gradecard");
+  gc.className="gradecard"+(GOOD(t)&&t!=='beat'?(" "+t):"");
+  gc.style.animation="none"; void gc.offsetWidth; gc.style.animation="";   // replay flip
+
+  overlay.classList.add("on");
+  // celebration ONLY for good grades; below-class = calm, determined, no confetti
+  if(GOOD(t)){
+    const m=$("#mascot"); m.classList.remove("cheer"); void m.offsetWidth; m.classList.add("cheer");
+    mascotSignature();                                          // + the animal's signature move
+    setTimeout(()=>burst(T.conf), 500);
+    if(t==='perfect'||t==='top') setTimeout(()=>burst(T.conf), 1100);   // double burst for the big ones
+  } else {
+    $("#mascot").classList.remove("cheer");   // no cheer on a low grade
+  }
+});
+overlay.addEventListener("click", ()=> overlay.classList.remove("on"));
+
+/* ---- confetti ---- */
+function burst(n){
+  const colors=["#ff8a3d","#ffd23d","#3ddc9b","#6aa0ff","#b06bff","#ff6bd6"];
+  for(let i=0;i<n;i++){
+    const c=document.createElement("div"); c.className="confetti";
+    c.style.left=(Math.random()*100)+"vw";
+    c.style.background=colors[i%colors.length];
+    c.style.animation=`fall ${0.9+Math.random()*0.9}s ${Math.random()*0.2}s linear forwards`;
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(), 2200);
+  }
+}
+
+/* ================= BOOT: receive data from the parent dashboard =================
+   Parent posts { type:'kidapp:init', child, yearKey, yearLabel, grades, gradesAll }.
+   grades/gradesAll are already in the kid-app shape {subj,you,cls,max,coef,date}.     */
+function init(payload){
+  GRADES = (payload.grades||[]).slice().sort((a,b)=> String(a.date).localeCompare(String(b.date)));
+  GRADES_ALL = (payload.gradesAll||payload.grades||[]).slice();
+  const child = (payload.child||"kid").replace(/[^A-Za-z0-9_-]/g,"");
+  const yk = (payload.yearKey||"year").replace(/[^A-Za-z0-9_-]/g,"");
+  NS = `kid:${child}:${yk}:`;       // per-kid + per-year (predictions, seen badges, bonus XP)
+  NS_KID = `kid:${child}:`;         // per-kid only (mascot choice, shared across years)
+  if(payload.title) document.title = payload.title;
+  if(GRADES.length===0){ $("#bubble").innerHTML = "Pas encore de notes pour cette année 📚"; return; }
+  computeDerived();
+  render();
+  renderSubjList();
+  initMascot();
+}
+// listen for the parent's data message (and tell the parent we're ready)
+window.addEventListener("message", (e)=>{
+  const d=e.data;
+  if(d && d.type==="kidapp:init") init(d);
+});
+// if opened standalone (no parent), do nothing until a message arrives.
+try{ if(window.parent && window.parent!==window) window.parent.postMessage({type:"kidapp:ready"}, "*"); }catch(_){}
+</script>
+</body>
+</html>
