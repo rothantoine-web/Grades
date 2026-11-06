@@ -95,6 +95,8 @@
   .yearbar button:hover { color:var(--ink); border-color:var(--muted); }
   .yearbar button.active { background:#2a3150; color:var(--ink); font-weight:600; border-color:#3a4573; }
   .yearbar .cnt { opacity:.6; font-size:11px; margin-left:4px; }
+  .yearbar .future-year { margin-left:auto; border-style:dashed; }
+  .yearbar .future-year.active { background:#2a3150; color:var(--ink); font-weight:600; border-color:#3a4573; border-style:solid; }
   /* drop zone */
   .drop { border:2px dashed var(--line); border-radius:14px; padding:26px; text-align:center; color:var(--muted); transition:.15s; margin-bottom:22px; cursor:pointer; }
   .drop:hover, .drop.over { border-color:#4a9df0; color:var(--ink); background:#141a2e; }
@@ -180,6 +182,24 @@
     <p class="legend-note" style="margin:0 0 10px">Estimated position within the class on each assessment, from the grade's place on the min→average→max line (50% = class average, 100% = top score, 0% = lowest). A position proxy, <b>not</b> an exact rank.</p>
     <div class="chartbox" style="height:320px"><canvas class="standingChart"></canvas></div>
   </div>
+  <div class="card bridge-card" style="border:1px dashed var(--line);background:linear-gradient(0deg,rgba(255,255,255,0.015),transparent)">
+    <h2 style="opacity:.92">Estimation nationale indicative <span style="text-transform:none;font-weight:400;color:var(--muted)">(heuristique, pas une mesure)</span></h2>
+    <p class="legend-note" style="margin:0 0 10px">
+      <b>Un pont, pas un instrument de mesure.</b> On combine ici trois choses que les repères
+      mesurés gardent séparées&nbsp;: la <b>position de l'enfant dans sa classe</b> (ses notes),
+      et le <b>niveau national de son collège</b> — calibré par l'<b>évaluation nationale de 6ᵉ</b>
+      (à l'entrée) et le <b>brevet / DNB</b> (à la sortie) — pour estimer une <b>fourchette de
+      percentile national</b> par matière. C'est une <b>estimation modélisée</b>&nbsp;: la barre est
+      une <i>plage</i>, jamais un point. Là où un <b>vrai score d'évaluation</b> existe, on affiche
+      le point <b>mesuré</b> (◆) à côté — on ne le fond pas dans l'estimation.
+      <b>Rappel&nbsp;:</b> ce collège est à <b>IPS très élevé (groupe&nbsp;5)</b>, donc «&nbsp;dans la
+      classe&nbsp;» est une barre bien plus exigeante que «&nbsp;en France&nbsp;»&nbsp;: un élève moyen
+      de cette classe est déjà au-dessus de la moyenne nationale.
+    </p>
+    <div class="chartbox" style="height:360px"><canvas class="bridgeChart"></canvas></div>
+    <p class="legend-note bridgeOnTrack" style="margin:10px 0 0;font-size:13px"></p>
+    <p class="legend-note bridgeNote" style="margin:6px 0 0;font-size:11px;color:var(--muted)"></p>
+  </div>
   <div class="card horizon-card">
     <h2>Horizon — positionnement national &amp; écoles</h2>
     <p class="legend-note" style="margin:0 0 10px">
@@ -198,10 +218,11 @@
     </p>
     <div class="natTestRow" style="margin:0 0 16px">
       <div class="legend-note" style="margin:0 0 6px;font-weight:600;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
-        <span>Évaluation nationale de début de 6ᵉ — sa position dans la distribution (sur 300)</span>
+        <span>Évaluation nationale de début de 6ᵉ — score réel par test &amp; position estimée</span>
         <span class="natResultNote" style="font-weight:400;font-size:12px;color:var(--muted)"></span>
       </div>
-      <div class="chartbox" style="height:300px"><canvas class="horizonNatTest"></canvas></div>
+      <div class="chartbox" style="height:380px"><canvas class="horizonNatTest"></canvas></div>
+      <p class="legend-note natModelNote" style="margin:6px 0 0;font-size:11px;color:var(--muted)"></p>
     </div>
     <div style="display:flex;gap:18px;flex-wrap:wrap">
       <div style="flex:1;min-width:280px">
@@ -242,6 +263,72 @@
   </div>
 </template>
 
+<!-- Planning the Future — rendered as its own full view when the "Planning the future"
+     pseudo-year is selected in a kid's yearbar (replaces the grade dashboard). -->
+<template id="futureTemplate">
+  <div class="card future-card" style="border:1px dashed var(--line);background:linear-gradient(0deg,rgba(255,255,255,0.02),transparent)">
+    <h2 style="opacity:.92">Planning the Future <span style="text-transform:none;font-weight:400;color:var(--muted)">(estimation indicative, pas une prédiction)</span></h2>
+    <p class="legend-note" style="margin:0 0 10px">
+      <b>Un repère de projection, pas une promesse d'admission.</b>
+      On estime une <b>chance de correspondance</b> entre la trajectoire de l'enfant et le profil
+      réel des admis d'une <b>formation Parcoursup</b> (université) ou d'un <b>lycée sélectif</b>.
+      <b>Attention&nbsp;:</b> une moyenne actuelle <b>n'est pas</b> une note de bac&nbsp;— projeter une
+      mention future est une <b>forte hypothèse</b>, montrée en <b>fourchette</b> avec un niveau de
+      confiance. Le score combine trois éléments (sélectivité officielle, correspondance de mention,
+      percentile national estimé)&nbsp;: c'est un <b>repère heuristique</b>, pas une probabilité d'admission.
+      <b>Lycées&nbsp;:</b> la plupart des lycées publics sont <b>sectorisés (Affelnet, par adresse)</b>,
+      sans sélection sur notes&nbsp;— <b>exclus</b>. Seuls les lycées <b>estimés sélectifs</b>
+      (privé, ou public à section sélective comme le CIV Valbonne) sont évalués.
+    </p>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin:0 0 10px;font-size:13px">
+      <label><input type="radio" name="futLevel" class="futLevel" value="univ"> Université (Parcoursup)</label>
+      <label><input type="radio" name="futLevel" class="futLevel" value="lycee" checked> Lycée (estimés sélectifs)</label>
+      <label style="margin-left:auto">Zone&nbsp;:
+        <select class="futScope" style="background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;font-size:12px">
+          <option value="national">France</option>
+          <option value="dept">Département de l'enfant</option>
+        </select>
+      </label>
+    </div>
+    <div class="futUnivControls" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:0 0 10px;font-size:13px">
+      <label>Filière&nbsp;:
+        <select class="futField" style="background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;font-size:12px">
+          <option value="">toutes (groupées par filière)</option>
+          <option value="Licence">Licence</option>
+          <option value="Licence_Las">Licence (L.AS)</option>
+          <option value="PASS">PASS (santé)</option>
+          <option value="BUT">BUT</option>
+          <option value="BTS">BTS</option>
+          <option value="CPGE">CPGE (prépa — Henri IV, LLG…)</option>
+          <option value="Ecole d'Ingénieur">École d'Ingénieur</option>
+          <option value="Ecole de Commerce">École de Commerce</option>
+          <option value="IFSI">IFSI (infirmier)</option>
+          <option value="EFTS">EFTS (social)</option>
+          <option value="Autre formation">Autre (Sciences Po, Dauphine, IEP…)</option>
+        </select>
+      </label>
+      <label>Discipline&nbsp;:
+        <select class="futDisc" disabled style="background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit;font-size:12px">
+          <option value="">— discipline —</option>
+        </select>
+      </label>
+    </div>
+    <p class="legend-note futProjection" style="margin:0 0 8px;font-size:12px"></p>
+    <input type="text" class="futSearch" placeholder="🔍 lycée ou formation (ex. ingénieur Nice, droit, CIV Valbonne)…"
+      style="width:100%;box-sizing:border-box;margin:0 0 8px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:6px 10px;font:inherit;font-size:13px">
+    <p class="legend-note futState" style="margin:0 0 6px;font-size:12px;color:var(--muted)"></p>
+    <div class="futResults" style="display:flex;flex-direction:column;gap:7px;margin:0 0 14px"></div>
+    <div class="futLeaders"></div>
+    <div class="futTop10">
+      <div class="legend-note" style="margin:0 0 6px;font-weight:600">Top 10 — <span class="futTop10Metric"></span></div>
+      <div class="futTop10List" style="display:flex;flex-direction:column;gap:7px"></div>
+    </div>
+    <p class="legend-note futCommentary" style="margin:10px 0 0;font-size:12px"></p>
+    <p class="legend-note futMethod" style="margin:10px 0 0;font-size:11px;color:var(--muted)"></p>
+  </div>
+</template>
+
+
 <script>
 /* ===================================================================
    Grades dashboard — loads raw EcoleDirecte & Pronote JSON exports.
@@ -266,6 +353,241 @@ const CONFIG = {
   // shared passphrase (speed-bump only; see notes). PASS_HASH = SHA-256 of the passphrase.
   AUTH: { ENABLED: false, PASS_HASH: '' }
 };
+
+/* =====================================================================
+   Planning the Future — admission-confidence (live Opendatasoft search)
+   HEURISTIC layered on the bridge (itself a heuristic). A /20 average is
+   NOT a Bac score; projecting a future mention is a strong assumption,
+   shown as a band + confidence tag, never a prediction. CORS on
+   data.education.gouv.fr is open (ACAO:*), so live browser calls work
+   from the Pages origin with no proxy.
+   ===================================================================== */
+const FUT_API = 'https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets';
+const DS_PARCOURSUP = 'fr-esr-parcoursup';
+const DS_LYCEE = 'fr-en-indicateurs-de-resultat-des-lycees-gt_v2';
+// Career-outcome source (SIES; CORS verified ACAO:* on GET + OPTIONS). Master-level insertion —
+// a VERY distal proxy for a collège kid (it's the university's master-graduate outcomes).
+const SIES_HOST = 'https://data.enseignementsup-recherche.gouv.fr/api/explore/v2.1/catalog/datasets';
+const DS_INSERTION_MASTER = 'fr-esr-insertion_professionnelle-master';
+// Weighted-composite ranking (/100). TUNABLE. Each present term's weight renormalises to sum 1
+// when another term is missing (e.g. career unjoined -> univ falls back to 30/30 -> 50/50).
+const CW_LYCEE = { honors:0.55, access:0.25, va:0.20 };   // raw-results tilt: mentions(+%TB) / access 2de→bac / value-added
+const FUT_LYCEE_POOL_MIN = 100;   // min presents_total so tiny-cohort noisy VA schools don't dominate the ranking
+const CW_UNIV  = { sel:0.30, honors:0.30, career:0.40 };  // 100-taux_acces / %TB+B / employment*salary
+const SAL_FLOOR = 1500, SAL_CEIL = 3500;                  // net median €/mo -> 0..100 (ARBITRARY, labelled)
+const VA_IDX_SLOPE = 2.5, VA_IDX_MID = 50;                // lycée VA pts (~[-20..20]) -> 0..100 (0pt->50)
+const FUT_BANDS = { green:66, amber:40 };           // >=66 vert, >=40 ambre, sinon rouge
+const FUT_MIN_COHORT = 30;                          // below this a cohort split is too noisy -> grey "bruité"
+const FUT_UNIV_POOL_MIN = 20;                        // univ ranking pool: exclude acc_tot<this (0-admit noise rows)
+const BAC_HARDER_SHIFT = 1.0;                        // Bac is ~1 /20 pt stricter than DNB mention bands (ASSUMPTION)
+const MENTION_SD = 1.2;                              // softness of the /20 -> mention threshold (ASSUMPTION)
+const FUT_LYCEE_VA_MIN = 6, FUT_LYCEE_MEN_MIN = 88;  // "estimated selective" heuristic for lycées
+const FUT_COL = { green:'#6ee7a8', amber:'#ffd27d', red:'#e74c6b', grey:'#9aa3c0' };
+function clamp(v,lo,hi){ return v<lo?lo:(v>hi?hi:v); }
+function deburr(s){ return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
+function salIndex(s){ return s==null ? null : clamp((s-SAL_FLOOR)/(SAL_CEIL-SAL_FLOOR)*100, 0, 100); }
+
+function debounce(fn, ms){ let t; return function(){ const a=arguments, c=this; clearTimeout(t); t=setTimeout(()=>fn.apply(c,a), ms); }; }
+
+// shared source of truth for the bridge card's GLOBAL "top X%" (mean of per-subject midpoints).
+// Returns {pct, conf, n} or null when no subject has class stats.
+function bridgeOverallTopPct(data, subjects, opts){
+  const ss = opts.subjectStats || {}, uai = opts.uai || null;
+  const gc = {}; data.forEach(d=>{ gc[d.matiere]=(gc[d.matiere]||0)+1; });
+  const mids=[]; let worst='high', nTot=0;
+  const rank={none:0,low:1,medium:2,high:3}, inv=['none','low','medium','high'];
+  subjects.forEach(s=>{ const b=bridgeSubjectBand(ss[s], uai, s, gc[s]||0);
+    if(b){ mids.push((b.pctLo+b.pctHi)/2); nTot+=(gc[s]||0); if(rank[b.conf]<rank[worst]) worst=b.conf; } });
+  if(!mids.length) return null;
+  return { pct: mids.reduce((a,b)=>a+b,0)/mids.length, conf:worst, n:nTot };
+}
+
+// project a future Bac mention from the current /20 average — as a probability VECTOR, not a point.
+// you = overallAvg(data); bridgePct = bridgeOverallTopPct().pct (may be null).
+function projectMention(you, bridgePct, bridgeConf){
+  const pEff = Math.max(0, Math.min(20, you - BAC_HARDER_SHIFT));   // Bac stricter than the DNB bands
+  const pGE = thr => 1 - normCdf((thr - pEff)/MENTION_SD);          // soft P(final >= threshold)
+  const pTB=pGE(16), pB=pGE(14), pAB=pGE(12);
+  const vector = { tb:pTB, b:Math.max(0,pB-pTB), ab:Math.max(0,pAB-pB), sans:Math.max(0,1-pAB) };
+  const modal = Object.keys(vector).reduce((m,k)=> vector[k]>vector[m]?k:m, 'sans');
+  // confidence: inherit the bridge's, knock down a notch if the bridge had none
+  const conf = bridgeConf && bridgeConf!=='none' ? bridgeConf : 'low';
+  return { you, pEff, vector, modal, pctNational: bridgePct, conf };
+}
+
+const MENTION_LABEL = { tb:'Très Bien', b:'Bien', ab:'Assez Bien', sans:'sans mention' };
+
+// escape a user string for an ODSQL search("...") clause
+function odsqlStr(s){ return '"' + String(s).replace(/["\\]/g,' ').trim() + '"'; }
+
+// build the records URL for a search or a top-N pool. fieldF/discF = univ field (fili) + discipline.
+function futBuildQuery(level, q, scope, kid, topN, fieldF, discF){
+  const ds = level==='univ' ? DS_PARCOURSUP : DS_LYCEE;
+  const sel = level==='univ'
+    ? 'cod_uai,g_ea_lib_vx,fil_lib_voe_acc,form_lib_voe_acc,fili,dep,dep_lib,region_etab_aff,ville_etab,taux_acces_ens,capa_fin,acc_tot,acc_tb,acc_b,acc_ab,acc_sansmention,pct_sansmention,pct_bg_mention'
+    : 'annee,uai,libelle_uai,secteur,libelle_commune,code_departement,libelle_departement,libelle_academie,libelle_region,taux_men_total,taux_reu_total,va_men_total,va_reu_total,taux_acces_2nde,presents_total,nb_mentions_tb_sansf_g,nb_mentions_b_g,nb_mentions_ab_g';
+  const where = [];
+  if(q){
+    // forgiving match: each token must appear in the name OR the place (so "Valbonne"
+    // or "ingénieur Nice" work even when the official libellé differs). Per-token AND,
+    // name-or-place OR within a token.
+    const nameF  = level==='univ' ? 'g_ea_lib_vx' : 'libelle_uai';
+    const placeF = level==='univ' ? 'ville_etab'  : 'libelle_commune';
+    const progF  = level==='univ' ? 'fil_lib_voe_acc' : 'secteur';
+    const toks = q.split(/\s+/).filter(t=>t.length>=2).slice(0,5);
+    toks.forEach(t=>{ const lk=odsqlStr('%'+t+'%');
+      where.push('('+nameF+' like '+lk+' or '+placeF+' like '+lk+' or '+progF+' like '+lk+')'); });
+  }
+  if(level==='univ'){
+    if(fieldF) where.push('fili='+odsqlStr(fieldF));
+    if(discF)  where.push('fil_lib_voe_acc='+odsqlStr(discF));
+  }
+  if(level==='lycee') where.push('(secteur like "PR%" or va_men_total >= '+FUT_LYCEE_VA_MIN+' or taux_men_total >= '+FUT_LYCEE_MEN_MIN+')');
+  // univ ranking pool: drop 0-admit / tiny-cohort noise so genuine top schools surface
+  if(level==='univ' && topN) where.push('acc_tot >= '+FUT_UNIV_POOL_MIN);
+  // lycée ranking pool: require a real cohort so noisy small-school value-added doesn't dominate
+  if(level==='lycee' && topN) where.push('presents_total >= '+FUT_LYCEE_POOL_MIN);
+  if(scope && scope!=='national' && kid && kid.dep){
+    const f = level==='univ' ? 'dep' : 'code_departement'; where.push(f+'="'+kid.dep+'"');
+  }
+  const metric = level==='univ' ? 'taux_acces_ens' : 'taux_men_total';
+  const params = new URLSearchParams();
+  params.set('select', sel);
+  if(where.length) params.set('where', where.join(' and '));
+  if(topN){ params.set('order_by', metric + (level==='univ' ? ' asc' : ' desc')); params.set('limit', String(topN)); }
+  else params.set('limit', '20');
+  return FUT_API + '/' + ds + '/records?' + params.toString();
+}
+
+// normalize one API record (v2.1 shape: flat fields) to a uniform row
+function futNormalize(level, r){
+  if(level==='univ'){
+    const tot = r.acc_tot || ((r.acc_tb||0)+(r.acc_b||0)+(r.acc_ab||0)+(r.acc_sansmention||0)) || null;
+    return { level, uai:r.cod_uai, name:r.g_ea_lib_vx, program:r.fil_lib_voe_acc||r.form_lib_voe_acc||r.fili,
+      field:r.fili, discipline:r.fil_lib_voe_acc,
+      place:r.ville_etab, dep:r.dep, depLib:r.dep_lib, region:r.region_etab_aff,
+      taux_acces:(r.taux_acces_ens!=null?+r.taux_acces_ens:null), cohort:(r.acc_tot!=null?+r.acc_tot:null),
+      admit:{ tb:+r.acc_tb||0, b:+r.acc_b||0, ab:+r.acc_ab||0, sans:+r.acc_sansmention||0 },
+      career:null,
+      metric:(r.taux_acces_ens!=null?+r.taux_acces_ens:null), metricLabel:"taux d'accès", metricFmt:v=>v+'%' };
+  }
+  const tm = r.taux_men_total!=null ? +r.taux_men_total : null;
+  return { level, uai:r.uai, name:r.libelle_uai, program:r.secteur, year:(r.annee!=null?+String(r.annee).slice(0,4):null),
+    place:r.libelle_commune, dep:r.code_departement, depLib:r.libelle_departement, region:r.libelle_region,
+    secteur:r.secteur, taux_men:tm, va:(r.va_men_total!=null?+r.va_men_total:null),
+    vaReu:(r.va_reu_total!=null?+r.va_reu_total:null), acces2nde:(r.taux_acces_2nde!=null?+r.taux_acces_2nde:null),
+    cohort:(r.presents_total!=null?+r.presents_total:null),
+    admit:{ tb:+r.nb_mentions_tb_sansf_g||0, b:+r.nb_mentions_b_g||0, ab:+r.nb_mentions_ab_g||0, sans:0 },
+    metric:(r.taux_men_total!=null?+r.taux_men_total:null), metricLabel:'taux de mention', metricFmt:v=>v+'%' };
+}
+
+// IVAL publishes several yearly rows per lycée — keep only the most recent rentrée per UAI.
+function futDedupLycee(rows){
+  const best = {};
+  rows.forEach(r=>{ const k = r.uai || r.name; const cur = best[k];
+    if(!cur || (r.year||0) > (cur.year||0)) best[k] = r; });
+  return Object.values(best);
+}
+
+// offline fallback for LYCÉE search/top-10 from the baked AM_LYCEES (Alpes-Maritimes only)
+function futAmFallbackRows(q){
+  const ql = (q||'').toLowerCase();
+  return AM_LYCEES.filter(l => !ql || (l.nom+' '+l.ville).toLowerCase().includes(ql)).map(l => ({
+    level:'lycee', uai:null, name:l.nom, program:(l.secteur==='prive'?'privé':'public'),
+    place:l.ville, dep:'06', depLib:'ALPES-MARITIMES', region:"PROVENCE-ALPES-COTE D'AZUR",
+    secteur:l.secteur, taux_men:l.men, va:l.vaMen, cohort:l.bN,
+    admit:{ tb:l.bTb||0, b:l.bB||0, ab:l.bAb||0, sans:l.bSans||0 },
+    metric:l.vaMen, metricLabel:'valeur ajoutée (mentions)', metricFmt:v=>(v>=0?'+':'')+v, _fallback:true }));
+}
+
+// live fetch with abort; resolves {rows} or rejects
+function futFetch(url, signal){
+  return fetch(url, { signal }).then(resp => {
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    return resp.json();
+  }).then(j => (j && j.results) ? j.results : []);
+}
+
+
+// ---- Career layer (universités only): SIES master-insertion, joined client-side ----
+function futCareerBuildQuery(rows){
+  const uais = [...new Set(rows.map(r=>r.uai).filter(Boolean))];
+  const stop = new Set(['universite','universites','ecole','ecoles','institut','instituts','national','nationale','superieur','superieure','de','du','des','la','le','les','et']);
+  const toks = [...new Set(rows.flatMap(r=> deburr(r.name).split(/[^a-z0-9]+/).filter(t=>t.length>=4 && !stop.has(t))))].slice(0,8);
+  const clauses = [];
+  if(uais.length) clauses.push('numero_de_l_etablissement in ('+uais.map(u=>odsqlStr(u)).join(',')+')');
+  toks.forEach(t=> clauses.push('etablissement like '+odsqlStr('%'+t+'%')));
+  if(!clauses.length) return null;
+  const params = new URLSearchParams();
+  params.set('select','numero_de_l_etablissement,etablissement,domaine,taux_d_emploi,taux_dinsertion,salaire_net_median_des_emplois_a_temps_plein,salaire_net_mensuel_median_regional');
+  params.set('where', clauses.join(' or '));
+  params.set('limit','100');
+  return SIES_HOST + '/' + DS_INSERTION_MASTER + '/records?' + params.toString();
+}
+function futNormalizeCareer(r){
+  const sal = r.salaire_net_median_des_emplois_a_temps_plein!=null ? +r.salaire_net_median_des_emplois_a_temps_plein
+            : (r.salaire_net_mensuel_median_regional!=null ? +r.salaire_net_mensuel_median_regional : null);
+  return { uai:r.numero_de_l_etablissement, establ:r.etablissement||'', domaine:r.domaine||'',
+    emp:(r.taux_d_emploi!=null && r.taux_d_emploi!=='' ? +r.taux_d_emploi : null),
+    sal:(sal!=null && !isNaN(sal) ? sal : null) };
+}
+// attach row.career = {score, emp, sal, matched:'uai'|'name'|null}. Score = emp% * salIndex/100 (0..100).
+function futJoinCareer(rows, careerRecs){
+  const recs = careerRecs.map(futNormalizeCareer).filter(c=>c.emp!=null || c.sal!=null);
+  const byUai = {};
+  recs.forEach(c=>{ if(!c.uai) return; (byUai[c.uai]=byUai[c.uai]||[]).push(c); });
+  function pick(cands, row){
+    if(!cands || !cands.length) return null;
+    if(cands.length===1) return cands[0];
+    const dtok = deburr(row.discipline||row.program||'').split(/[^a-z0-9]+/).filter(Boolean);
+    let best=cands[0], bestOv=-1;
+    cands.forEach(c=>{ const ct=deburr(c.domaine).split(/[^a-z0-9]+/); const ov=ct.filter(t=>dtok.includes(t)).length; if(ov>bestOv){bestOv=ov;best=c;} });
+    return best;
+  }
+  function score(c){ if(c.emp==null && c.sal==null) return null; const si=salIndex(c.sal); const emp=c.emp!=null?c.emp:null;
+    if(emp!=null && si!=null) return clamp(emp*(si/100),0,100);
+    if(emp!=null) return emp*0.6;              // employment only, no salary -> discounted
+    return si!=null ? si*0.6 : null; }         // salary only -> discounted
+  rows.forEach(row=>{
+    if(row.level!=='univ'){ return; }
+    let c = row.uai ? pick(byUai[row.uai], row) : null, matched = c ? 'uai' : null;
+    if(!c){ // name-token fallback
+      const nt = deburr(row.name).split(/[^a-z0-9]+/).filter(t=>t.length>=4);
+      const cands = recs.filter(x=> { const xt=deburr(x.establ).split(/[^a-z0-9]+/); return xt.some(t=>nt.includes(t)); });
+      c = pick(cands, row); matched = c ? 'name' : null;
+    }
+    const sc = c ? score(c) : null;
+    row.career = (c && sc!=null) ? { score:sc, emp:c.emp, sal:c.sal, matched } : { matched:null };
+  });
+  return rows;
+}
+
+// ---- Weighted-composite ranking (/100) per institution. Replaces confidenceScore. ----
+function compositeScore(row, level){
+  const comps = {}, w = {};
+  if(level==='lycee'){
+    // honors = mention rate, nudged up by the share of Très Bien among mentions (so a
+    // TB-rich elite lycée outranks a 100%-but-mostly-AB school). Bounded 0..100.
+    if(row.taux_men!=null){
+      const tb=row.admit?(row.admit.tb||0):0, men=tb+(row.admit?(row.admit.b||0)+(row.admit.ab||0):0);
+      const tbShare = men>0 ? tb/men : 0;                 // 0..1
+      comps.honors = clamp(row.taux_men*(0.85+0.30*tbShare), 0, 100);
+      w.honors = CW_LYCEE.honors;
+    }
+    if(row.acces2nde!=null){ comps.access=clamp(row.acces2nde,0,100); w.access=CW_LYCEE.access; }
+    const vaParts=[row.va, row.vaReu].filter(v=>v!=null);
+    if(vaParts.length){ const vaAvg=vaParts.reduce((a,b)=>a+b,0)/vaParts.length; comps.va=clamp(VA_IDX_MID+vaAvg*VA_IDX_SLOPE,0,100); w.va=CW_LYCEE.va; }
+  } else {
+    if(row.taux_acces!=null){ comps.sel=clamp(100-row.taux_acces,0,100); w.sel=CW_UNIV.sel; }
+    if(row.cohort){ comps.honors=clamp(100*((row.admit.tb||0)+(row.admit.b||0))/row.cohort,0,100); w.honors=CW_UNIV.honors; }
+    if(row.career && row.career.matched){ comps.career=clamp(row.career.score,0,100); w.career=CW_UNIV.career; }
+  }
+  const keys=Object.keys(w), wsum=keys.reduce((s,k)=>s+w[k],0);
+  let pct = wsum>0 ? Math.round(keys.reduce((s,k)=>s+ (w[k]/wsum)*comps[k], 0)) : null;
+  const noisy = row.cohort!=null && row.cohort < FUT_MIN_COHORT;
+  const band = pct==null ? 'grey' : (noisy ? 'grey' : (pct>=FUT_BANDS.green?'green':(pct>=FUT_BANDS.amber?'amber':'red')));
+  return { pct, band, color:FUT_COL[band], comps, weights:w, noisy, careerFound: !!(row.career && row.career.matched) };
+}
 
 /* ---------- register the service worker (enables install + offline) ---------- */
 if ('serviceWorker' in navigator && (location.protocol==='http:'||location.protocol==='https:')) {
@@ -386,15 +708,16 @@ function fromPronote(json){
 // subjectStats: optional {subject -> {lo,hi,classAvg,studentAvg}} (Pronote supplies it directly).
 // method: how to compute overall averages — 'pool' (Pronote: Σnote/Σbareme×20) or 'per20' (EcoleDirecte).
 function parseFile(json){
+  const school = json.__school || (json.data && json.data.__school) || null;
   if(Array.isArray(json.__records)){
     // normalize dates to ISO: Pronote compact records carry dd/mm/yyyy, which
     // new Date() otherwise misreads as mm/dd (21/09 -> invalid, 01/10 -> Jan).
     const data = json.__records.map(d=> ({...d, dateSaisie: frDate(d.dateSaisie)}));
-    return {source:"built-in", data, subjectStats:json.__stats||{}, method:json.__method||'per20'};
+    return {source:"built-in", data, subjectStats:json.__stats||{}, method:json.__method||'per20', natEval:json.__natEval6_items||null, school};
   }
   const r = (json.dataSec && json.dataSec.data) || json.data || json;
-  if(r.listeDevoirs){ const {data,subjectStats}=fromPronote(json); return {source:"Pronote", data, subjectStats, method:'pool'}; }
-  if(r.notes || json.notes){ const {data,subjectStats}=fromEcoleDirecte(json); return {source:"EcoleDirecte", data, subjectStats, method:'per20'}; }
+  if(r.listeDevoirs){ const {data,subjectStats}=fromPronote(json); return {source:"Pronote", data, subjectStats, method:'pool', school}; }
+  if(r.notes || json.notes){ const {data,subjectStats}=fromEcoleDirecte(json); return {source:"EcoleDirecte", data, subjectStats, method:'per20', school}; }
   throw new Error("Unrecognized format (no notes[] or listeDevoirs)");
 }
 
@@ -437,20 +760,130 @@ function parseName(filename){
    HONESTY: the national eval is a /300 test at the START of the cycle, not the
    child's Pronote /20 bulletin — treat any mapping as indicative only.
    =================================================================== */
-const NAT6 = { year:2025, scale:300,
-  Francais:{moy:251.7, sd:48.4, bands:[16.3,15.4,19.1,18.3,13.9,17.1]},
-  Maths:   {moy:248.3, sd:51.9, bands:[19.3,17.9,18.1,15.7,11.9,17.1]} };
-/* Valentina's OWN début-6ᵉ national-test result — fill in from the sheet at home.
-   Two accepted forms (honesty-preserving):
-   · numeric /300:  fr: 265, maths: 258   → exact marker + z-score percentile
-   · band only 1-6: frBand: 5, mathsBand: 6 → marker at band midpoint, flagged approx
-   Leave null to show the national distribution with no personal marker yet. */
-const NAT6_RESULT = { fr:null, maths:null, frBand:null, mathsBand:null };
+const NAT6 = { year:2025 };
 const MENTION = { ab:12, b:14, tb:16, pctAtOrAbove:{12:69, 14:48, 16:25} };
+
+/* ── National 6ᵉ-eval, honest model ──────────────────────────────────────────
+   The parent fiche shows only 3 zones (À besoins / Fragile / Satisfaisant); bar
+   LENGTH within a zone is meaningless. The real score is the per-item count from
+   the "réponses détaillées" (QR) sheets. To turn that count into a national
+   percentile we use a beta-binomial calibrated on two published DEPP numbers per
+   test: the per-item success rates (annexe) AND the national % "Satisfaisant".
+   This is a MODEL estimate (national, not IPS-specific), never a bare z-score on
+   a /300 scale we don't have. Load a child's data via the Settings tab (future)
+   or inline below; the loader reads __natEval6_items from a file too.            */
+function nat6TopPct(itemRates, maxItems, seuilSat, natSatPct, score){
+  // itemRates: national success rate (%) per item; returns modelled P(score≥child)
+  const n=maxItems, p=itemRates.map(x=>x/100), mbar=p.reduce((a,b)=>a+b,0)/n;
+  const lg=x=>{ // Lanczos log-gamma
+    const g=7, c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,
+      771.32342877765313,-176.61502916214059,12.507343278686905,
+      -0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+    if(x<0.5) return Math.log(Math.PI/Math.sin(Math.PI*x))-lg(1-x);
+    x-=1; let a=c[0]; const t=x+g+0.5;
+    for(let i=1;i<g+2;i++) a+=c[i]/(x+i);
+    return 0.5*Math.log(2*Math.PI)+(x+0.5)*Math.log(t)-t+Math.log(a);
+  };
+  const bb=rho=>{ const tt=(1-rho)/rho, a=mbar*tt, b=(1-mbar)*tt, out=[];
+    for(let k=0;k<=n;k++){ out.push(Math.exp(
+      lg(n+1)-lg(k+1)-lg(n-k+1)+lg(k+a)+lg(n-k+b)-lg(n+a+b)-(lg(a)+lg(b)-lg(a+b)))); }
+    return out; };
+  const tailFrom=(d,x)=>d.slice(x).reduce((a,b)=>a+b,0);
+  // calibrate rho so P(score≥seuilSat) == natSatPct
+  const target=natSatPct/100; let lo=0.0005, hi=0.5, flo=tailFrom(bb(lo),seuilSat);
+  for(let i=0;i<80;i++){ const m=(lo+hi)/2, fm=tailFrom(bb(m),seuilSat);
+    if((fm-target)*(flo-target)<=0) hi=m; else { lo=m; flo=fm; } }
+  return tailFrom(bb((lo+hi)/2), score)*100;   // "top X%"
+}
+function nat6Band(score, maxItems, seuilSat){
+  // DEPP bands: Satisfaisant ≥ seuilSat; the two lower cuts aren't needed for the
+  // label but the zone widths are derived from them where a test publishes them.
+  return score>=seuilSat ? 'Satisfaisant' : 'Fragile/À besoins';
+}
+/* Per-child national-eval data (scores counted per QUESTION from the QR sheets;
+   grid questions = 1 item all-or-nothing, per the DEPP rule). itemRates = national
+   per-item success % from the DEPP "analyses détaillées" annexe. cut = [besoins≤,
+   fragile≤] item-count thresholds; seuilSat = first Satisfaisant count. A matching
+   `<child>_<level>_<year>.nateval.json` sidecar carries the same shape and survives
+   grade re-exports. */
+const NAT6_ITEMS = {
+  "Louis": { year:"2026-2027", school:{nom:"Collège International de Valbonne", ipsGroup:5},
+    tests:[
+    {key:"resolution", discipline:"maths", label:"Résolution de problèmes", max:19, cut:[4,9], seuilSat:10, score:18, natSatPct:44.6,
+      rates:[42.1,40.1,35.9,47.5,67,40.5,59.8,41.6,41.2,49.1,75.7,56,29.8,21.4,51.6,75.8,51.7,46.1,40.5]},
+    {key:"automatismes", discipline:"maths", label:"Automatismes", max:23, cut:[6,12], seuilSat:13, score:21, natSatPct:59.4,
+      rates:[81,55.9,62.2,58.3,69.3,50.4,69.2,50.2,92.7,46.5,57.8,36.2,72.4,36.1,59.1,58.3,56.5,40.1,67,29.8,75.8,51.7,40.5]},
+    {key:"lexique", discipline:"francais", label:"Lexique", max:15, cut:[6,10], seuilSat:11, score:15, natSatPct:44.2,
+      rates:[69,77.9,59.9,42.6,71.2,73.3,80.2,92.8,77.9,47.1,31.8,81.5,77.8,33,46.6]},
+    {key:"comprehension_ecrit", discipline:"francais", label:"Compréhension de l'écrit", max:19, cut:[4,10], seuilSat:11, score:16, natSatPct:42.6,
+      rates:[26.2,61,56.8,42.9,46.9,55,20.4,52.7,69.9,28,56.4,76.6,78.7,42.2,59.6,63,43.2,39.8,53.5]}
+  ]}
+};
 // Normal-CDF → percentile from a z-score (Abramowitz-Stegun 26.2.17 approx).
 function normCdf(z){ const t=1/(1+0.2316419*Math.abs(z)), d=0.3989423*Math.exp(-z*z/2);
   let p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));
   return z>0 ? 1-p : p; }
+
+/* ── National "bridge" estimate (ROUGH HEURISTIC — not a measured percentile) ──
+   Blends what the measured instruments keep separate: (a) the kid's standing
+   WITHIN class (from grades), (b) how far the SCHOOL sits above/below national
+   (calibrated by the per-school 6e eval at ENTRY and the DNB at EXIT),
+   → an estimated national percentile BAND. An inference layer built ON TOP of
+   the honest instruments; never converts one instrument into another, never
+   fabricates item scores. Where a real 6e-eval item score exists (nat6TopPct),
+   we show that MEASURED point beside the band — we do not blend it in.
+   Reference baked from data.education.gouv.fr (6e+4e eval, DNB/IVAC, IPS).      */
+const SCHOOLS = { "Louis":"0062011D", "Valentina":"0061119J" };   // child -> UAI (like NAT6_ITEMS)
+const EVAL6E_REF = {"source":"data.education.gouv.fr — fr-en-evaluations_nationales_6eme_par_etablissement (API v2.1)","dataset":"fr-en-evaluations_nationales_6eme_par_etablissement","fetched":"2026-11-04","note":"Evaluations nationales de debut de 6e. score_moyen/ecart_type on DEPP national scale (~mean 250, SD 50). groups = % of pupils in national performance groups 1..6 (6=top). National baseline = rows with uai null.","national":{"2025":{"Français":{"score_moyen":256.0,"ecart_type":49.0,"effectif":null,"groups":[12.6,15.4,19.9,19.5,14.8,17.8]},"Mathématiques":{"score_moyen":254.0,"ecart_type":53.0,"effectif":null,"groups":[15.2,17.3,18.7,16.8,13.1,18.9]}},"2024":{"Français":{"score_moyen":256.0,"ecart_type":49.0,"effectif":null,"groups":[11.7,15.2,20.1,20.1,15.0,17.9]},"Mathématiques":{"score_moyen":254.0,"ecart_type":53.0,"effectif":null,"groups":[15.0,17.2,18.8,16.9,13.0,19.0]}},"2023":{"Français":{"score_moyen":257.0,"ecart_type":48.0,"effectif":null,"groups":[11.3,15.7,20.1,19.3,15.3,18.2]},"Mathématiques":{"score_moyen":254.0,"ecart_type":53.0,"effectif":null,"groups":[14.8,17.3,19.0,17.0,13.1,18.9]}},"2022":{"Français":{"score_moyen":257.0,"ecart_type":47.0,"effectif":null,"groups":[11.2,15.8,19.9,19.3,15.6,18.3]},"Mathématiques":{"score_moyen":253.0,"ecart_type":52.0,"effectif":null,"groups":[14.9,17.4,19.2,17.0,13.0,18.4]}},"2021":{"Français":{"score_moyen":261.0,"ecart_type":46.0,"effectif":null,"groups":[8.4,13.8,20.4,20.5,16.6,20.3]},"Mathématiques":{"score_moyen":254.0,"ecart_type":53.0,"effectif":null,"groups":[15.1,16.1,18.5,17.4,13.9,19.0]}},"2020":{"Français":{"score_moyen":261.0,"ecart_type":48.0,"effectif":null,"groups":[9.2,13.8,19.5,19.9,16.6,21.1]},"Mathématiques":{"score_moyen":253.0,"ecart_type":52.0,"effectif":null,"groups":[15.4,15.9,18.7,17.7,14.0,18.3]}},"2019":{"Français":{"score_moyen":255.0,"ecart_type":49.0,"effectif":null,"groups":[13.6,14.8,17.8,18.5,16.3,19.1]},"Mathématiques":{"score_moyen":249.0,"ecart_type":52.0,"effectif":null,"groups":[16.8,17.5,19.2,17.1,12.9,16.5]}},"2018":{"Français":{"score_moyen":254.0,"ecart_type":50.0,"effectif":null,"groups":[11.9,17.1,21.7,18.4,13.4,17.5]},"Mathématiques":{"score_moyen":249.0,"ecart_type":48.0,"effectif":null,"groups":[13.4,17.9,21.7,19.2,13.4,14.3]}},"2017":{"Français":{"score_moyen":250.0,"ecart_type":50.0,"effectif":null,"groups":[13.3,18.4,20.9,18.3,13.5,15.6]},"Mathématiques":{"score_moyen":250.0,"ecart_type":50.0,"effectif":null,"groups":[12.7,18.1,22.2,18.9,13.2,15.0]}}},"schools":{"0062011D":{"nom":"College International de Valbonne","commune":"VALBONNE","by_year":{"2025":{"Français":{"score_moyen":302.0,"ecart_type":43.0,"effectif":187,"groups":[2.1,2.7,4.8,16.0,18.7,55.6]},"Mathématiques":{"score_moyen":318.0,"ecart_type":50.0,"effectif":186,"groups":[0.0,2.7,3.8,12.9,15.1,65.6]}},"2024":{"Français":{"score_moyen":309.0,"ecart_type":46.0,"effectif":155,"groups":[0.6,1.3,3.9,16.1,21.9,56.1]},"Mathématiques":{"score_moyen":325.0,"ecart_type":60.0,"effectif":155,"groups":[1.3,0.0,4.5,11.6,14.2,68.4]}},"2023":{"Français":{"score_moyen":303.0,"ecart_type":44.0,"effectif":149,"groups":[0.0,2.0,8.7,15.4,26.8,47.0]},"Mathématiques":{"score_moyen":316.0,"ecart_type":58.0,"effectif":151,"groups":[2.0,2.0,6.6,14.6,14.6,60.3]}},"2022":{"Français":{"score_moyen":301.0,"ecart_type":47.0,"effectif":167,"groups":[1.2,2.4,10.2,13.2,24.0,49.1]},"Mathématiques":{"score_moyen":303.0,"ecart_type":46.0,"effectif":164,"groups":[1.2,4.3,7.3,13.4,17.7,56.1]}},"2021":{"Français":{"score_moyen":304.0,"ecart_type":42.0,"effectif":169,"groups":[0.6,1.2,5.9,13.6,27.2,51.5]},"Mathématiques":{"score_moyen":307.0,"ecart_type":49.0,"effectif":169,"groups":[0.0,2.4,6.5,14.8,24.3,52.1]}},"2020":{"Français":{"score_moyen":312.0,"ecart_type":41.0,"effectif":179,"groups":[0.0,2.2,4.5,11.7,20.1,61.5]},"Mathématiques":{"score_moyen":314.0,"ecart_type":44.0,"effectif":180,"groups":[0.6,1.7,1.7,13.3,22.8,60.0]}},"2019":{"Français":{"score_moyen":297.0,"ecart_type":38.0,"effectif":173,"groups":[1.2,1.7,6.9,19.1,21.4,49.7]},"Mathématiques":{"score_moyen":303.0,"ecart_type":47.0,"effectif":174,"groups":[0.6,1.1,10.9,16.1,21.3,50.0]}},"2018":{"Français":{"score_moyen":309.0,"ecart_type":54.0,"effectif":168,"groups":[1.2,4.2,7.7,14.3,19.0,53.6]},"Mathématiques":{"score_moyen":309.0,"ecart_type":50.0,"effectif":167,"groups":[0.6,1.2,5.4,14.4,24.0,54.5]}},"2017":{"Français":{"score_moyen":305.0,"ecart_type":49.0,"effectif":182,"groups":[1.1,2.7,8.2,15.9,17.0,54.9]},"Mathématiques":{"score_moyen":313.0,"ecart_type":52.0,"effectif":182,"groups":[0.5,2.2,5.5,15.4,20.3,56.0]}}},"exit_dnb":{"2025":{"brevet_note_ecrit_g":14.4,"va_note_g":-0.3,"taux_reussite_g":100.0,"va_taux_reussite_g":1.0,"taux_acces_6e_3e":93.0,"nb_candidats_g":180,"mentions":{"ab":12,"b":26,"tb":141,"total":179},"pct_tb":78.8},"2024":{"brevet_note_ecrit_g":15.4,"va_note_g":0.3,"taux_reussite_g":100.0,"va_taux_reussite_g":1.0,"taux_acces_6e_3e":94.0,"nb_candidats_g":184,"mentions":{"ab":6,"b":25,"tb":152,"total":183},"pct_tb":83.1},"2023":{"brevet_note_ecrit_g":15.4,"va_note_g":0.4,"taux_reussite_g":100.0,"va_taux_reussite_g":1.0,"taux_acces_6e_3e":89.0,"nb_candidats_g":179,"mentions":{"ab":8,"b":27,"tb":140,"total":175},"pct_tb":80.0},"2022":{"brevet_note_ecrit_g":15.0,"va_note_g":0.4,"taux_reussite_g":99.0,"va_taux_reussite_g":0.0,"taux_acces_6e_3e":90.0,"nb_candidats_g":171,"mentions":{"ab":4,"b":25,"tb":141,"total":170},"pct_tb":82.9}}},"0061119J":{"nom":"College Prive Notre Dame de la Tramontane","commune":"ANTIBES","by_year":{"2025":{"Français":{"score_moyen":269.0,"ecart_type":44.0,"effectif":154,"groups":[3.2,11.0,22.7,27.3,13.6,22.1]},"Mathématiques":{"score_moyen":276.0,"ecart_type":46.0,"effectif":152,"groups":[2.0,5.9,23.0,28.3,17.1,23.7]}},"2024":{"Français":{"score_moyen":284.0,"ecart_type":45.0,"effectif":151,"groups":[1.3,7.3,13.9,25.2,13.9,38.4]},"Mathématiques":{"score_moyen":293.0,"ecart_type":58.0,"effectif":152,"groups":[2.6,9.9,14.5,13.2,14.5,45.4]}},"2023":{"Français":{"score_moyen":293.0,"ecart_type":45.0,"effectif":164,"groups":[1.2,4.3,12.8,18.9,20.7,42.1]},"Mathématiques":{"score_moyen":291.0,"ecart_type":55.0,"effectif":162,"groups":[2.5,6.2,13.6,23.5,13.0,41.4]}},"2022":{"Français":{"score_moyen":275.0,"ecart_type":48.0,"effectif":150,"groups":[5.3,8.0,15.3,24.0,16.0,31.3]},"Mathématiques":{"score_moyen":293.0,"ecart_type":58.0,"effectif":153,"groups":[4.6,5.9,18.3,16.3,9.8,45.1]}},"2021":{"Français":{"score_moyen":281.0,"ecart_type":43.0,"effectif":150,"groups":[1.3,8.0,14.7,18.7,22.7,34.7]},"Mathématiques":{"score_moyen":286.0,"ecart_type":46.0,"effectif":151,"groups":[2.6,7.3,9.3,23.8,21.2,35.8]}},"2020":{"Français":{"score_moyen":300.0,"ecart_type":43.0,"effectif":149,"groups":[1.3,1.3,8.1,16.1,26.8,46.3]},"Mathématiques":{"score_moyen":297.0,"ecart_type":49.0,"effectif":150,"groups":[0.7,5.3,10.7,22.0,16.7,44.7]}},"2019":{"Français":{"score_moyen":265.0,"ecart_type":48.0,"effectif":148,"groups":[8.8,12.2,16.2,17.6,20.3,25.0]},"Mathématiques":{"score_moyen":278.0,"ecart_type":45.0,"effectif":147,"groups":[4.1,8.2,18.4,17.7,17.7,34.0]}},"2018":{"Français":{"score_moyen":292.0,"ecart_type":53.0,"effectif":148,"groups":[5.4,5.4,10.8,13.5,20.3,44.6]},"Mathématiques":{"score_moyen":273.0,"ecart_type":46.0,"effectif":149,"groups":[6.7,8.1,17.4,16.8,22.8,28.2]}},"2017":{"Français":{"score_moyen":293.0,"ecart_type":49.0,"effectif":151,"groups":[2.6,5.3,7.9,16.6,25.8,41.7]},"Mathématiques":{"score_moyen":282.0,"ecart_type":54.0,"effectif":151,"groups":[2.6,11.3,12.6,20.5,14.6,38.4]}}},"exit_dnb":{"2025":{"brevet_note_ecrit_g":12.9,"va_note_g":0.1,"taux_reussite_g":100.0,"va_taux_reussite_g":3.0,"taux_acces_6e_3e":94.0,"nb_candidats_g":146,"mentions":{"ab":27,"b":55,"tb":51,"total":133},"pct_tb":38.3},"2024":{"brevet_note_ecrit_g":14.1,"va_note_g":0.2,"taux_reussite_g":99.0,"va_taux_reussite_g":1.0,"taux_acces_6e_3e":94.0,"nb_candidats_g":142,"mentions":{"ab":18,"b":49,"tb":70,"total":137},"pct_tb":51.1},"2023":{"brevet_note_ecrit_g":14.1,"va_note_g":0.9,"taux_reussite_g":100.0,"va_taux_reussite_g":2.0,"taux_acces_6e_3e":94.0,"nb_candidats_g":147,"mentions":{"ab":32,"b":37,"tb":66,"total":135},"pct_tb":48.9},"2022":{"brevet_note_ecrit_g":13.6,"va_note_g":0.8,"taux_reussite_g":100.0,"va_taux_reussite_g":3.0,"taux_acces_6e_3e":93.0,"nb_candidats_g":152,"mentions":{"ab":30,"b":52,"tb":68,"total":150},"pct_tb":45.3}}}},"eval4e":{"note":"4e eval nationale is published only at departement/academie level (NOT per school). Use as national + departmental reference curve for kids currently in 4e; cannot isolate a specific school offset. Years 2023-2025.","national":{"2025":{"Mathématiques":{"score_moyen":250.0,"ecart_type":51.2,"groups":[15.0,18.8,20.7,17.5,12.2,15.8]},"Français":{"score_moyen":247.0,"ecart_type":50.4,"groups":[17.4,17.7,20.5,17.6,12.5,14.4]}},"2024":{"Français":{"score_moyen":248.0,"ecart_type":50.2,"groups":[16.7,17.5,20.4,17.9,12.7,14.8]},"Mathématiques":{"score_moyen":249.0,"ecart_type":50.3,"groups":[15.1,19.2,21.2,17.5,12.1,14.9]}},"2023":{"Mathématiques":{"score_moyen":250.0,"ecart_type":50.0,"groups":[14.0,19.1,21.5,17.9,12.4,15.2]},"Français":{"score_moyen":250.0,"ecart_type":50.0,"groups":[15.2,17.1,20.3,18.2,13.4,15.8]}}},"dept06":{"2025":{"Français":{"score_moyen":249.0,"ecart_type":51.7,"groups":[17.0,16.8,19.9,17.4,13.5,15.4]},"Mathématiques":{"score_moyen":253.0,"ecart_type":51.2,"groups":[13.9,18.0,20.7,18.0,12.8,16.6]}},"2024":{"Mathématiques":{"score_moyen":252.0,"ecart_type":48.8,"groups":[12.8,18.5,21.9,18.7,12.7,15.5]},"Français":{"score_moyen":251.0,"ecart_type":50.8,"groups":[14.8,16.7,20.8,18.0,13.4,16.3]}},"2023":{"Mathématiques":{"score_moyen":252.0,"ecart_type":50.3,"groups":[12.6,18.3,21.8,19.0,12.7,15.5]},"Français":{"score_moyen":252.0,"ecart_type":50.1,"groups":[14.3,17.0,20.1,18.4,13.5,16.7]}}}},"exit_note":"exit_dnb per school from fr-en-indicateurs-valeur-ajoutee-colleges (IVAC): brevet written note /20, value-added (va_*), mention mix. va ~0 => school performs as its intake/IPS predicts (no exceptional lift). Sessions 2022-2025.","sources":{"eval6e":"fr-en-evaluations_nationales_6eme_par_etablissement","eval4e":"fr-en-evaluations_nationales_4eme_departement","dnb_ivac":"fr-en-indicateurs-valeur-ajoutee-colleges","ips":"fr-en-ips-colleges-ap2023"}};
+const BRIDGE_K = 0.75;   // within-class spread is narrower than national; damp class-z
+function evalDiscipline(matiere){
+  const m=(matiere||'').toUpperCase();
+  if(m.includes('FRAN')) return 'Français';
+  if(m.includes('MATH')) return 'Mathématiques';
+  return null;
+}
+// school offset in NATIONAL-SD units, bracketed by entry(6e eval) and exit(DNB).
+function schoolOffset(uai, discipline){
+  const sc = uai && EVAL6E_REF.schools[uai];
+  if(!sc) return {off:0, lo:0, hi:0, conf:'none', parts:{}};
+  const parts={}, by=sc.by_year||{}, years=Object.keys(by).sort().reverse();
+  function entryFor(disc){
+    for(const y of years){ const row=by[y]&&by[y][disc], nat=EVAL6E_REF.national[y]&&EVAL6E_REF.national[y][disc];
+      if(row && nat && nat.ecart_type) return (row.score_moyen-nat.score_moyen)/nat.ecart_type; }
+    return null;
+  }
+  let entry = discipline ? entryFor(discipline) : null;
+  if(entry==null){ const fr=entryFor('Français'), ma=entryFor('Mathématiques'), a=[fr,ma].filter(v=>v!=null); if(a.length) entry=a.reduce((x,y)=>x+y,0)/a.length; }
+  if(entry!=null) parts.entry=entry;
+  const ex=sc.exit_dnb||{}, exYears=Object.keys(ex).sort().reverse(); let exit=null;
+  for(const y of exYears){ const n=ex[y]&&ex[y].brevet_note_ecrit_g; if(n!=null){ exit=(n-10.5)/3.3; break; } }
+  if(exit!=null) parts.exit=exit;
+  const vals=[entry,exit].filter(v=>v!=null);
+  if(!vals.length) return {off:0, lo:0, hi:0, conf:'none', parts};
+  const off=vals.reduce((a,b)=>a+b,0)/vals.length;
+  const gap=(entry!=null&&exit!=null)?Math.abs(entry-exit):0.6, half=Math.max(0.15, gap/2);
+  const conf=(entry!=null&&exit!=null)?(gap<0.5?'high':'medium'):'low';
+  return {off, lo:off-half, hi:off+half, conf, parts};
+}
+function classZ(st){
+  if(!st || st.studentAvg==null || st.classAvg==null) return null;
+  let sd=null;
+  if(st.hi!=null && st.lo!=null && st.hi>st.lo) sd=(st.hi-st.lo)/4;
+  if(!sd || sd<=0) sd=2.5;
+  return (st.studentAvg-st.classAvg)/sd;
+}
+function bridgeSubjectBand(st, uai, matiere, nGrades){
+  const zc=classZ(st); if(zc==null) return null;
+  const so=schoolOffset(uai, evalDiscipline(matiere));
+  const z=zc*BRIDGE_K + so.off;
+  const pct=(1-normCdf(z))*100;
+  // class-position uncertainty shrinks with the number of grades (~0.5/√n), clamped [0.08,0.30].
+  // 1 grade → ±0.30σ (honestly wide); a full term (~10) → ±0.16; many → ±0.08.
+  const n=Math.max(1, nGrades||1);
+  const classSlack=Math.min(0.30, Math.max(0.08, 0.5/Math.sqrt(n)));
+  const a=(1-normCdf(z+(so.hi-so.off)+classSlack))*100, b=(1-normCdf(z-(so.off-so.lo)-classSlack))*100;
+  return {pct, pctLo:Math.min(a,b), pctHi:Math.max(a,b), conf:so.conf, z, zc, off:so.off, n, classSlack};
+}
 // top-school horizon rungs, sorted hi→lo; moment ∈ prepa|univ-intl|lycee
 const HORIZON = [
     {label:"Heidelberg (Médecine, NC)", moment:"univ-intl", lo:18.5, hi:20.0, honesty:"reported", momentFr:"université post-bac (intl.)"},
@@ -1195,6 +1628,89 @@ function renderDashboard(root, data, palette, opts={}){
     });
   })();
 
+  (function drawBridge(){
+    const el = root.querySelector('.bridgeChart');
+    const onTrackEl = root.querySelector('.bridgeOnTrack');
+    const noteEl = root.querySelector('.bridgeNote');
+    if(!el) return;
+    const uai = opts.uai || null;
+    const ss = opts.subjectStats || {};
+    // measured anchors available this year (real eval item scores) -> top% per discipline
+    const nat = opts.natEval;
+    const measured = {};   // discipline -> best measured top% (lower=better); keep min across tests
+    if(nat && Array.isArray(nat.tests)){
+      nat.tests.forEach(t=>{
+        try{ const p = nat6TopPct(t.rates, t.max, t.seuilSat, t.natSatPct, t.score);
+          const disc = t.discipline==='maths' ? 'Mathématiques' : (t.discipline==='francais' ? 'Français' : null);
+          if(disc!=null && (measured[disc]==null || p<measured[disc])) measured[disc]=p;
+        }catch(e){}
+      });
+    }
+    // one row per subject that has class stats
+    const gradeCount = {};
+    data.forEach(d=>{ gradeCount[d.matiere]=(gradeCount[d.matiere]||0)+1; });
+    const rows = subjects.map(s=>{
+      const band = bridgeSubjectBand(ss[s], uai, s, gradeCount[s]||0);
+      if(!band) return null;
+      const disc = evalDiscipline(s);
+      return { s, band, disc, meas: disc ? measured[disc] : null };
+    }).filter(Boolean).sort((a,b)=> a.band.pct - b.band.pct);   // best (lowest top%) first
+    if(!rows.length){ if(onTrackEl) onTrackEl.textContent='Pas assez de données de classe pour estimer une position nationale.'; return; }
+
+    const confColor = { high:'#6ee7a8', medium:'#ffd27d', low:'#9aa3c0', none:'#9aa3c0' };
+    const confFr = { high:'confiance élevée', medium:'confiance moyenne', low:'confiance faible', none:'—' };
+    // floating bars = the [pctLo, pctHi] band; x axis is "top X% nationally" (reversed: left=best)
+    const data2 = rows.map(r=>[r.band.pctLo, r.band.pctHi]);
+    const bridgeChart = new Chart(el, {
+      type:'bar',
+      data:{ labels: rows.map(r=>r.s), datasets:[{
+        data: data2, backgroundColor: rows.map(r=>color(r.s)+'cc'),
+        borderColor: rows.map(r=>confColor[r.band.conf]), borderWidth:2, borderSkipped:false,
+        borderRadius:3, barPercentage:0.7
+      }]},
+      options:{ maintainAspectRatio:false, indexAxis:'y',
+        scales:{
+          x:{ min:0, max:100, reverse:true, grid:{color:'#2a3150'},
+              title:{display:true, text:'≈ top % national (gauche = mieux ; plage estimée)', color:'#9aa3c0', font:{size:11}},
+              ticks:{color:'#9aa3c0', callback:v=>'top '+v+'%'} },
+          y:{ grid:{display:false}, ticks:{color:'#e8ecf7', font:{size:11}} }
+        },
+        plugins:{ legend:{display:false},
+          tooltip:{callbacks:{ label:ctx=>{ const r=rows[ctx.dataIndex], b=r.band;
+            const out=[`estimation : top ${b.pctLo.toFixed(0)}–${b.pctHi.toFixed(0)}% national`,
+                      `(position classe z=${b.zc.toFixed(2)}, décalage collège +${b.off.toFixed(2)}σ, ${confFr[b.conf]})`];
+            if(r.meas!=null) out.push(`◆ mesuré (éval 6ᵉ) : ~top ${r.meas.toFixed(1)}%`);
+            return out; } }}
+        }
+      },
+      plugins:[{ id:'measMarker', afterDatasetsDraw(c){
+        const {ctx, scales:{x,y}} = c;
+        rows.forEach((r,i)=>{ if(r.meas==null) return;
+          const px=x.getPixelForValue(r.meas), py=y.getPixelForValue(i);
+          ctx.save(); ctx.fillStyle='#ffffff'; ctx.strokeStyle='#0f1220'; ctx.lineWidth=1.5;
+          ctx.beginPath(); ctx.moveTo(px,py-7); ctx.lineTo(px+7,py); ctx.lineTo(px,py+7); ctx.lineTo(px-7,py); ctx.closePath();
+          ctx.fill(); ctx.stroke(); ctx.restore();
+        });
+      }}]
+    });
+
+    // "on track" readout: overall coef-weighted blend of subject midpoints vs top-10–20% threshold
+    const mids = rows.map(r=>(r.band.pctLo+r.band.pctHi)/2);
+    const overall = mids.reduce((a,b)=>a+b,0)/mids.length;
+    const anyMeas = rows.some(r=>r.meas!=null);
+    const verdict = overall<=20
+      ? `<b style="color:#6ee7a8">Dans la zone des établissements sélectifs</b> (≈ top 10–20% national) sur l'estimation globale.`
+      : overall<=40
+      ? `<b style="color:#ffd27d">Au-dessus de la moyenne nationale</b>, un peu en-dessous de la zone des plus sélectifs (top&nbsp;10–20%).`
+      : `<b style="color:#9aa3c0">Autour de la moyenne nationale</b> sur cette estimation.`;
+    if(onTrackEl) onTrackEl.innerHTML = `Estimation globale ≈ <b>top ${overall.toFixed(0)}%</b> national (moyenne des matières). ${verdict}`;
+    if(noteEl) noteEl.innerHTML = `Méthode&nbsp;: position dans la classe (amortie ×${BRIDGE_K}) + décalage du collège vs national (éval 6ᵉ à l'entrée, DNB à la sortie), converti en percentile normal. `
+      + (anyMeas ? `Le losange ◆ est le <b>vrai</b> résultat d'évaluation (modèle bêta-binomial), à comparer à la plage estimée.` : `Aucun score d'évaluation réel cette année&nbsp;: tout est estimé.`)
+      + ` Les bordures de barre indiquent la confiance (vert = élevée, jaune = moyenne, gris = faible).`;
+    // expose for teardown
+    root.__bridgeChart = bridgeChart;
+  })();
+
   /* ---- Horizon: national positioning (left) + hedged school ladder (right) ----
      Honesty is the whole point. The national chart maps the child's own-level
      Français/Maths averages onto the NATIONAL début-6ᵉ distribution (/300 test,
@@ -1204,73 +1720,105 @@ function renderDashboard(root, data, palette, opts={}){
   (function drawHorizon(){
     const you = overallAvg(data);                       // same number as the "Weighted avg" tile
 
-    // === TOP: her position in the national 6ᵉ-test distribution (/300) ===
-    // Bell curve per subject from the national mean+SD; her result (NAT6_RESULT,
-    // filled from the official sheet) drawn as a marker with a z-score percentile.
-    // If only an ability band (1-6) is known, the marker sits at the band midpoint
-    // and is flagged approximate. The national test is a DIFFERENT instrument from
-    // the Pronote /20 — we never convert one into the other.
+    // === TOP: national 6ᵉ-eval — real per-test item score + modelled position ===
+    // One horizontal bar per test, x = item count (0→max). The three official zones
+    // (À besoins / Fragile / Satisfaisant) are drawn as coloured bands from the
+    // published item-count thresholds; the child's real score (counted from the QR
+    // sheets) is a bright marker. The "~top X%" beside it is a beta-binomial model
+    // calibrated on the DEPP per-item rates + the national %Satisfaisant — a model
+    // estimate, national (not IPS-specific), NOT a /300 z-score.
     const natTestEl = root.querySelector('.horizonNatTest');
     const natResultNote = root.querySelector('.natResultNote');
+    const natModelNote = root.querySelector('.natModelNote');
     const natTestRow = root.querySelector('.natTestRow');
-    // The only national distribution we hold is the début-6ᵉ eval, so this chart
-    // is shown ONLY on 6ᵉ data. Other years (e.g. 5ᵉ) have no matching national
-    // dataset yet — hide the row rather than draw a result on the wrong curve.
     const is6eme = /6\s*e|sixi/i.test(opts.level||'');
-    if(natTestRow) natTestRow.style.display = is6eme ? '' : 'none';
-    if(natTestEl && is6eme){
-      // band 1-6 → representative /300 score (midpoint of the band on the national scale)
-      const bandMid = (nat, band) => {
-        // split the /300 range into 6 equal slices around the mean±2.5sd span
-        const lo = nat.moy - 2.5*nat.sd, hi = nat.moy + 2.5*nat.sd, w=(hi-lo)/6;
-        return lo + w*(band-0.5);
-      };
-      const resolve = (nat, num, band) => {
-        if(num!=null) return {score:num, approx:false};
-        if(band!=null) return {score:bandMid(nat,band), approx:true, band};
-        return null;
-      };
-      const subs = [
-        {key:'Français', nat:NAT6.Francais, col:'#6ea8fe', r:resolve(NAT6.Francais, NAT6_RESULT.fr, NAT6_RESULT.frBand)},
-        {key:'Maths',    nat:NAT6.Maths,    col:'#2ecc9b', r:resolve(NAT6.Maths, NAT6_RESULT.maths, NAT6_RESULT.mathsBand)},
-      ];
-      // x domain spans both subjects
-      const xmin = Math.min(...subs.map(s=>s.nat.moy-2.6*s.nat.sd));
-      const xmax = Math.max(...subs.map(s=>s.nat.moy+2.6*s.nat.sd));
-      const N = 60, curve = (nat)=>{ const pts=[]; for(let i=0;i<=N;i++){ const x=xmin+(xmax-xmin)*i/N;
-        const y=Math.exp(-0.5*Math.pow((x-nat.moy)/nat.sd,2)); pts.push({x, y}); } return pts; };
-      const datasets = subs.map(s=>({
-        label:s.key, data:curve(s.nat), parsing:false, borderColor:s.col, borderWidth:2,
-        tension:0.35, pointRadius:0, fill:true, backgroundColor:hexA(s.col,0.08) }));
+    const nat = opts.natEval;
+    const haveNat = is6eme && nat && Array.isArray(nat.tests) && nat.tests.length;
+    if(natTestRow) natTestRow.style.display = (is6eme ? '' : 'none');
+    if(natTestEl && is6eme && haveNat){
+      // zone colours: À besoins (rose) → Fragile (amber) → Satisfaisant (green)
+      const Z = { besoins:'#e06c9f', fragile:'#ffd166', satis:'#2ecc9b' };
+      const DISC = { maths:'#6ea8fe', francais:'#c792ea' };
+      // normalise each test onto a shared 0→100% of its own max so bars are comparable
+      const rows = nat.tests.map(t=>{
+        const topPct = nat6TopPct(t.rates, t.max, t.seuilSat, t.natSatPct, t.score);
+        const b1 = t.cut ? t.cut[0] : Math.round(t.max*0.3);   // À besoins ≤ b1
+        const b2 = t.cut ? t.cut[1] : (t.seuilSat-1);          // Fragile ≤ b2
+        return { ...t, topPct, b1, b2 };
+      });
+      const labels = rows.map(r=>r.label);
+      // stacked segments expressed as fraction of max (so every bar is full-width)
+      const seg = (r,a,b)=> Math.max(0,(b-a))/r.max*100;
+      const dsBesoins = { label:'À besoins', backgroundColor:Z.besoins, data:rows.map(r=>seg(r,0,r.b1)), stack:'z', borderWidth:0, barPercentage:0.5, categoryPercentage:0.9, base:0 };
+      const dsFragile = { label:'Fragile', backgroundColor:Z.fragile, data:rows.map(r=>seg(r,r.b1,r.b2)), stack:'z', borderWidth:0, barPercentage:0.5, categoryPercentage:0.9 };
+      const dsSatis   = { label:'Satisfaisant', backgroundColor:Z.satis, data:rows.map(r=>seg(r,r.b2,r.max)), stack:'z', borderWidth:0, barPercentage:0.5, categoryPercentage:0.9 };
       new Chart(natTestEl, {
-        type:'line', data:{datasets},
-        options:{ maintainAspectRatio:false, interaction:{mode:'nearest'},
+        type:'bar',
+        data:{ labels, datasets:[dsBesoins, dsFragile, dsSatis] },
+        options:{ maintainAspectRatio:false, indexAxis:'y',
+          layout:{padding:{right:92, top:4}},
           scales:{
-            x:{type:'linear', min:xmin, max:xmax, grid:{color:'#2a3150'},
-               ticks:{color:'#9aa3c0', callback:v=>Math.round(v)}, title:{display:true,text:'score /300',color:'#9aa3c0'}},
-            y:{display:false, min:0, max:1.05}
+            x:{ stacked:true, min:0, max:100, grid:{color:'#2a3150'},
+                ticks:{color:'#9aa3c0', callback:v=>v+'%'},
+                title:{display:true, color:'#9aa3c0', text:'barre = position dans le test (0→max, zones officielles) · ligne = percentile national (◆)'} },
+            y:{ stacked:true, grid:{display:false}, ticks:{color:'#e8ecf7', font:{size:11}} }
           },
-          plugins:{ legend:{display:true, labels:{color:'#e8ecf7'}},
-            tooltip:{enabled:false} }},
-        plugins:[{ id:'natmarkers', afterDraw(c){
-          const xs=c.scales.x, a=c.chartArea, ctx=c.ctx;
-          subs.forEach(s=>{ if(!s.r) return; const px=xs.getPixelForValue(s.r.score);
-            const z=(s.r.score-s.nat.moy)/s.nat.sd, top=Math.max(1,Math.min(99,Math.round((1-normCdf(z))*100)));
-            ctx.save(); ctx.strokeStyle=s.col; ctx.lineWidth=2.5; ctx.setLineDash(s.r.approx?[4,3]:[]);
-            ctx.beginPath(); ctx.moveTo(px,a.top+6); ctx.lineTo(px,a.bottom); ctx.stroke();
-            ctx.setLineDash([]); ctx.fillStyle=s.col; ctx.font='bold 11px sans-serif';
-            ctx.textAlign = px>(a.left+a.right)/2?'right':'left';
-            ctx.fillText(`★ ${s.key} ~top ${top}%${s.r.approx?' (approx.)':''}`, px+(ctx.textAlign==='right'?-5:5), a.top+16);
-            ctx.restore(); });
+          plugins:{ legend:{display:true, labels:{color:'#e8ecf7', boxWidth:12, font:{size:11}}},
+            tooltip:{callbacks:{
+              title:items=>rows[items[0].dataIndex].label,
+              label:ctx=>{ const r=rows[ctx.dataIndex];
+                return [`Score de ${nat.eleve||'l’élève'} : ${r.score}/${r.max}  ·  ${nat6Band(r.score,r.max,r.seuilSat)}`,
+                  `Seuil « Satisfaisant » : ≥ ${r.seuilSat}/${r.max}`,
+                  `Position estimée : ~top ${r.topPct<1?r.topPct.toFixed(2):r.topPct.toFixed(1)}% (≈ ${(100-r.topPct).toFixed(r.topPct<1?2:1)}e percentile national)`]; }
+            }}
+          }},
+        plugins:[{ id:'natscore', afterDraw(c){
+          const xs=c.scales.x, ys=c.scales.y, ctx=c.ctx, area=c.chartArea;
+          const rowH = ys.height/rows.length;
+          const barHalf = rowH*0.5*0.5*0.9;   // matches barPercentage*categoryPercentage
+          rows.forEach((r,i)=>{
+            const frac = r.score/r.max*100, px=xs.getPixelForValue(frac);
+            const yc = ys.getPixelForValue(i);
+            // bar sits centred on yc; nudge the score marker to the bar's vertical span
+            const bTop = yc - barHalf, bBot = yc + barHalf;
+            ctx.save();
+            // --- score marker on the zone bar ---
+            ctx.strokeStyle='#0b0f1e'; ctx.lineWidth=4; ctx.beginPath();
+            ctx.moveTo(px, bTop); ctx.lineTo(px, bBot); ctx.stroke();
+            ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.beginPath();
+            ctx.moveTo(px, bTop); ctx.lineTo(px, bBot); ctx.stroke();
+            ctx.fillStyle='#0b0f1e'; ctx.font='bold 11px sans-serif'; ctx.textBaseline='middle';
+            ctx.textAlign = frac>12?'right':'left';
+            ctx.fillText(`${r.score}/${r.max}`, px+(frac>12?-6:6), yc);
+            // --- percentile lane just below the bar ---
+            const laneY = bBot + 11, pctile = Math.max(0, Math.min(100, 100 - r.topPct));
+            const lpx = xs.getPixelForValue(pctile);
+            ctx.strokeStyle='#3a4266'; ctx.lineWidth=2; ctx.beginPath();
+            ctx.moveTo(area.left, laneY); ctx.lineTo(area.right, laneY); ctx.stroke();
+            // tick at 0 and 100
+            ctx.fillStyle='#6b7398'; ctx.font='9px sans-serif'; ctx.textBaseline='middle';
+            ctx.textAlign='left';  ctx.fillText('0', area.left-2, laneY+9);
+            ctx.textAlign='right'; ctx.fillText('100e', area.right+2, laneY+9);
+            // diamond at the child's percentile
+            ctx.fillStyle='#ffd166'; ctx.strokeStyle='#0b0f1e'; ctx.lineWidth=1;
+            const d=5; ctx.beginPath();
+            ctx.moveTo(lpx, laneY-d); ctx.lineTo(lpx+d, laneY); ctx.lineTo(lpx, laneY+d); ctx.lineTo(lpx-d, laneY); ctx.closePath();
+            ctx.fill(); ctx.stroke();
+            // --- "~top X%" to the right of the plot (aligned to the diamond) ---
+            const pct = r.topPct<1 ? r.topPct.toFixed(2) : r.topPct.toFixed(1);
+            ctx.fillStyle='#ffd166'; ctx.font='bold 12px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
+            ctx.fillText(`~top ${pct}%`, area.right+8, yc);
+            ctx.restore();
+          });
         }}]
       });
-      // notes
-      const have = subs.some(s=>s.r);
-      if(natResultNote){
-        natResultNote.textContent = have
-          ? (subs.some(s=>s.r&&s.r.approx) ? 'position indicative (bande seule — pas le score exact)' : `réf. nationale ${NAT6.year}`)
-          : '⚠ résultat de l’enfant pas encore saisi — renseigne NAT6_RESULT quand tu as la feuille';
-      }
+      if(natResultNote) natResultNote.textContent =
+        `${nat.eleve||''}${nat.school?.nom?' · '+nat.school.nom:''}  (réf. nationale ${NAT6.year})`.trim();
+      if(natModelNote) natModelNote.textContent =
+        'Score = comptage réel par question (fiches détaillées). « ~top X% » = estimation modèle (beta-binomial calé sur les taux de réussite par item + le % national « Satisfaisant » de la DEPP), au niveau national — en contexte IPS élevé, la position relative aux pairs est un peu moins extrême.';
+    } else if(natTestEl && is6eme && !haveNat){
+      if(natResultNote) natResultNote.textContent = '⚠ résultats non chargés';
+      if(natModelNote) natModelNote.textContent = 'Charge la feuille « réponses détaillées » de l’éval nationale dans les Réglages pour voir la position par test.';
     }
 
     // === LEFT: national positioning — only the HONEST /20→national bridge ===
@@ -1453,26 +2001,287 @@ function renderDashboard(root, data, palette, opts={}){
       if(amFilter) amFilter.addEventListener('input', buildAM); }
   })();
 
+
   return { chart, barChart, radarChart, standingChart,
     destroy(){ [chart,barChart,radarChart,standingChart].forEach(c=>c&&c.destroy&&c.destroy());
-      [root.querySelector('.horizonNatTest'),root.querySelector('.horizonNat'),root.querySelector('.horizonLadder'),root.querySelector('.amLycees')].forEach(el=>{ const c=el&&Chart.getChart(el); if(c)c.destroy(); }); } };
+      [root.querySelector('.horizonNatTest'),root.querySelector('.horizonNat'),root.querySelector('.horizonLadder'),root.querySelector('.amLycees'),root.querySelector('.bridgeChart')].forEach(el=>{ const c=el&&Chart.getChart(el); if(c)c.destroy(); }); } };
+}
+
+// Full-page Planning-the-Future view (rendered into a kid's holder when the
+// "Planning the future" pseudo-year is selected, replacing the grade dashboard).
+// Self-contained: no renderDashboard closure deps. Reuses the scoring/search/fetch fns.
+function futOverallAvg(rows, method){
+  if(!rows || !rows.length) return null;
+  if(method==='pool'){ const earned=rows.reduce((s,d)=>s+d.valeur*d.coef,0), poss=rows.reduce((s,d)=>s+d.noteSur*d.coef,0); return poss>0?earned/poss*20:null; }
+  const w=rows.reduce((s,d)=>s+d.coef,0); return w>0 ? rows.reduce((s,d)=>s+(d.norm!=null?d.norm:(d.valeur/d.noteSur*20))*d.coef,0)/w : null;
+}
+function renderFuture(holder, data, opts){
+    const card = holder.querySelector('.future-card'); if(!card) return;
+    const searchEl = card.querySelector('.futSearch');
+    const stateEl  = card.querySelector('.futState');
+    const resEl    = card.querySelector('.futResults');
+    const projEl   = card.querySelector('.futProjection');
+    const top10El  = card.querySelector('.futTop10List');
+    const top10Lbl = card.querySelector('.futTop10Metric');
+    const methodEl = card.querySelector('.futMethod');
+    const scopeEl  = card.querySelector('.futScope');
+    const fieldEl  = card.querySelector('.futField');
+    const discEl   = card.querySelector('.futDisc');
+    const leadersEl= card.querySelector('.futLeaders');
+    const commEl   = card.querySelector('.futCommentary');
+
+    const subjects = [...new Set(data.map(d=>d.matiere))];
+    const you = futOverallAvg(data, opts.method);
+    const bo = bridgeOverallTopPct(data, subjects, opts);
+    const proj = projectMention(you, bo ? bo.pct : null, bo ? bo.conf : null);
+    const kid = { dep:null };
+    // department: prefer the school block, else derive from the UAI prefix (first 3 digits =
+    // zero-padded dept code: 0062011D -> "06"). uai is reliably present via SCHOOLS map.
+    if(opts.school && opts.school.departement) kid.dep = String(opts.school.departement).padStart(2,'0');
+    else if(opts.uai && /^\d{3}/.test(opts.uai)){ const p=opts.uai.slice(0,3); kid.dep = p[0]==='0' ? p.slice(1) : p; }
+
+    (function(){
+      const v = proj.vector, pctP = m=>Math.round(v[m]*100);
+      const confFr = {high:'confiance élevée', medium:'confiance moyenne', low:'confiance faible'}[proj.conf] || '—';
+      const natTxt = proj.pctNational!=null ? ` · position nationale estimée ≈ top ${proj.pctNational.toFixed(0)}%` : '';
+      projEl.innerHTML = `Votre enfant vise, moyenne actuelle <b>${you.toFixed(1)}/20</b> → mention probable au bac (projection) : `
+        + `<b>${MENTION_LABEL[proj.modal]}</b> <span style="color:var(--muted)">`
+        + `(TB ${pctP('tb')}% · B ${pctP('b')}% · AB ${pctP('ab')}% · sans ${pctP('sans')}%, ${confFr})</span>${natTxt}. `
+        + `<i>Projection depuis une moyenne pré-bac — forte hypothèse, contexte seulement.</i>`;
+    })();
+
+    let level = 'lycee';   // default entry point: lycée (kids are in 5e/6e)
+    let ctrl = null;
+
+    const bandFr = {green:'solide', amber:'moyen', red:'faible', grey:'bruité'};
+    const compLabel = { honors:'mentions', va:'valeur ajoutée', access:'accès 2de→bac', sel:'sélectivité', career:'carrière' };
+    function pill(c){
+      const lab = c.pct==null ? '—' : (c.noisy ? 'petit effectif' : c.pct + '/100');
+      return `<span style="display:inline-block;min-width:66px;text-align:center;padding:2px 8px;border-radius:999px;`
+        + `background:${c.color}22;color:${c.color};border:1px solid ${c.color};font-weight:600;font-size:12px">${lab}</span>`
+        + `<span style="color:var(--muted);font-size:11px;margin-left:6px">${bandFr[c.band]}</span>`;
+    }
+    function breakdown(c, lvl){
+      const order = lvl==='lycee' ? ['honors','va','access'] : ['sel','honors','career'];
+      const parts = order.map(k=>{
+        if(k in c.comps) return `<span style="color:var(--muted)">${compLabel[k]}</span> ${Math.round(c.comps[k])}`;
+        if(lvl==='univ' && k==='career') return `<span style="color:var(--muted)">carrière — <i>(non appariée)</i></span>`;
+        return null;
+      }).filter(Boolean);
+      return parts.join(' · ');
+    }
+    function strengthChips(c){
+      const entries = Object.keys(c.comps).map(k=>[k,c.comps[k]]).sort((a,b)=>b[1]-a[1]);
+      if(!entries.length) return '';
+      const top = entries.slice(0, entries[1] && entries[0][1]-entries[1][1]<8 ? 2 : 1);
+      return top.map(e=>`<span style="font-size:10px;background:#2a3150;color:#c9d2f0;border-radius:5px;padding:1px 6px;margin-right:4px">💪 ${compLabel[e[0]]}</span>`).join('');
+    }
+    // human-readable "how is this /100 computed" for one row (raw inputs → sub-scores → weighted blend)
+    function futExplain(row, c){
+      const L = {honors:'mentions', va:'valeur ajoutée', access:'accès 2de→bac', sel:'sélectivité', career:'carrière'};
+      const lines = [];
+      if(row.level==='lycee'){
+        const tb=row.admit?(row.admit.tb||0):0, men=tb+(row.admit?(row.admit.b||0)+(row.admit.ab||0):0);
+        const tbShare = men>0 ? tb/men : 0;
+        if('honors' in c.comps) lines.push(`<b>mentions</b> = taux ${row.taux_men}% × (0,85 + 0,30 × part TB ${(tbShare*100).toFixed(0)}%) = <b>${Math.round(c.comps.honors)}</b>/100 <span style="color:var(--muted)">(TB ${tb} · B ${row.admit?row.admit.b:0} · AB ${row.admit?row.admit.ab:0})</span>`);
+        if('access' in c.comps) lines.push(`<b>accès 2de→bac</b> = ${row.acces2nde}% → <b>${Math.round(c.comps.access)}</b>/100`);
+        if('va' in c.comps){ const vp=[row.va,row.vaReu].filter(v=>v!=null); lines.push(`<b>valeur ajoutée</b> = indice de VA moy. ${(vp.reduce((a,b)=>a+b,0)/vp.length).toFixed(0)} pts → <b>${Math.round(c.comps.va)}</b>/100`); }
+        else lines.push(`<b>valeur ajoutée</b> : non publiée → terme retiré, poids redistribués`);
+      } else {
+        if('sel' in c.comps) lines.push(`<b>sélectivité</b> = 100 − taux d'accès ${row.taux_acces}% = <b>${Math.round(c.comps.sel)}</b>/100`);
+        if('honors' in c.comps) lines.push(`<b>mentions cohorte</b> = (TB ${row.admit.tb} + B ${row.admit.b}) / ${row.cohort} admis = <b>${Math.round(c.comps.honors)}</b>/100`);
+        if('career' in c.comps) lines.push(`<b>carrière</b> = emploi ${row.career.emp!=null?row.career.emp+'%':'—'} × indice salaire (médiane ${row.career.sal!=null?row.career.sal+'€':'—'}) = <b>${Math.round(c.comps.career)}</b>/100`);
+        else lines.push(`<b>carrière</b> : non appariée (insertion master) → terme retiré, poids redistribués`);
+      }
+      // show the weighted blend with renormalized weights
+      const keys=Object.keys(c.weights), wsum=keys.reduce((s,k)=>s+c.weights[k],0);
+      const terms = keys.map(k=>`${Math.round(c.weights[k]/wsum*100)}%×${Math.round(c.comps[k])}`);
+      lines.push(`<b>score</b> = ${terms.join(' + ')} = <b>${c.pct}/100</b> <span style="color:var(--muted)">(poids renormalisés sur les termes présents)</span>`);
+      return lines.map(l=>`<div style="margin:2px 0">${l}</div>`).join('');
+    }
+    function rowCard(row, rank){
+      const c = row._composite || (row._composite = compositeScore(row, row.level));
+      const metric = row.metric!=null ? row.metricFmt(row.metric) : '—';
+      const sub = [row.program, row.place, row.depLib].filter(Boolean).join(' · ');
+      const rk = rank!=null ? `<b style="color:var(--muted);margin-right:8px">#${rank}</b>` : '';
+      const fb = row._fallback ? ' <span style="color:var(--muted);font-size:10px">(hors-ligne: AM)</span>' : '';
+      return `<div style="padding:7px 10px;background:var(--bg);border:1px solid var(--line);border-radius:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rk}${row.name||'?'}${fb}</div>
+            <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sub}</div>
+            <div style="font-size:11px;margin-top:2px">${breakdown(c, row.level)}</div>
+            <div style="margin-top:3px">${strengthChips(c)}</div>
+          </div>
+          <div style="text-align:right;white-space:nowrap">
+            <div style="font-size:11px;color:var(--muted)">${row.metricLabel}: <b>${metric}</b></div>
+            <div style="margin-top:3px">${pill(c)}</div>
+          </div>
+        </div>
+        <details style="margin-top:5px">
+          <summary style="font-size:11px;color:var(--muted);cursor:pointer">ⓘ détail du calcul</summary>
+          <div style="font-size:11px;margin-top:4px;padding:6px 8px;background:var(--panel,#0f1220);border-radius:6px;line-height:1.5">${futExplain(row, c)}</div>
+        </details>
+      </div>`;
+    }
+    function scoreAll(rows){ rows.forEach(r=> r._composite = compositeScore(r, r.level)); return rows; }
+    function rankSort(rows){ return rows.slice().sort((a,b)=> (b._composite.pct==null?-1:b._composite.pct) - (a._composite.pct==null?-1:a._composite.pct)); }
+
+    function renderRows(container, rows, ranked){
+      if(!rows.length){ container.innerHTML = `<div class="legend-note" style="color:var(--muted)">Aucun résultat.</div>`; return; }
+      container.innerHTML = rows.map((r,i)=> rowCard(r, ranked ? i+1 : null)).join('');
+    }
+    function renderGrouped(container, rows){
+      if(!rows.length){ container.innerHTML = `<div class="legend-note" style="color:var(--muted)">Aucun résultat.</div>`; return; }
+      const byField = {};
+      rows.forEach(r=>{ const f=r.field||'Autre'; (byField[f]=byField[f]||[]).push(r); });
+      container.innerHTML = Object.keys(byField).sort().map(f=>{
+        const top = rankSort(byField[f]).slice(0,5);
+        return `<div style="margin:0 0 10px"><div class="legend-note" style="font-weight:600;margin:0 0 4px">${f}</div>`
+          + top.map((r,i)=>rowCard(r,i+1)).join('') + `</div>`;
+      }).join('');
+    }
+
+    function categoryLeaders(rows){
+      if(!rows.length){ leadersEl.innerHTML=''; return; }
+      let academic, valueAdder;
+      if(level==='lycee'){
+        academic = rows.slice().sort((a,b)=>(b.taux_men||-1)-(a.taux_men||-1))[0];
+        valueAdder = rows.filter(r=>r.va!=null).sort((a,b)=>b.va-a.va)[0];
+      } else {
+        academic = rows.slice().sort((a,b)=>((b._composite.comps.sel||-1))-((a._composite.comps.sel||-1)))[0];
+        valueAdder = rows.filter(r=>r.career && r.career.matched).sort((a,b)=>b.career.score-a.career.score)[0]
+          || rows.slice().sort((a,b)=>((b._composite.comps.honors||-1))-((a._composite.comps.honors||-1)))[0];
+      }
+      const cardHtml=(title,r,extra)=> r ? `<div style="flex:1;min-width:200px;padding:8px 10px;background:var(--bg);border:1px solid var(--line);border-radius:8px">
+        <div class="legend-note" style="font-weight:600;margin:0 0 2px">${title}</div>
+        <div style="font-size:12px">${r.name||'?'} <span style="color:var(--muted)">${extra}</span></div></div>` : '';
+      const vaExtra = level==='lycee'
+        ? (valueAdder?`VA ${valueAdder.va>=0?'+':''}${valueAdder.va}`:'')
+        : (valueAdder&&valueAdder.career&&valueAdder.career.matched?`carrière ${Math.round(valueAdder.career.score)}/100`:'');
+      leadersEl.innerHTML = `<div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 10px">`
+        + cardHtml('🏅 Meilleur résultat brut', academic, level==='lycee'?`mentions ${academic?academic.taux_men:''}%`:`accès ${academic?academic.taux_acces:''}%`)
+        + cardHtml('📈 Meilleure valeur ajoutée', valueAdder, vaExtra) + `</div>`;
+    }
+
+    function commentary(rankedRows){
+      if(!rankedRows.length){ commEl.innerHTML=''; return; }
+      const notes=[];
+      const raw = r=> level==='lycee' ? (r.taux_men||0) : (100-(r.taux_acces!=null?r.taux_acces:100));
+      const med = rankedRows.map(raw).sort((a,b)=>a-b)[Math.floor(rankedRows.length/2)];
+      const top = rankedRows[0];
+      if(top && raw(top) < med) notes.push(`${top.name} domine le classement pondéré sans avoir le meilleur résultat brut — c'est sa valeur ajoutée / carrière qui le porte.`);
+      if(level==='univ'){
+        const matched = rankedRows.filter(r=>r.career && r.career.matched).length;
+        if(matched < rankedRows.length*0.3) notes.push(`Donnée carrière appariée pour seulement ${matched}/${rankedRows.length} formations — le terme carrière (40%) est souvent neutralisé, les scores ne sont donc pas tous comparables.`);
+      }
+      commEl.innerHTML = notes.length ? `<b>Lecture&nbsp;:</b> ${notes.join(' ')} <i>(repères indicatifs)</i>` : '';
+    }
+
+    function populateDisciplines(){
+      if(level!=='univ' || !fieldEl || !fieldEl.value){ if(discEl){ discEl.innerHTML='<option value="">— discipline —</option>'; discEl.disabled=true; } return; }
+      discEl.disabled=false; discEl.innerHTML='<option value="">toutes disciplines</option>';
+      const where = encodeURIComponent('fili="'+fieldEl.value+'"');
+      const url = FUT_API + '/' + DS_PARCOURSUP + '/records?select=fil_lib_voe_acc&group_by=fil_lib_voe_acc&where=' + where + '&limit=60';
+      futFetch(url).then(recs=>{ recs.map(r=>r.fil_lib_voe_acc).filter(Boolean).sort().forEach(d=>{ const o=document.createElement('option'); o.value=d; o.textContent=d; discEl.appendChild(o); }); }).catch(()=>{});
+    }
+
+    function maybeCareer(rows){
+      if(level!=='univ') return Promise.resolve();
+      const url = futCareerBuildQuery(rows);
+      if(!url) return Promise.resolve();
+      return futFetch(url, ctrl.signal).then(recs=> futJoinCareer(rows, recs)).catch(()=> rows);
+    }
+
+    function runSearch(q){
+      if(ctrl) ctrl.abort(); ctrl = new AbortController();
+      if(!q || q.length<2){ resEl.innerHTML=''; stateEl.textContent=''; return; }
+      stateEl.textContent = 'Recherche…';
+      const fF = level==='univ'&&fieldEl?fieldEl.value:'' , dF = level==='univ'&&discEl?discEl.value:'';
+      const url = futBuildQuery(level, q, scopeEl.value, kid, 0, fF, dF);
+      futFetch(url, ctrl.signal)
+        .then(recs=>{ let rows = recs.map(r=>futNormalize(level,r)); if(level==='lycee') rows = futDedupLycee(rows);
+          return maybeCareer(rows).then(()=>{ scoreAll(rows); stateEl.textContent = rows.length? '' : 'Aucun résultat.'; renderRows(resEl, rankSort(rows), false); }); })
+        .catch(err=>{
+          if(err.name==='AbortError') return;
+          if(level==='lycee'){ stateEl.innerHTML = '⚠ données indisponibles hors-ligne — repli sur les lycées Alpes-Maritimes connus.'; const rows=scoreAll(futAmFallbackRows(q)); renderRows(resEl, rankSort(rows), false); }
+          else { stateEl.innerHTML = '⚠ données indisponibles hors-ligne (recherche université nécessite une connexion).'; resEl.innerHTML=''; }
+        });
+    }
+
+    function runTop10(){
+      const fF = level==='univ'&&fieldEl?fieldEl.value:'' , dF = level==='univ'&&discEl?discEl.value:'';
+      top10Lbl.textContent = level==='univ'
+        ? (fF ? `${fF}${dF?' · '+dF:''} — classement pondéré` : 'classement pondéré par domaine')
+        : 'lycées sélectifs — classement pondéré';
+      if(ctrl) ctrl.abort(); ctrl = new AbortController();
+      // univ pool bigger so grouped-by-field (top-5 per filière) + national ranking have depth.
+      // API hard-caps limit at 100.
+      const url = futBuildQuery(level, '', scopeEl.value, kid, 100, fF, dF);
+      futFetch(url, ctrl.signal)
+        .then(recs=>{ let rows = recs.map(r=>futNormalize(level,r));
+          if(level==='lycee') rows = futDedupLycee(rows);
+          return maybeCareer(rows).then(()=>{
+            scoreAll(rows);
+            const grouped = level==='univ' && !fF;
+            if(grouped){ renderGrouped(top10El, rows); const rk=rankSort(rows); categoryLeaders(rk); commentary(rk.slice(0,15)); }
+            else { const ranked = rankSort(rows).slice(0,10); renderRows(top10El, ranked, true); categoryLeaders(ranked); commentary(ranked); }
+          });
+        })
+        .catch(err=>{
+          if(err.name==='AbortError') return;
+          if(level==='lycee'){ const rows=scoreAll(futAmFallbackRows('')); const ranked=rankSort(rows).slice(0,10); renderRows(top10El, ranked, true); categoryLeaders(ranked); commentary(ranked); }
+          else { top10El.innerHTML = `<div class="legend-note" style="color:var(--muted)">Classement indisponible hors-ligne.</div>`; leadersEl.innerHTML=''; commEl.innerHTML=''; }
+        });
+    }
+
+    function setMethod(){
+      const lw = `lycée : ${Math.round(CW_LYCEE.honors*100)}% mentions (pondérées par la part de Très Bien) + ${Math.round(CW_LYCEE.access*100)}% accès 2de→bac + ${Math.round(CW_LYCEE.va*100)}% valeur ajoutée`;
+      const uw = `université : ${Math.round(CW_UNIV.sel*100)}% sélectivité + ${Math.round(CW_UNIV.honors*100)}% mentions de la cohorte + ${Math.round(CW_UNIV.career*100)}% carrière (emploi × salaire)`;
+      const lyceeFraming = level==='lycee'
+        ? `<b>⚠ Ce classement privilégie les résultats bruts / le prestige</b> — il reflète donc en partie le <b>profil social des élèves à l'entrée</b> (les grands lycées plafonnent en valeur ajoutée). Pour « ce que le lycée <i>apporte</i> » indépendamment du public (le critère le plus honnête), la <b>valeur ajoutée</b> est ici pondérée plus bas&nbsp;: voir le panneau <b>lycées IVAL</b> (onglet d'une année) classé en valeur ajoutée. `
+        : '';
+      methodEl.innerHTML = lyceeFraming
+        + `<b>Classement selon métriques officielles pondérées</b> (score /100), pas une probabilité d'admission. Pondérations — ${lw} ; ${uw}. `
+        + `Un terme manquant est retiré et les autres renormalisés. Le salaire est normalisé entre ${SAL_FLOOR}€ et ${SAL_CEIL}€ (choix arbitraire). `
+        + `L'appariement carrière (${DS_INSERTION_MASTER}, niveau <b>master</b>) est approximatif — code établissement composante vs université mère — et c'est un proxy <b>très lointain</b> pour un collégien (ce sont les débouchés des diplômés de master de l'université, pas ceux de l'enfant). `
+        + `Sources : Parcoursup, IVAL lycées (data.education.gouv.fr), insertion master (data.enseignementsup-recherche.gouv.fr).`;
+    }
+
+    const debSearch = debounce(()=>runSearch(searchEl.value.trim()), 350);
+    searchEl.addEventListener('input', debSearch);
+    scopeEl.addEventListener('change', ()=>{ runTop10(); if(searchEl.value.trim()) runSearch(searchEl.value.trim()); });
+    if(fieldEl) fieldEl.addEventListener('change', ()=>{ populateDisciplines(); runTop10(); if(searchEl.value.trim()) runSearch(searchEl.value.trim()); });
+    if(discEl) discEl.addEventListener('change', ()=>{ runTop10(); if(searchEl.value.trim()) runSearch(searchEl.value.trim()); });
+    function syncLevelUI(){ const u = card.querySelector('.futUnivControls'); if(u) u.style.display = level==='univ' ? '' : 'none'; }
+    card.querySelectorAll('.futLevel').forEach(r=> r.addEventListener('change', e=>{ if(e.target.checked){ level=e.target.value; syncLevelUI(); setMethod(); resEl.innerHTML=''; searchEl.value=''; stateEl.textContent=''; populateDisciplines(); runTop10(); } }));
+
+    syncLevelUI();
+    setMethod();
+    populateDisciplines();
+    runTop10();
 }
 
 /* ===================================================================
    Loader: files -> grouped by child -> tabs; years/levels -> buttons
    =================================================================== */
 const tpl = document.getElementById('dashTemplate');
+const futureTpl = document.getElementById('futureTemplate');
 // store = { child: { label, years:[ {key,label,data,palette,count} ], active, handle, area, panel, tabBtn } }
 const store = {};
 let activeChild = null;
 
-function addDataset(meta, data, subjectStats, method){
+function addDataset(meta, data, subjectStats, method, natEval, school){
   const child = meta.child;
   if(!store[child]) store[child] = { label:child, years:[], handle:null, area:null, panel:null, tabBtn:null, year:null, thin:false };
   const key = (meta.level||'')+(meta.year?('_'+meta.year):'') || ('set'+(store[child].years.length+1));
   // replace if same key reloaded
   const existing = store[child].years.findIndex(y=>y.key===key);
-  const entry = { key, label: meta.label, level:meta.level, year:meta.year, data, subjectStats:subjectStats||{}, method:method||'per20', palette:paletteFor(data), count:data.length };
+  // national-eval: explicit file block wins, else inline per-child fallback
+  const nat = natEval || NAT6_ITEMS[child] || null;
+  // school/UAI: file block wins, else child->UAI map (same fallback pattern as natEval)
+  const uai = (school && school.uai) || SCHOOLS[child] || null;
+  const entry = { key, label: meta.label, level:meta.level, year:meta.year, data, subjectStats:subjectStats||{}, method:method||'per20', palette:paletteFor(data), count:data.length, natEval:nat, school:school||null, uai };
   if(existing>=0) store[child].years[existing]=entry; else store[child].years.push(entry);
   // sort years chronologically by year string then level
   store[child].years.sort((a,b)=> (a.year||'').localeCompare(b.year||'') || (a.level||'').localeCompare(b.level||''));
@@ -1505,10 +2314,13 @@ function rebuildUI(){
     panelsEl.appendChild(panel);
     c.panel=panel; c.holder=holder; c.yearbar=yearbar;
 
-    if(!c.year || !c.years.find(y=>y.key===c.year)) c.year = c.years[c.years.length-1].key; // default to latest
+    // default to latest real year (never the Planning pseudo-year)
+    if(!c.year || (c.year!=='__future__' && !c.years.find(y=>y.key===c.year))) c.year = c.years[c.years.length-1].key;
+    // yearbar = real years, then a "Planning the future" pseudo-year forced rightmost.
     yearbar.innerHTML = c.years.map(y=>
-      `<button data-key="${y.key}" class="${y.key===c.year?'active':''}">${y.label} <span class="cnt">${y.count}</span></button>`).join('');
-    yearbar.querySelectorAll('button').forEach(b=>b.onclick=()=>{ c.year=b.dataset.key; renderChild(child); });
+      `<button data-key="${y.key}" class="${y.key===c.year?'active':''}">${y.label} <span class="cnt">${y.count}</span></button>`).join('')
+      + `<button data-key="__future__" class="future-year${c.year==='__future__'?' active':''}">🎓 Planning the future</button>`;
+    yearbar.querySelectorAll('button[data-key]').forEach(b=>b.onclick=()=>{ c.year=b.dataset.key; renderChild(child); });
 
     if(child===activeChild) renderChild(child);
   });
@@ -1528,12 +2340,24 @@ function rebuildUI(){
 
 function renderChild(child){
   const c=store[child];
-  // mark active year button
-  c.yearbar.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.key===c.year));
-  if(c.handle){ c.handle.destroy(); c.holder.innerHTML=''; }
-  const area=document.createElement('div'); area.appendChild(tpl.content.cloneNode(true)); c.holder.appendChild(area);
+  // mark active year button (incl. the "__future__" pseudo-year)
+  c.yearbar.querySelectorAll('button[data-key]').forEach(b=>b.classList.toggle('active', b.dataset.key===c.year));
+  if(c.handle){ c.handle.destroy && c.handle.destroy(); c.handle=null; }
+  c.holder.innerHTML='';   // always clear — the Planning view sets no c.handle, so it would otherwise stack
+  const area=document.createElement('div'); c.holder.appendChild(area); c.area=area;
+
+  // Planning-the-Future pseudo-year: render the full confidence view instead of the dashboard.
+  if(c.year==='__future__'){
+    area.appendChild(futureTpl.content.cloneNode(true));
+    // use the kid's most-recent real year for the projection ("current trajectory")
+    const latest = c.years[c.years.length-1];
+    renderFuture(area, latest.data, {subjectStats: latest.subjectStats, method: latest.method, level: latest.level, natEval: latest.natEval, uai: latest.uai, school: latest.school});
+    return;
+  }
+
+  area.appendChild(tpl.content.cloneNode(true));
   const y=c.years.find(x=>x.key===c.year);
-  c.handle = renderDashboard(area, y.data, y.palette, {subjectStats: y.subjectStats, method: y.method, allYears: c.years, level: y.level});
+  c.handle = renderDashboard(area, y.data, y.palette, {subjectStats: y.subjectStats, method: y.method, allYears: c.years, level: y.level, natEval: y.natEval, uai: y.uai, school: y.school});
 }
 
 /* ---------- Settings tab: published-data pull + manual file load (no server) ---------- */
@@ -1611,10 +2435,10 @@ function saveRecords(name, records, stats, method){
 function ingest(name, text, persist){
   try{
     const json=JSON.parse(text);
-    const {source,data,subjectStats,method}=parseFile(json);
+    const {source,data,subjectStats,method,natEval,school}=parseFile(json);
     if(!data.length) throw new Error("no usable grades");
     const meta=parseName(name);
-    addDataset(meta, data, subjectStats, method);
+    addDataset(meta, data, subjectStats, method, natEval, school);
     if(persist) saveRecords(name, data, subjectStats, method);
     return `${meta.child} · ${meta.label} (${data.length}) — ${source}`;
   }catch(err){ return `⚠️ ${name}: ${err.message}`; }

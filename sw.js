@@ -6,7 +6,7 @@
      offline. The app ALSO keeps data in localStorage, so this is belt-and-braces.
 
    Bump CACHE_VERSION whenever the shell files change to force an update. */
-const CACHE_VERSION = 'grades-v16';
+const CACHE_VERSION = 'grades-v31';
 const SHELL = [
   './',
   './grades_dashboard.html',
@@ -44,10 +44,31 @@ function isDataRequest(url) {
          /\/input\/.*\.json/i.test(url);
 }
 
+// The national open-data API (Planning the Future live search). Network-first
+// with cache fallback so repeat searches work offline; it also contains "/api/"
+// so this MUST be checked before the generic local-/api/ bypass below.
+function isOpenDataApi(url) {
+  // two explicit gov hosts only — NOT a broad /api/ or gouv.fr match (would swallow the
+  // local helper /api/ bypass and the gist data path).
+  return /:\/\/data\.education\.gouv\.fr\/api\//i.test(url) ||
+         /:\/\/data\.enseignementsup-recherche\.gouv\.fr\/api\//i.test(url);
+}
+
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;                 // never cache POST (/api/refresh etc.)
   const url = req.url;
+
+  // national open-data API: network-first, cache 200s for offline repeat searches
+  if (isOpenDataApi(url)) {
+    e.respondWith(
+      fetch(req).then(resp => {
+        if (resp && resp.status === 200) { const copy = resp.clone(); caches.open(CACHE_VERSION).then(c => c.put(req, copy)); }
+        return resp;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
 
   // local helper API — always go to network, never cache
   if (/\/api\//.test(url)) return;
