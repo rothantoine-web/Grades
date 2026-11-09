@@ -1346,7 +1346,7 @@ function renderDashboard(root, data, palette, opts={}){
   let showingGap = false;                       // read by refresh() to route rendering
   function renderGap(){}                         // reassigned below if data supports it
   if(subjBox){
-    const CLAMP = 4;
+    const CLAMP = 6;
     const clamp = v => Math.max(-CLAMP, Math.min(CLAMP, v));
     const gapLabels = seqAll.map((d,i)=>{
       const s=new Date(d.dateSaisie).toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
