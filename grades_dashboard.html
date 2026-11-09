@@ -1682,7 +1682,16 @@ function renderDashboard(root, data, palette, opts={}){
     const fams = [...new Set(perYear.flatMap(p=>Object.keys(p.pct)))];
     if(!fams.length){ if(card) card.style.display='none'; return; }
     if(card) card.style.display='';
-    const labels = fams.map(k=>famLabel[k]);
+    // Display-name overrides per family (raw first-seen label is used otherwise).
+    const FAM_LABELS = { ANGLAIS: "Anglais LLC1+2" };
+    // Axis order: group related subjects — languages, then English-taught history, then
+    // French history, then sciences, then the rest. Families not listed fall to the end.
+    const FAM_ORDER = ["ANGLAIS","ANGLAIS_BILINGUE","ESPAGNOL","ALLEMAND","ITALIEN",
+      "HISTOIRE_GEO_ANGLAIS","HISTOIRE_GEO","FRANCAIS","MATHEMATIQUES","SVT","PHYSIQUE_CHIMIE",
+      "TECHNO","EMC","MUSIQUE","ARTS","EPS"];
+    const ord = k => { const i = FAM_ORDER.indexOf(k); return i<0 ? FAM_ORDER.length : i; };
+    fams.sort((a,b)=> ord(a)-ord(b) || a.localeCompare(b));
+    const labels = fams.map(k=> FAM_LABELS[k] || famLabel[k]);
     const YEARCOLORS = ['#4a9df0','#e74c6b','#2ecc9b','#f5a623'];
     const datasets = perYear.map((p,i)=>{
       const missing = fams.map(k=> p.pct[k]==null);           // true where this year has no data
