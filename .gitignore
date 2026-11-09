@@ -1,0 +1,11 @@
+# Secrets — never commit (defense-in-depth; these normally live outside this repo)
+_creds.txt
+*creds*
+*token*
+*secret*
+*.env
+.env*
+
+# OS / editor noise
+Thumbs.db
+.DS_Store
