@@ -1348,9 +1348,14 @@ function renderDashboard(root, data, palette, opts={}){
   if(subjBox){
     const CLAMP = 6;
     const clamp = v => Math.max(-CLAMP, Math.min(CLAMP, v));
-    const gapLabels = seqAll.map((d,i)=>{
-      const s=new Date(d.dateSaisie).toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
-      return (i>0 && seqAll[i-1].dateSaisie===d.dateSaisie) ? '' : s;
+    // x-axis: one month name at the first grade of each month, blank elsewhere —
+    // same scheme as the classic trend (labelsFor), so both read as month sections.
+    let gapPrevMonth = null;
+    const gapLabels = seqAll.map(d=>{
+      const dd=new Date(d.dateSaisie), m=dd.getFullYear()+'-'+dd.getMonth();
+      if(m===gapPrevMonth) return '';
+      gapPrevMonth = m;
+      return dd.toLocaleDateString('en-GB',{month:'short'});
     });
     // continuous per-subject gap line (forward-filled so it coasts between grades)
     const subjSeries = subjects.map(s=>{
