@@ -79,6 +79,7 @@
   .subjlegend .swatch { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); cursor:pointer; padding:3px 8px; border-radius:7px; border:1px solid transparent; transition:.15s; user-select:none; }
   .subjlegend .swatch:hover { background:var(--bg); border-color:var(--line); }
   .subjlegend .swatch i { width:12px; height:12px; border-radius:50%; display:inline-block; }
+  .subjlegend .subj-emoji { font-size:20px; line-height:1; }
   .subjlegend .swatch.off { opacity:.32; }
   .subjlegend .swatch.active { background:var(--bg); border-color:var(--line); color:var(--ink); font-weight:600; }
   .subjlegend .swatch.reset { color:var(--ink); border-color:var(--line); }
@@ -697,6 +698,29 @@ function canon(label){
   if(/FRANC/.test(s)) return "FRANCAIS";
   return s;   // unknown -> its own key
 }
+// Display-only emoji for a subject's selection chip (never touches the raw label/join key).
+// Keyword-ordered like canon(): the English-section history course and EPS must be
+// matched before the generic language / physique rules that would otherwise grab them.
+function subjEmoji(label){
+  const s = (label||"").toUpperCase();
+  if(/^HG\b|(HIST|GEO).*ANGL|ANGL.*(HIST|GEO)/.test(s)) return "🌍🇬🇧";
+  if(/HIST|GEO/.test(s)) return "🌍";
+  if(/ESPAGNOL|\bESP/.test(s)) return "🇪🇸";
+  if(/ALLEMAND|\bALL\b|DEUTSCH/.test(s)) return "🇩🇪";
+  if(/ITALIEN|\bITA\b/.test(s)) return "🇮🇹";
+  if(/ANGLAIS|\bAGL|\bLV1\b|\bLLC|BILING|\bEBS\b/.test(s)){ const m=s.match(/LLC\s*([12])\b/); return "🇬🇧"+(m?m[1]:""); }  // LLC1/LLC2 → flag+number
+  if(/MATH/.test(s)) return "📐";
+  if(/\bEPS\b|PHYSIQUE ET SPORT|SPORT/.test(s)) return "⚽";          // before PHYS (EPS contains "PHYSIQUE")
+  if(/PHYSIQUE-CHIM|PHYSIQUE\/CHIM|PHYS.*CHIM|CHIM/.test(s)) return "🧪";
+  if(/SCIENCES DE LA VIE|\bSVT\b/.test(s)) return "🌱";
+  if(/\bEIS\b|SCIENCE/.test(s)) return "🔬";
+  if(/MORAL|\bEMC\b/.test(s)) return "⚖️";
+  if(/MUSICALE|MUSIQUE/.test(s)) return "🎵";
+  if(/ARTS|PLASTIQ/.test(s)) return "🎨";
+  if(/TECHNO/.test(s)) return "🔧";
+  if(/FRANC/.test(s)) return "📖";
+  return "";   // unknown subject -> no emoji, just the real name
+}
 // fallback colors for families with no assigned color, deterministic by key
 const FALLBACK = ["#4a9df0","#e74c6b","#2ecc9b","#f5a623","#b36bf5","#1ab6c8","#ff8a65","#8bc34a","#ba68c8","#ffd54f","#f06292","#00bcd4"];
 let _fallbackSeen = {};
@@ -1187,7 +1211,13 @@ function renderDashboard(root, data, palette, opts={}){
       const on = activeSubject===null || activeSubject===s;
       const g = gapForSubject(s);
       const badge = g==null ? '' : ` <b style="color:${gapInk(g)};font-weight:600">${g>=0?'+':''}${g.toFixed(1)}</b>`;
-      return `<span class="swatch${on?'':' off'}${activeSubject===s?' active':''}" data-subj="${s}" title="${s}${g==null?'':`: ${g>=0?'+':''}${g.toFixed(2)} vs class`}"><i style="background:${color(s)}"></i>${s}${badge}</span>`;
+      const em = subjEmoji(s);
+      // Collapsed to emoji only when unselected; show the full name when this chip is the
+      // selected one, or when it has no emoji (an emoji-less chip would otherwise be blank).
+      const showName = (activeSubject===s) || !em;
+      const emj = em ? `<span class="subj-emoji">${em}</span>` : '';
+      const nm  = showName ? `${em?' ':''}${s}` : '';
+      return `<span class="swatch${on?'':' off'}${activeSubject===s?' active':''}" data-subj="${s}" title="${s}${g==null?'':`: ${g>=0?'+':''}${g.toFixed(2)} vs class`}"><i style="background:${color(s)}"></i>${emj}${nm}${badge}</span>`;
     }).join('') + (activeSubject!==null ? `<span class="swatch reset" data-subj="__all">↺ show all</span>` : '');
     legendEl.querySelectorAll('.swatch').forEach(sw=>sw.onclick=()=>{
       const s=sw.dataset.subj; activeSubject=(s==='__all'||s===activeSubject)?null:s; renderSubjLegend(); refresh();
