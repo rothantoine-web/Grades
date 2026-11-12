@@ -27,35 +27,37 @@
   .controls { display:flex; gap:18px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
   .controls label { color:var(--muted); font-size:13px; cursor:pointer; user-select:none; }
   .controls input { vertical-align:middle; margin-right:5px; }
-  /* In-chart interactive legend (the single control for the trend chart's series + decorations) */
-  .chartbox { position:relative; }
-  .chart-legend { position:absolute; top:2px; left:50%; transform:translateX(-50%); z-index:5;
-    display:flex; flex-wrap:wrap; justify-content:center; gap:5px; max-width:94%;
-    background:color-mix(in srgb, var(--panel) 82%, transparent); backdrop-filter:blur(3px);
-    border:1px solid var(--line); border-radius:999px; padding:5px 7px; }
-  .chart-legend .cl-item { display:inline-flex; align-items:center; gap:6px; cursor:pointer;
-    border:1px solid transparent; border-radius:999px; padding:4px 10px; font:inherit; font-size:12px;
-    color:var(--muted); background:transparent; transition:.15s; white-space:nowrap; }
-  .chart-legend .cl-item:hover { color:var(--ink); }
-  .chart-legend .cl-item[aria-pressed="true"] { color:var(--ink); background:var(--bg); border-color:var(--line); font-weight:600; }
-  .chart-legend .cl-item[aria-pressed="false"] { opacity:.5; text-decoration:line-through; text-decoration-color:var(--muted); }
-  .chart-legend .cl-item .dot { width:11px; height:11px; border-radius:50%; display:inline-block; flex:0 0 auto; }
-  .chart-legend .cl-item .dot.ring { background:transparent; border:2px solid var(--ink); }
-  .chart-legend .cl-item .gi { font-size:13px; line-height:1; }
-  .chart-info { position:absolute; top:2px; right:8px; z-index:6; }
-  /* View-mode row below the chart (Subjects vs class · Period) */
-  .viewbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:12px 0 0; }
-  .viewbar .chip { display:inline-flex; align-items:center; gap:6px; cursor:pointer; user-select:none;
-    border:1px solid var(--line); border-radius:999px; padding:6px 12px; font-size:13px; line-height:1;
-    color:var(--muted); background:var(--bg); transition:.15s; }
-  .viewbar .chip input { position:absolute; opacity:0; width:0; height:0; pointer-events:none; margin:0; }
-  .viewbar .chip:hover { color:var(--ink); border-color:#3a4a6e; }
-  .viewbar .chip:has(input:checked) { color:var(--ink); border-color:var(--accent,#6ea8ff);
-    background:color-mix(in srgb, var(--accent,#6ea8ff) 16%, var(--bg)); font-weight:600; }
-  .viewbar .chip:focus-within { outline:2px solid var(--accent,#6ea8ff); outline-offset:1px; }
-  .viewbar .period { display:inline-flex; align-items:center; gap:6px; color:var(--muted); font-size:13px; }
-  .viewbar .period select { background:var(--bg); color:var(--ink); border:1px solid var(--line);
-    border-radius:999px; padding:6px 10px; font:inherit; font-size:13px; }
+  /* Chart controls occupy their own space above the canvas. */
+  .chart-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:16px 0 12px; }
+  .chart-heading h2 { margin:0; text-transform:none; letter-spacing:0; color:var(--ink); font-size:16px; }
+  .chart-heading .period { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:12px; }
+  .chart-heading select { max-width:160px; min-height:44px; padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); font:inherit; }
+  .trend-chartbox { min-width:0; width:100%; }
+  .trend-chartbox canvas { max-width:100%; }
+  .chart-toolbar { margin:12px 0 16px; }
+  .chart-legend { display:flex; flex-wrap:wrap; gap:6px; }
+  .chart-legend[hidden] { display:none; }
+  .cl-item { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:44px; padding:9px 13px; border:1px solid var(--line); border-radius:10px; color:var(--muted); background:var(--bg); font:inherit; font-size:12px; cursor:pointer; transition:background .15s,border-color .15s; }
+  .cl-item:hover { color:var(--ink); border-color:#52638e; }
+  .cl-item[aria-pressed="true"] { color:var(--ink); border-color:#6ea8ff; background:rgba(110,168,255,.14); font-weight:600; }
+  .cl-item:disabled { opacity:.45; cursor:default; }
+  .cl-item .dot { width:14px; height:3px; border-radius:2px; display:inline-block; flex:0 0 auto; background:#c9d2f0; }
+  .cl-item .dot.class-line { background:none; border-top:2px dashed #9aa3c0; }
+  .cl-item .dot.ring { background:none; border-top:2px dotted #fff; }
+  .chart-options { margin-top:8px; border:1px solid var(--line); border-radius:10px; background:var(--bg); }
+  .chart-options summary { padding:10px 12px; min-height:44px; color:var(--muted); cursor:pointer; font-size:12px; }
+  .chart-options[open] summary { color:var(--ink); border-bottom:1px solid var(--line); }
+  .chart-options .viewbar { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:12px; }
+  .viewbar .chip { display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:9px 12px; color:var(--muted); border:1px solid var(--line); border-radius:10px; font-size:12px; cursor:pointer; }
+  .viewbar .chip:has(input:checked) { color:var(--ink); border-color:#6ea8ff; background:rgba(110,168,255,.14); }
+  .viewbar .chip input { accent-color:#6ea8ff; margin:0; width:16px; height:16px; }
+  .chart-toolbar .chart-info { position:static; width:44px; height:44px; margin-left:auto; }
+  .chart-mode-note { color:var(--muted); font-size:12px; margin:0 0 10px; }
+  .chart-options .ctrl-legend { margin:0 12px 12px; }
+  .cl-item:focus-visible, .swatch:focus-visible, .chart-options summary:focus-visible, .chart-heading select:focus-visible { outline:2px solid #6ea8ff; outline-offset:3px; }
+  .chart-caption { margin:12px 0 0; color:var(--muted); font-size:12px; }
+  .chart-method { margin-top:8px; color:var(--muted); font-size:12px; }
+  .chart-method summary { min-height:44px; padding:12px 0; cursor:pointer; }
   .info-btn { display:inline-flex; align-items:center; justify-content:center;
     width:28px; height:28px; border-radius:999px; border:1px solid var(--line);
     background:color-mix(in srgb, var(--panel) 82%, transparent); color:var(--muted); font-size:13px; cursor:pointer; transition:.15s; }
@@ -75,14 +77,14 @@
   .stat .v { font-size:20px; font-weight:600; margin-top:4px; }
   .stat .sub { font-size:12px; color:var(--muted); margin-top:2px; }
   .legend-note { color:var(--muted); font-size:12px; margin-top:10px; }
-  .subjlegend { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:12px; }
-  .subjlegend .swatch { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); cursor:pointer; padding:3px 8px; border-radius:7px; border:1px solid transparent; transition:.15s; user-select:none; }
-  .subjlegend .swatch:hover { background:var(--bg); border-color:var(--line); }
-  .subjlegend .swatch i { width:12px; height:12px; border-radius:50%; display:inline-block; }
-  .subjlegend .subj-emoji { font-size:20px; line-height:1; }
-  .subjlegend .swatch.off { opacity:.32; }
-  .subjlegend .swatch.active { background:var(--bg); border-color:var(--line); color:var(--ink); font-weight:600; }
-  .subjlegend .swatch.reset { color:var(--ink); border-color:var(--line); }
+  .subjlegend { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px; }
+  .subjlegend .swatch { display:inline-flex; align-items:center; gap:6px; min-height:44px; max-width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--muted); font:inherit; font-size:12px; cursor:pointer; }
+  .subjlegend .swatch i { width:8px; height:8px; border-radius:50%; flex:0 0 auto; }
+  .subjlegend .subj-emoji { font-size:16px; line-height:1; }
+  .subjlegend .subj-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .subjlegend .swatch.off { opacity:.6; }
+  .subjlegend .swatch.active { color:var(--ink); border-color:#6ea8ff; background:rgba(110,168,255,.14); font-weight:600; }
+  .subjlegend .swatch.reset { color:var(--ink); }
   h2 { font-size:15px; margin:0 0 12px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
   /* replay final-result strip (static end-state, shown without playing) */
   .replayResult { margin:10px 0 2px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; }
@@ -171,9 +173,17 @@
     .controls { gap:10px; }
     .range-lab { width:120px; }
     .sub { font-size:12px; margin:0 0 14px; }
-    .chart-legend { gap:3px; padding:4px 5px; max-width:97%; }
-    .chart-legend .cl-item { padding:4px 7px; font-size:11px; gap:4px; }
-    .viewbar { gap:8px; }
+    .chart-heading { gap:8px; align-items:flex-start; }
+    .chart-heading h2 { font-size:15px; padding-top:11px; }
+    .chart-heading .period { flex-direction:column; align-items:flex-start; gap:2px; }
+    .chart-heading .period > span { font-size:10px; }
+    .chart-heading select { max-width:130px; min-height:44px; font-size:12px; }
+    .subjlegend { flex-wrap:nowrap; overflow-x:auto; padding:2px 2px 8px; scrollbar-width:thin; scroll-padding:4px; }
+    .subjlegend .swatch { flex:0 0 auto; max-width:220px; }
+    .chart-legend { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+    .chart-legend[hidden] { display:none; }
+    .chart-legend .cl-item { padding:8px 4px; font-size:11px; gap:4px; }
+    .chart-legend .dot { width:10px; }
   }
 </style>
 </head>
@@ -200,32 +210,45 @@
 <template id="dashTemplate">
   <div class="card">
     <div class="replayResult"></div>
-    <div class="subjlegend"></div>
-    <div class="chartbox">
+    <div class="chart-heading">
+      <h2>Grade history</h2>
+      <label class="period"><span>Period</span><select class="periodSel" aria-label="Chart period"></select></label>
+    </div>
+    <div class="subjlegend" role="group" aria-label="Filter by subject"></div>
+    <div class="chart-toolbar">
       <div class="chart-legend" role="group" aria-label="Chart series toggles">
-        <button type="button" class="cl-item" data-ctrl="grade" aria-pressed="true"><i class="dot" style="background:#c9d2f0"></i>Grade</button>
-        <button type="button" class="cl-item" data-ctrl="class" aria-pressed="true"><i class="dot" style="background:rgba(154,163,192,0.85)"></i>Class average</button>
-        <button type="button" class="cl-item" data-ctrl="trend" aria-pressed="false"><i class="dot ring"></i>Trend</button>
-        <button type="button" class="cl-item" data-ctrl="crowns" aria-pressed="false"><span class="gi">👑</span>Crowns</button>
-        <button type="button" class="cl-item" data-ctrl="vs" aria-pressed="false"><span class="gi">🟢</span>Beat class</button>
+        <button type="button" class="cl-item" data-ctrl="grade" aria-pressed="true"><i class="dot" aria-hidden="true"></i><span>Grades</span></button>
+        <button type="button" class="cl-item" data-ctrl="class" aria-pressed="true"><i class="dot class-line" aria-hidden="true"></i><span>Class average</span></button>
+        <button type="button" class="cl-item" data-ctrl="trend" aria-pressed="false"><i class="dot ring" aria-hidden="true"></i><span>Overall trend</span></button>
       </div>
-      <button type="button" class="info-btn chart-info" aria-expanded="false" aria-label="What do the toggles mean?">ⓘ</button>
-      <canvas class="chart"></canvas>
-    </div>
-    <div class="viewbar">
-      <label class="chip" title="Subjects vs class — overlay each subject's gap to the class"><input type="checkbox" class="toggleSubjVs"><span class="ico">📊</span><span class="lab">Subjects vs class</span></label>
-      <span class="period">Period <select class="periodSel"></select></span>
-    </div>
+      <p class="chart-mode-note" hidden>Showing the cumulative gap to the class average. Turn off Subjects vs class to return to grades.</p>
+      <details class="chart-options">
+        <summary>Options</summary>
+        <div class="viewbar" role="group" aria-label="Additional chart options">
+          <button type="button" class="cl-item" data-ctrl="crowns" aria-pressed="false"><span aria-hidden="true">&#128081;</span>Crowns</button>
+          <button type="button" class="cl-item" data-ctrl="vs" aria-pressed="false"><span aria-hidden="true">&#128994;</span>Beat class</button>
+          <label class="chip"><input type="checkbox" class="toggleSubjVs"><span>Subjects vs class</span></label>
+          <button type="button" class="info-btn chart-info" aria-expanded="false" aria-label="Explain chart options">&#9432;</button>
+        </div>
     <div class="ctrl-legend" role="region" aria-label="Control legend">
-      <div class="row"><i class="dot" style="background:#c9d2f0"></i><span><b>Grade</b> — her grade on each assessment (point size = coefficient).</span></div>
+      <div class="row"><i class="dot" style="background:#c9d2f0"></i><span><b>Grades</b> — the student’s grade on each assessment (point size = coefficient).</span></div>
       <div class="row"><i class="dot" style="background:rgba(154,163,192,0.85)"></i><span><b>Class average</b> — dashed overlay of the class mean.</span></div>
-      <div class="row"><i class="dot ring"></i><span><b>Trend</b> — the overall coefficient-weighted trend line.</span></div>
-      <div class="row"><span class="gi">👑</span><span><b>Crowns</b> — marks each assessment where she was top of the class.</span></div>
+      <div class="row"><i class="dot ring"></i><span><b>Overall trend</b> — the coefficient-weighted direction of grades.</span></div>
+      <div class="row"><span class="gi">👑</span><span><b>Crowns</b> — marks each assessment where the student was top of the class.</span></div>
       <div class="row"><span class="gi">🟢</span><span><b>Beat class</b> — recolors points: above class average = green, below = red.</span></div>
       <div class="row"><span class="gi">📊</span><span><b>Subjects vs class</b> — overlays how each subject compares with the class.</span></div>
       <div class="row"><span class="gi">⏱️</span><span><b>Period</b> — limit the chart to one term, or show the full year.</span></div>
     </div>
-    <p class="legend-note"><b>Click a subject above</b> to isolate it. <b>Circle size = coefficient</b>. White line = coefficient-weighted trend. Red zone (&lt;10/20) = below-passing. 👑 = top of class on that assessment. Hover any point for details.<br><span style="opacity:.75"><b>Vs-class here is per test:</b> the gap to the class is the coefficient-weighted average of each test's gap, using the class average printed on that test. It can differ slightly from EcoleDirecte's official subject average (shown in the per-subject range below), because the official class average weights by the pupils who actually sat each test — so varying attendance shifts it. Trust the per-subject range for the official standing.</span></p>
+      </details>
+    </div>
+    <div class="chartbox trend-chartbox">
+      <canvas class="chart" role="img" aria-label="Assessment grades and class averages over the selected period"></canvas>
+    </div>
+    <p class="chart-caption">Tap a point for the assessment details. Point size reflects its coefficient. The pale line connects grades; Overall trend shows the weighted direction.</p>
+    <details class="chart-method"><summary>How to read this chart</summary>
+      <p>Subject colors identify assessments. The dashed line shows the class average; the shaded area below 10/20 marks the passing threshold. Crowns mark top-of-class results when enabled.</p>
+      <p><b>Vs-class here is per test:</b> the gap to the class is the coefficient-weighted average of each test's gap, using the class average printed on that test. It can differ slightly from EcoleDirecte's official subject average (shown in the per-subject range below), because the official class average weights by the pupils who actually sat each test — so varying attendance shifts it. Trust the per-subject range for the official standing.</p>
+    </details>
   </div>
   <div class="card">
     <h2>At a glance</h2>
@@ -1107,12 +1130,13 @@ function renderDashboard(root, data, palette, opts={}){
       label:"Grade",
       data: seq.map((d,i)=>({x:i, y:visible(d)?d.norm:null, raw:d})),
       parsing:false, spanGaps:true,
-      borderColor:"#c9d2f0", borderWidth:2.5, tension:0.3, fill:false,
-      pointRadius: seq.map(d=> visible(d) ? 4 + d.coef*2.2 : 0),
-      pointHoverRadius: seq.map(d=> visible(d) ? 6 + d.coef*2.2 : 0),
+      borderColor:"#c9d2f0", borderWidth:2.2, tension:0.3, fill:false,
+      pointRadius: seq.map(d=> visible(d) ? Math.min(8, 3 + d.coef*1.7) : 0),
+      pointHoverRadius: seq.map(d=> visible(d) ? Math.min(11, 5 + d.coef*1.7) : 0),
       pointBackgroundColor: colorByVs
         ? seq.map(d=> d.vsClass>=0 ? "#2ecc9b" : "#e74c6b")
         : seq.map(d=>color(d.matiere)),
+      pointHitRadius:8,
       pointBorderColor:"#0f1220", pointBorderWidth:1.5, _kind:"student"
     };
   }
@@ -1200,28 +1224,60 @@ function renderDashboard(root, data, palette, opts={}){
     seq.forEach(d=>{ if(d.matiere===s && d.normClass!=null){ n+=d.norm*d.coef; w+=d.coef; cn+=d.normClass*d.coef; cw+=d.coef; any=true; } });
     return any ? (n/w)-(cn/cw) : null;
   }
+  // Display names remain separate from the original filtering keys.
+  function chartSubjectName(label){
+    const s=label.toUpperCase();
+    if(s.startsWith('HG') || ((s.includes('HIST') || s.includes('GEO')) && (s.includes('ANGL') || s.includes('AGL')))) return 'History / EN';
+    if(s.includes('HIST') || s.includes('GEO')) return 'History / geo';
+    if(s.includes('LLC1')) return 'English 1';
+    if(s.includes('LLC2')) return 'English 2';
+    if(s.includes('BILING') || s.includes('EBS')) return 'Bilingual English';
+    if(s.includes('ANGL') || s.includes('AGL')) return 'English';
+    if(s.includes('MATH')) return 'Maths';
+    if(s.includes('SPORT') || s.includes('EPS')) return 'PE';
+    if(s.includes('CHIM')) return 'Physics / chem';
+    if(s.includes('SVT') || s.includes('SCIENCES DE LA VIE')) return 'SVT';
+    if(s.includes('EIS') || s.includes('SCIENCE')) return 'Science';
+    if(s.includes('FRANC')) return 'French';
+    if(s.includes('MUSI')) return 'Music';
+    if(s.includes('ART') || s.includes('PLASTIQ')) return 'Arts';
+    if(s.includes('ESP')) return 'Spanish';
+    if(s.includes('ALL') || s.includes('DEUTSCH')) return 'German';
+    if(s.includes('ITAL')) return 'Italian';
+    if(s.includes('TECHNO')) return 'Technology';
+    if(s.includes('MORAL') || s.includes('EMC')) return 'Civics';
+    return label;
+  }
   function renderSubjLegend(){
-    // sort strongest→weakest gap vs class (subjects with no class-rated grade go last)
-    const ordered = subjects.slice().sort((a,b)=>{
+    const scrollLeft=legendEl.scrollLeft;
+    const focusKey=legendEl.contains(document.activeElement) ? document.activeElement.dataset.subj : null;
+    const ordered=subjects.slice().sort((a,b)=>{
       const ga=gapForSubject(a), gb=gapForSubject(b);
       if(ga==null && gb==null) return 0; if(ga==null) return 1; if(gb==null) return -1;
       return gb-ga;
     });
-    legendEl.innerHTML = ordered.map(s=>{
-      const on = activeSubject===null || activeSubject===s;
-      const g = gapForSubject(s);
-      const badge = g==null ? '' : ` <b style="color:${gapInk(g)};font-weight:600">${g>=0?'+':''}${g.toFixed(1)}</b>`;
-      const em = subjEmoji(s);
-      // Collapsed to emoji only when unselected; show the full name when this chip is the
-      // selected one, or when it has no emoji (an emoji-less chip would otherwise be blank).
-      const showName = (activeSubject===s) || !em;
-      const emj = em ? `<span class="subj-emoji">${em}</span>` : '';
-      const nm  = showName ? `${em?' ':''}${s}` : '';
-      return `<span class="swatch${on?'':' off'}${activeSubject===s?' active':''}" data-subj="${s}" title="${s}${g==null?'':`: ${g>=0?'+':''}${g.toFixed(2)} vs class`}"><i style="background:${color(s)}"></i>${emj}${nm}${badge}</span>`;
-    }).join('') + (activeSubject!==null ? `<span class="swatch reset" data-subj="__all">↺ show all</span>` : '');
-    legendEl.querySelectorAll('.swatch').forEach(sw=>sw.onclick=()=>{
-      const s=sw.dataset.subj; activeSubject=(s==='__all'||s===activeSubject)?null:s; renderSubjLegend(); refresh();
+    legendEl.replaceChildren();
+    function chip(key,label,selected){
+      const button=document.createElement('button');
+      button.type='button'; button.className='swatch'+(selected?' active':'');
+      button.dataset.subj=key; button.setAttribute('aria-pressed',String(selected));
+      button.title=label;
+      button.onclick=()=>{ const s=button.dataset.subj; activeSubject=(s==='__all'||s===activeSubject)?null:s; renderSubjLegend(); refresh(); };
+      legendEl.appendChild(button);
+      return button;
+    }
+    chip('__all','All subjects',activeSubject===null).textContent='All subjects';
+    ordered.forEach(s=>{
+      const selected=activeSubject===s, g=gapForSubject(s), em=subjEmoji(s);
+      const button=chip(s,s,selected);
+      if(activeSubject!==null && !selected) button.classList.add('off');
+      const dot=document.createElement('i'); dot.style.background=color(s); dot.setAttribute('aria-hidden','true'); button.appendChild(dot);
+      if(em){ const emoji=document.createElement('span'); emoji.className='subj-emoji'; emoji.textContent=em; emoji.setAttribute('aria-hidden','true'); button.appendChild(emoji); }
+      const name=document.createElement('span'); name.className='subj-name'; name.textContent=chartSubjectName(s); button.appendChild(name);
+      if(g!=null){ const badge=document.createElement('b'); badge.style.color=gapInk(g); badge.textContent=(g>=0?'+':'')+g.toFixed(1); button.appendChild(badge); button.title+=': '+(g>=0?'+':'')+g.toFixed(2)+' vs class'; }
     });
+    legendEl.scrollLeft=scrollLeft;
+    legendEl.querySelectorAll('.swatch').forEach(button=>{ if(button.dataset.subj===focusKey) button.focus({preventScroll:true}); });
   }
 
   let showClass=true, colorByVs=false, showTrend=false;
@@ -1230,9 +1286,9 @@ function renderDashboard(root, data, palette, opts={}){
   const chart = new Chart(root.querySelector('.chart'), {
     type:'line', data:{labels:labelsFor(), datasets:datasets()},
     options:{ maintainAspectRatio:false, animation:{duration:400}, interaction:{mode:'nearest', intersect:true},
-      layout:{padding:{top:43}},
-      scales:{ x:{type:'category', grid:{color:'#2a3150'}, ticks:{color:'#9aa3c0', autoSkip:false, maxRotation:0, minRotation:0}},
-        y:{min:0, max:20, grid:{color:'#2a3150'}, ticks:{color:'#9aa3c0', stepSize:2}, title:{display:true, text:'Grade (/20)', color:'#9aa3c0'}} },
+      layout:{padding:{top:12, bottom:4}},
+      scales:{ x:{type:'category', grid:{display:false}, ticks:{color:'#9aa3c0', autoSkip:false, maxRotation:0, minRotation:0}},
+        y:{min:0, max:20, grid:{color:'rgba(154,163,192,0.12)'}, ticks:{color:'#9aa3c0', stepSize:2}, title:{display:true, text:'Grade (/20)', color:'#9aa3c0'}} },
       plugins:{ legend:{display:false},
         tooltip:{ callbacks:{
           title:items=>items[0].raw.raw ? new Date(items[0].raw.raw.dateSaisie).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '',
@@ -1256,9 +1312,9 @@ function renderDashboard(root, data, palette, opts={}){
     if(hideGrade){ chart.getDatasetMeta(0).hidden = true; chart.update(); }
   }
   let hideGrade=false;
-  // In-chart legend buttons drive the series/decoration toggles (single control surface).
+  // The toolbar drives the series and additional chart options.
   const clSet = (btn,on)=>btn.setAttribute('aria-pressed', on?'true':'false');
-  root.querySelectorAll('.chart-legend .cl-item').forEach(btn=>{
+  root.querySelectorAll('.chart-toolbar .cl-item').forEach(btn=>{
     btn.onclick = ()=>{
       const on = btn.getAttribute('aria-pressed')!=='true';   // flip
       clSet(btn,on);
@@ -1339,7 +1395,7 @@ function renderDashboard(root, data, palette, opts={}){
 
   /* ---- "Subjects vs class" static view (checkbox toggle, no animation) ----
      Flattens the class average to a horizontal zero line and shows each subject's
-     full-year cumulative coef-weighted gap vs class (student − class), clamped ±4.
+     full-year cumulative coef-weighted gap vs class (student − class), clamped ±6.
      Stays on until the checkbox is unticked; respects the active subject filter
      (clicking a subject chip isolates its line instead of dropping back to grades). */
   const subjBox = root.querySelector('.toggleSubjVs');
@@ -1350,13 +1406,6 @@ function renderDashboard(root, data, palette, opts={}){
     const clamp = v => Math.max(-CLAMP, Math.min(CLAMP, v));
     // x-axis: one month name at the first grade of each month, blank elsewhere —
     // same scheme as the classic trend (labelsFor), so both read as month sections.
-    let gapPrevMonth = null;
-    const gapLabels = seqAll.map(d=>{
-      const dd=new Date(d.dateSaisie), m=dd.getFullYear()+'-'+dd.getMonth();
-      if(m===gapPrevMonth) return '';
-      gapPrevMonth = m;
-      return dd.toLocaleDateString('en-GB',{month:'short'});
-    });
     // continuous per-subject gap line (forward-filled so it coasts between grades)
     const subjSeries = subjects.map(s=>{
       let num=0,w=0,cnum=0,cw=0,any=false,last=null;
@@ -1369,15 +1418,17 @@ function renderDashboard(root, data, palette, opts={}){
       });
       return { s, data, any };
     }).filter(x=>x.any);
-    const baseline = seqAll.map(()=>0);
+    const baseline = ()=>seq.map(()=>0);
     function subjDatasets(){
       // when a subject is isolated, show only its gap line; otherwise show all
       const shown = activeSubject===null ? subjSeries : subjSeries.filter(x=>x.s===activeSubject);
+      const indexByRecord=new Map(seqAll.map((d,i)=>[d,i]));
+      const indices=seq.map(d=>indexByRecord.get(d));
       const lines = shown.map(({s,data})=>({
-        label:s, data, parsing:true, spanGaps:true,
+        label:s, data:indices.map(i=>data[i]), parsing:true, spanGaps:true,
         borderColor:color(s), borderWidth:2.5, tension:0.3, fill:false,
         pointRadius:0, _kind:"subjgap" }));
-      lines.unshift({ label:"Class average", data:baseline, parsing:true,
+      lines.unshift({ label:"Class average", data:baseline(), parsing:true,
         borderColor:"rgba(154,163,192,0.65)", borderWidth:1.6, borderDash:[6,4],
         pointRadius:0, tension:0, fill:false, _kind:"baseline" });
       return lines;
@@ -1389,17 +1440,20 @@ function renderDashboard(root, data, palette, opts={}){
     // render the gap view (also called by refresh() while the box is ticked)
     const chartLegendEl = root.querySelector('.chart-legend');
     renderGap = ()=>{
-      chart.data.labels = gapLabels;
+      chart.data.labels = labelsFor();
       chart.data.datasets = subjDatasets();
       chart.options.scales.y = gapY;
-      if(chartLegendEl) chartLegendEl.style.display='none';   // 5-item legend doesn't describe the gap view
+      if(chartLegendEl) chartLegendEl.hidden=true;
       chart.update();
     };
     subjBox.onchange = e=>{
       showingGap = e.target.checked && subjSeries.length>0;
       if(e.target.checked && !subjSeries.length){ e.target.checked=false; return; }
+      root.querySelector('.chart-mode-note').hidden=!showingGap;
+      root.querySelector('.chart-caption').hidden=showingGap;
+      root.querySelectorAll('.viewbar .cl-item').forEach(btn=>btn.disabled=showingGap);
       if(showingGap){ renderGap(); }
-      else { chart.options.scales.y = normalY; if(chartLegendEl) chartLegendEl.style.display=''; refresh(); }
+      else { chart.options.scales.y = normalY; if(chartLegendEl) chartLegendEl.hidden=false; refresh(); }
     };
   }
 
