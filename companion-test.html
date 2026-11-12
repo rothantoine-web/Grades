@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#faf8f5">
+  <title>Koompa · Atelier des compagnons</title>
+  <link rel="icon" href="icon-192.png">
+  <link rel="stylesheet" href="assets/companions/companion.css">
+  <link rel="stylesheet" href="assets/companions/companion-test.css">
+</head>
+<body>
+  <header class="page-header">
+    <a class="brand" href="companion-test.html" aria-label="Koompa, atelier des compagnons"><span class="brand-mark" aria-hidden="true">k</span>koompa<span class="brand-dot">.</span></a>
+    <span class="preview-tag"><span aria-hidden="true"></span> Atelier des compagnons</span>
+  </header>
+  <main>
+    <div class="intro">
+      <p class="eyebrow">UNE PETITE PRÉSENCE. BEAUCOUP D’ÉMOTIONS.</p>
+      <h1>Un compagnon qui <span>prend vie.</span></h1>
+      <p>Choisis ton ami, explore ses expressions et découvre comment il t’accompagne.</p>
+    </div>
+    <div class="workshop">
+      <section class="preview-panel" aria-label="Ton compagnon">
+        <div class="animal-tabs" role="group" aria-label="Choisir un compagnon">
+          <button type="button" data-animal="cat" aria-pressed="false"><span class="animal-avatar" id="catAvatar"></span><span>Mochi<small>Le chat</small></span></button>
+          <button type="button" data-animal="platypus" aria-pressed="true"><span class="animal-avatar" id="platypusAvatar"></span><span>Pipo<small>L’ornithorynque</small></span><span class="new-tag">Nouveau</span></button>
+        </div>
+        <div class="scene" id="scene">
+          <div class="scene-top"><span class="scene-label">TON PETIT COÉQUIPIER</span><span class="scene-status" id="sceneStatus">Paisible</span></div>
+          <div class="speech" id="speech" role="status" aria-live="polite">Un petit pas à la fois. Je suis avec toi.</div>
+          <span class="scene-orbit orbit-one" aria-hidden="true"></span><span class="scene-orbit orbit-two" aria-hidden="true"></span>
+          <span class="scene-spark spark-one" aria-hidden="true">✦</span><span class="scene-spark spark-two" aria-hidden="true">✦</span>
+          <button type="button" class="stage-companion" id="stageCompanion" aria-label="Rejouer la réaction de Pipo"></button>
+          <div class="platform" aria-hidden="true"></div>
+          <div class="scene-caption"><h2 id="animalName">Pipo</h2><p id="personality">Un drôle de petit explorateur au grand cœur.</p></div>
+        </div>
+        <div class="playback">
+          <button type="button" class="replay-button" id="replay"><span aria-hidden="true">↻</span> Rejouer</button>
+          <label for="speed">Vitesse <select id="speed"><option value="0.65">Douce</option><option value="1" selected>Normale</option><option value="1.4">Vive</option></select></label>
+          <button type="button" class="motion-toggle" id="motionToggle" aria-pressed="false">Mettre en pause</button>
+        </div>
+        <div class="result-test">
+          <p class="eyebrow">ET AVEC UNE NOTE ?</p>
+          <p class="result-intro">Trois situations pour voir sa réaction.</p>
+          <div class="sample-results" role="group" aria-label="Simuler un résultat">
+            <button type="button" data-result="success"><span class="result-icon" aria-hidden="true">✦</span><span>Une réussite<small>18 / 20</small></span><span aria-hidden="true">↗</span></button>
+            <button type="button" data-result="progress"><span class="result-icon" aria-hidden="true">↗</span><span>Un progrès<small>10 → 13 / 20</small></span><span aria-hidden="true">↗</span></button>
+            <button type="button" data-result="support"><span class="result-icon" aria-hidden="true">♡</span><span>Un coup de pouce<small>8 / 20</small></span><span aria-hidden="true">↗</span></button>
+          </div>
+          <p class="demo-note">Exemples de démonstration · aucune note réelle utilisée.</p>
+        </div>
+      </section>
+      <section class="gallery-panel" aria-labelledby="galleryTitle">
+        <div class="gallery-heading"><div><p class="eyebrow">LA GALERIE DES ÉMOTIONS</p><h2 id="galleryTitle">Toutes ses petites facettes.</h2></div><button type="button" id="tour" class="tour-button" aria-pressed="false"><span aria-hidden="true">▷</span> Tout découvrir</button></div>
+        <p class="gallery-intro">8 expressions et 5 réactions. Clique sur une carte pour la voir en mouvement.</p>
+        <div id="emotionGallery" class="emotion-grid" role="group" aria-label="Expressions du compagnon"></div>
+        <div class="selected-detail"><span class="detail-dot" aria-hidden="true"></span><p id="stateDetail">Un sourire doux et une respiration tranquille.</p><span id="stateCount">01 / 13</span></div>
+        <div class="design-note"><span class="note-icon" aria-hidden="true">♡</span><div><h3>Toujours dans ton équipe.</h3><p>Il fête les réussites, remarque les progrès et encourage quand c’est plus difficile.</p></div></div>
+      </section>
+    </div>
+  </main>
+  <footer><span>Koompa · Un petit ami pour les grandes aventures.</span><span>Prototype interactif · <a href="assets/companions/README.md">Crédits</a></span></footer>
+  <noscript><p class="noscript">Active JavaScript pour explorer les compagnons et leurs expressions.</p></noscript>
+  <script type="module" src="assets/companions/companion-test.mjs"></script>
+</body>
+</html>

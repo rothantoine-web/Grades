@@ -1,0 +1,10 @@
+/* Shared articulation rules for the dashboard and the companion workshop. */
+.companion-svg [data-part]{transform-box:view-box;transform-origin:0 130px}
+.companion-svg [data-part=creature]{transform-origin:0 178px}
+.companion-svg [data-part=head]{transform-origin:0 45px}
+.companion-svg [data-part=body]{transform-origin:0 160px}
+.companion-svg [data-part=eyes]{transform-origin:0 -10px}
+.companion-svg [data-part=mouth]{transform-origin:0 32px}
+.companion-svg [data-part=tail]{transform-origin:-48px 150px}
+.companion-svg [data-part=shadow]{transform-origin:0 187px}
+.companion-svg [data-part^=arm-]{transform-origin:var(--pivot)}

@@ -6,11 +6,14 @@
      offline. The app ALSO keeps data in localStorage, so this is belt-and-braces.
 
    Bump CACHE_VERSION whenever the shell files change to force an update. */
-const CACHE_VERSION = 'grades-v44';
+const CACHE_VERSION = 'grades-v45';
 const SHELL = [
   './',
   './grades_dashboard.html',
   './kid_app.html',
+  './assets/companions/companion.css',
+  './assets/companions/companion.mjs',
+  './assets/companions/roundimals-kit.mjs',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
@@ -87,8 +90,11 @@ self.addEventListener('fetch', e => {
   }
 
   // app shell — cache-first, revalidate in background
+  // The dashboard adds ?t= on every kid-app launch. Reuse its cached HTML
+  // offline even when that timestamp has never been requested before.
+  const isKidShell = new URL(url).pathname.endsWith('/kid_app.html');
   e.respondWith(
-    caches.match(req).then(hit => {
+    caches.match(req, { ignoreSearch: isKidShell }).then(hit => {
       const net = fetch(req).then(resp => {
         if (resp && resp.status === 200) {
           const copy = resp.clone();

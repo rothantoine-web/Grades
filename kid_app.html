@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Koompa</title>
+<link rel="stylesheet" href="assets/companions/companion.css">
 <style>
   :root{
     --bg:#1a1033; --bg2:#2a1a4d; --card:#2d1f52; --card2:#372a63;
@@ -31,12 +32,17 @@
   .pill .lbl{font-size:11px; color:var(--muted); font-weight:700; margin-left:2px}
 
   /* ---- hero: mascot + bubble ---- */
-  .hero{display:flex; flex-direction:column; align-items:center; margin:6px 0 10px; position:relative}
+  .hero{display:flex; flex-direction:column; align-items:center; margin:6px 0 10px; position:relative;
+    background:radial-gradient(circle at 50% 48%,#eee4ff,#d9c9f0); border:1px solid #dfd2ec; border-radius:24px; padding:18px 14px 15px}
   .bubble{background:#fff; color:#2a1a4d; border-radius:18px; padding:11px 15px; font-size:15px; font-weight:800;
     max-width:300px; text-align:center; position:relative; box-shadow:0 6px 0 rgba(0,0,0,.18); animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
   .bubble:after{content:''; position:absolute; bottom:-9px; left:50%; transform:translateX(-50%);
     border:10px solid transparent; border-top-color:#fff; border-bottom:0}
-  .mascot{margin-top:14px; width:150px; height:150px; cursor:pointer; transform-origin:center bottom}
+  .mascot{margin-top:14px; width:150px; height:150px; cursor:pointer; transform-origin:center bottom;
+    background:none; border:0; padding:0; border-radius:24px}
+  .mascot:focus-visible,.pickcell:focus-visible,.pick-close:focus-visible{outline:3px solid #8060be;outline-offset:4px}
+  .mascot.advanced{width:250px;height:245px;margin-top:-27px;animation:none!important}
+  .companion-name{margin:0 0 5px;color:#62447d;font-size:16px;font-weight:900}
   .mascot svg{width:100%; height:100%; display:block}
   /* idle = gentle breathe on the whole creature; the svg may override with a signature idle */
   .mascot{animation:breathe 3.2s ease-in-out infinite}
@@ -44,7 +50,7 @@
   .mascot.sig{animation:none}                 /* signature move runs on inner parts */
   .level-chip{margin-top:6px; background:linear-gradient(90deg,var(--purp),var(--pink)); color:#fff;
     padding:4px 14px; border-radius:999px; font-weight:800; font-size:14px; box-shadow:0 3px 0 rgba(0,0,0,.25)}
-  .changeMascot{margin-top:8px; background:none; border:0; color:var(--muted); font:inherit; font-size:12px; font-weight:700;
+  .changeMascot{margin-top:8px; background:none; border:0; color:#765d91; font:inherit; font-size:12px; font-weight:700;
     cursor:pointer; opacity:.8}
   .changeMascot:active{transform:translateY(1px)}
 
@@ -166,6 +172,7 @@
   /* chosen mascot inside the reveal card, with a mood face bubble */
   .g-mascot{position:relative; width:92px; height:92px; margin:0 auto 2px}
   .g-mascot svg{width:100%; height:100%; display:block}
+  .g-mascot.advanced{width:165px;height:150px;margin:-22px auto -5px;animation:none!important}
   .g-mascot.great{animation:moodGreat .9s cubic-bezier(.2,1.3,.4,1)}
   .g-mascot.good{animation:moodGood .7s cubic-bezier(.2,1.3,.4,1)}
   .g-mascot.neutral{animation:moodNeutral 2.4s ease-in-out infinite}
@@ -229,7 +236,9 @@
   .pick-scrim{position:fixed; inset:0; z-index:60; background:rgba(15,8,34,.85); backdrop-filter:blur(3px);
     display:none; align-items:center; justify-content:center; padding:20px}
   .pick-scrim.on{display:flex}
-  .pick{width:100%; max-width:430px; text-align:center}
+  .pick{width:100%; max-width:430px; text-align:center;position:relative}
+  .pick-close{position:absolute;right:0;top:-38px;background:var(--card);border:1px solid var(--line);color:var(--ink);
+    border-radius:50%;width:32px;height:32px;font:inherit;font-size:20px;cursor:pointer}
   .pick h2{margin:0 0 4px; font-size:22px; font-weight:900}
   .pick-sub{margin:0 0 18px; color:var(--muted); font-weight:700; font-size:13px}
   .pickgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
@@ -237,8 +246,12 @@
     transition:transform .1s, border-color .1s}
   .pickcell:active{transform:scale(.95)}
   .pickcell:hover{border-color:var(--purp)}
-  .pickcell svg{width:74px; height:74px}
+  .pickcell[aria-pressed=true]{border-color:var(--purp);background:#49326e}
+  .pickcell svg{width:84px; height:84px;display:block;margin:auto}
   .pickcell .pn{font-size:12px; font-weight:800; margin-top:4px}
+  .pickcell .pn small{display:block;font-size:10px;color:var(--muted);font-weight:600;margin-top:4px}
+  @media(max-width:360px){.pickgrid{gap:8px}.pickcell svg{width:70px;height:76px}.pickcell .pn{font-size:10px}}
+  @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
   /* ---- subject list rows ---- */
   .subjrow{display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line);
@@ -319,7 +332,8 @@
 
   <div class="hero">
     <div class="bubble" id="bubble">Bienvenue sur Koompa&nbsp;! ⭐</div>
-    <div class="mascot" id="mascot" aria-label="mascotte"></div>
+    <button type="button" class="mascot" id="mascot" aria-label="Faire réagir ton compagnon"></button>
+    <div class="companion-name" id="companionName"></div>
     <div class="level-chip" id="levelChip">Niveau 1 · Étincelle</div>
     <button class="changeMascot" id="changeMascot">🔄 changer de compagnon</button>
   </div>
@@ -426,14 +440,16 @@
 
 <!-- mascot picker -->
 <div class="pick-scrim" id="pickScrim">
-  <div class="pick">
-    <h2>Choisis ton compagnon&nbsp;! 🐾</h2>
+  <div class="pick" role="dialog" aria-modal="true" aria-labelledby="pickTitle">
+    <button type="button" class="pick-close" id="pickClose" aria-label="Fermer le choix du compagnon">×</button>
+    <h2 id="pickTitle">Choisis ton compagnon&nbsp;! 🐾</h2>
     <p class="pick-sub">Il fêtera tes réussites avec toi.</p>
     <div class="pickgrid" id="pickGrid"></div>
   </div>
 </div>
 
-<script>
+<script type="module">
+import { ANIMALS as COMPANIONS, companionSvg as expressiveSvg, animateCompanion, stopCompanion } from './assets/companions/companion.mjs';
 /* ---- data arrives via postMessage from the parent dashboard ----
    GRADES     = the SELECTED year's grades (streak, badges, prediction, reveal)
    GRADES_ALL = every year's grades concatenated (cumulative XP/level only)      */
@@ -957,8 +973,7 @@ function renderPredPanelAfterSim(){
   $("#predHint").innerHTML="Prédictions résolues ✓ — rejoue dès ta prochaine note&nbsp;!";
 }
 
-/* ---- MASCOTS: 5 selectable animated SVG creatures, one consistent kawaii style ----
-   Each has big blinking eyes (.m-blink), blush, and a 'signature part' that animates on cheer.  */
+/* ---- COMPANIONS: approved expressive cat and platypus + existing choices ---- */
 function face(){ return `
   <ellipse class="m-blink" cx="43" cy="60" rx="6" ry="7" fill="#2a1a2a"/>
   <ellipse class="m-blink" cx="71" cy="60" rx="6" ry="7" fill="#2a1a2a"/>
@@ -994,17 +1009,8 @@ const MASCOTS = {
       ${face()}
       <path d="M53 78 L61 78 L57 83 Z" fill="#8a4a2a"/>
     </g>`},
-  cat:{ name:"Chat", sig:"sigPounce", svg:`
-    <ellipse cx="57" cy="110" rx="26" ry="5" fill="rgba(0,0,0,.25)"/>
-    <g class="SIG">
-      <path d="M34 34 L30 14 L50 30 Z" fill="#f4f0ff" stroke="#d9d2ee" stroke-width="1.5"/><path d="M80 34 L84 14 L64 30 Z" fill="#f4f0ff" stroke="#d9d2ee" stroke-width="1.5"/>
-      <path d="M36 32 L34 20 L46 30 Z" fill="#ffb6d5"/><path d="M78 32 L80 20 L68 30 Z" fill="#ffb6d5"/>
-      <ellipse cx="57" cy="64" rx="33" ry="36" fill="#f4f0ff" stroke="#d9d2ee" stroke-width="1.5"/>
-      ${face()}
-      <path d="M57 74 L52 79 M57 74 L62 79" stroke="#2a1a2a" stroke-width="2" stroke-linecap="round"/>
-      <path d="M20 66 H38 M22 72 H38" stroke="#b9aee0" stroke-width="1.6" opacity=".9"/>
-      <path d="M94 66 H76 M92 72 H76" stroke="#b9aee0" stroke-width="1.6" opacity=".9"/>
-    </g>`},
+  cat:{ name:COMPANIONS.cat.name },
+  platypus:{ name:COMPANIONS.platypus.name },
   boar:{ name:"Sanglier", sig:"sigCharge", svg:`
     <ellipse cx="57" cy="110" rx="27" ry="5" fill="rgba(0,0,0,.25)"/>
     <g class="SIG">
@@ -1034,19 +1040,49 @@ const MASCOTS = {
       <path d="M48 80 Q57 90 66 80" stroke="#2a1a2a" stroke-width="2.6" fill="none" stroke-linecap="round"/>
     </g>`}
 };
-const MASCOT_ORDER = ["penguin","squirrel","cat","fox","boar"];
+const MASCOT_ORDER = ["cat","platypus","penguin","squirrel","fox","boar"];
+const DEFAULT_MASCOT = "cat";
+const modernMascot = key => Object.hasOwn(COMPANIONS, key);
+const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+let heroReactionTimer = null;
 
-function mascotSvg(key){
-  const m=MASCOTS[key]||MASCOTS.penguin;
+function mascotSvg(key, state="neutral"){
+  key = Object.hasOwn(MASCOTS,key) ? key : DEFAULT_MASCOT;
+  if(modernMascot(key)) return expressiveSvg(key,state);
+  const m=MASCOTS[key];
   return `<svg viewBox="0 0 114 118">${m.svg.replace('class="SIG"','class="sigpart"')}</svg>`;
 }
-function currentMascot(){ return LS.getKid("mascot") || null; }
-function applyMascot(key){
-  $("#mascot").innerHTML = mascotSvg(key);
+function currentMascot(){
+  const key=LS.getKid("mascot");
+  return Object.hasOwn(MASCOTS,key) ? key : null;
 }
-// play the selected mascot's signature move on its .sigpart group
+function drawCompanion(target,key,state="neutral",loop=true){
+  stopCompanion(target);
+  target.innerHTML=mascotSvg(key,state);
+  target.classList.toggle("advanced",modernMascot(key));
+  target.dataset.companionState=state;
+  target.dataset.companionKey=key;
+  if(modernMascot(key)) animateCompanion(target,state,{reducedMotion:motionPreference.matches||document.hidden,loop});
+}
+function applyMascot(key,state="neutral",loop=true){
+  clearTimeout(heroReactionTimer);
+  key=Object.hasOwn(MASCOTS,key) ? key : DEFAULT_MASCOT;
+  const target=$("#mascot");
+  target.classList.remove("cheer","sig");
+  drawCompanion(target,key,state,loop);
+  const name=modernMascot(key) ? COMPANIONS[key].nickname : MASCOTS[key].name;
+  $("#companionName").textContent=name;
+  target.setAttribute("aria-label",`Faire réagir ${name}`);
+}
+function playHeroReaction(state){
+  const key=currentMascot()||DEFAULT_MASCOT;
+  applyMascot(key,state,false);
+  heroReactionTimer=setTimeout(()=>applyMascot(currentMascot()||DEFAULT_MASCOT),1800);
+}
 function mascotSignature(){
-  const key=currentMascot()||"penguin"; const sig=MASCOTS[key].sig;
+  const key=currentMascot()||DEFAULT_MASCOT;
+  if(modernMascot(key)){playHeroReaction("waving");return;}
+  const sig=MASCOTS[key].sig;
   const part=$("#mascot").querySelector(".sigpart");
   if(!part) return;
   part.classList.remove("sigWaddle","sigTail","sigPounce","sigCharge");
@@ -1055,27 +1091,63 @@ function mascotSignature(){
 
 /* ---- mascot picker ---- */
 const pickScrim=$("#pickScrim");
+let pickerReturnFocus=null;
+function closePicker(){
+  pickScrim.classList.remove("on");
+  refreshCompanionMotion();
+  const target=pickerReturnFocus && pickerReturnFocus!==document.body ? pickerReturnFocus : $("#changeMascot");
+  target.focus();
+}
 function openPicker(){
+  pickerReturnFocus=document.activeElement;
+  stopCompanion($("#mascot"));
   const grid=$("#pickGrid"); grid.innerHTML="";
   MASCOT_ORDER.forEach(key=>{
-    const cell=document.createElement("div"); cell.className="pickcell";
-    cell.innerHTML = mascotSvg(key) + `<div class="pn">${MASCOTS[key].name}</div>`;
+    const cell=document.createElement("button"); cell.type="button"; cell.className="pickcell";cell.dataset.mascot=key;
+    cell.setAttribute("aria-pressed",String(key===currentMascot()));
+    cell.setAttribute("aria-label",modernMascot(key)?`${COMPANIONS[key].nickname}, ${MASCOTS[key].name}`:MASCOTS[key].name);
+    cell.innerHTML = mascotSvg(key) + `<div class="pn">${MASCOTS[key].name}${modernMascot(key)?`<small>${COMPANIONS[key].nickname}</small>`:""}</div>`;
     cell.addEventListener("click", ()=>{
       LS.setKid("mascot", key);
       applyMascot(key);
-      pickScrim.classList.remove("on");
+      closePicker();
       mascotSignature(); burst(20);
     });
     grid.appendChild(cell);
   });
   pickScrim.classList.add("on");
+  const first=grid.querySelector('[aria-pressed="true"]')||grid.querySelector("button");
+  first.focus();
 }
-function initMascot(){
+function initMascot(state="neutral"){
   const cur=currentMascot();
-  if(cur){ applyMascot(cur); } else { openPicker(); applyMascot("penguin"); }  // first run -> choose
+  applyMascot(cur||DEFAULT_MASCOT,state);
+  if(!cur) openPicker();
 }
 // (initMascot() is called from init() once data arrives)
 $("#changeMascot").addEventListener("click", openPicker);
+$("#pickClose").addEventListener("click",closePicker);
+pickScrim.addEventListener("click",event=>{if(event.target===pickScrim)closePicker();});
+pickScrim.addEventListener("keydown",event=>{
+  if(event.key==="Escape"){event.preventDefault();closePicker();return;}
+  if(event.key!=="Tab")return;
+  const buttons=[...pickScrim.querySelectorAll("button")];
+  const first=buttons[0],last=buttons[buttons.length-1];
+  if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+  else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+});
+function refreshCompanionMotion(){
+  const hero=$("#mascot"),reveal=$("#gMascot");
+  for(const target of [hero,reveal]){
+    stopCompanion(target);
+    const visible=target===hero ? !pickScrim.classList.contains("on") : $("#overlay").classList.contains("on");
+    if(target.classList.contains("advanced")&&visible&&!document.hidden)
+      animateCompanion(target,target.dataset.companionState,{reducedMotion:motionPreference.matches,loop:target===hero&&target.dataset.companionState==="neutral"});
+  }
+}
+motionPreference.addEventListener("change",refreshCompanionMotion);
+document.addEventListener("visibilitychange",refreshCompanionMotion);
+window.addEventListener("pagehide",()=>{clearTimeout(heroReactionTimer);stopCompanion($("#mascot"));stopCompanion($("#gMascot"));});
 
 /* ---- mascot tap = signature move + sparkle ---- */
 $("#mascot").addEventListener("click", ()=>{ mascotSignature(); burst(12); });
@@ -1122,6 +1194,14 @@ const TIER = {
   tough:  {banner:null, medal:null, cmp:null, cls:"", conf:0}   // cmp built live with a remontada nudge
 };
 const GOOD = t => (t==='perfect'||t==='top'||t==='record'||t==='beat');  // gets the party
+function companionReaction(g,t){
+  if(t==='perfect'||t==='top'||(GOOD(t)&&g.you>=18))return "celebrating";
+  if(t==='record')return "proud";
+  let previous=null;
+  for(const grade of GRADES){if(grade===g)break;if(grade.subj===g.subj)previous=grade;}
+  if(previous&&g.you>previous.you)return "proud";
+  return GOOD(t)?"happy":"encouraging";
+}
 
 /* --- seen-grades set (persisted per kid+year) + new-grade detection --- */
 const gradeId = g => `${g.subj}|${g.date}|${g.you}`;
@@ -1209,13 +1289,19 @@ function showReveal(g){
   if(T.banner){ banner.textContent=T.banner; banner.className="tier-banner "+t; banner.classList.remove("hidden"); }
   else banner.classList.add("hidden");
 
-  // chosen companion appears in the card, reacting with a mood that matches the grade
-  const mascotKey = currentMascot()||"penguin";
-  const mood = moodOf(g);          // great | good | neutral | sad — drives the animation
-  const face = sentimentEmoji(g);
-  $("#gMascot").innerHTML = mascotSvg(mascotKey) + `<span class="g-mood ${mood}">${face}</span>`;
-  $("#gMascot").className = "g-mascot "+mood;
-  medal.classList.add("hidden");   // the sentiment face (on the mascot) replaces the old static medal
+  const mascotKey = currentMascot()||DEFAULT_MASCOT;
+  const reaction=companionReaction(g,t);
+  const revealMascot=$("#gMascot");
+  revealMascot.className="g-mascot";
+  if(modernMascot(mascotKey)){
+    drawCompanion(revealMascot,mascotKey,reaction,false);
+  }else{
+    const mood=moodOf(g);
+    drawCompanion(revealMascot,mascotKey);
+    revealMascot.insertAdjacentHTML("beforeend",`<span class="g-mood ${mood}">${sentimentEmoji(g)}</span>`);
+    revealMascot.classList.add(mood);
+  }
+  medal.classList.add("hidden");
 
   const cmp=$("#gCmp");
   if(t==='record'){ cmp.className="cmp win"; cmp.textContent=`Ton meilleur score en ${nn(g.subj)} 📈`; }
@@ -1261,9 +1347,12 @@ function showReveal(g){
   gc.style.animation="none"; void gc.offsetWidth; gc.style.animation="";
 
   overlay.classList.add("on");
+  if(modernMascot(mascotKey))playHeroReaction(reaction);
   if(GOOD(t)){
-    const m=$("#mascot"); m.classList.remove("cheer"); void m.offsetWidth; m.classList.add("cheer");
-    mascotSignature();
+    if(!modernMascot(mascotKey)){
+      const m=$("#mascot");m.classList.remove("cheer");void m.offsetWidth;m.classList.add("cheer");
+      mascotSignature();
+    }
     setTimeout(()=>burst(T.conf), 500);
     if(t==='perfect'||t==='top') setTimeout(()=>burst(T.conf), 1100);
   } else {
@@ -1324,6 +1413,8 @@ function revealNext(){  if(revealQueue.length===0){ renderRevealButton(); return
 }
 overlay.addEventListener("click", ()=>{
   overlay.classList.remove("on");
+  stopCompanion($("#gMascot"));
+  applyMascot(currentMascot()||DEFAULT_MASCOT);
   if(revealQueue.length>0){ setTimeout(revealNext, 180); }                       // chain to next new grade
   else { computeDerived(); render(); renderSubjList(); renderRevealButton(); }    // refresh stats after the batch
 });
@@ -1343,6 +1434,7 @@ $("#revealBtn").addEventListener("click", revealNext);
 
 /* ---- confetti ---- */
 function burst(n){
+  if(motionPreference.matches)return;
   const colors=["#ff8a3d","#ffd23d","#3ddc9b","#6aa0ff","#b06bff","#ff6bd6"];
   for(let i=0;i<n;i++){
     const c=document.createElement("div"); c.className="confetti";
@@ -1365,7 +1457,7 @@ function init(payload){
   NS = `kid:${child}:${yk}:`;       // per-kid + per-year (predictions, seen badges, bonus XP)
   NS_KID = `kid:${child}:`;         // per-kid only (mascot choice, shared across years)
   if(payload.title) document.title = payload.title;
-  if(GRADES.length===0){ $("#bubble").innerHTML = "Pas encore de notes pour cette année 📚"; return; }
+  if(GRADES.length===0){ $("#bubble").innerHTML = "Pas encore de notes pour cette année 📚";initMascot("sleeping");return; }
   baselineSeenIfFirstRun();   // MUST run before computeDerived: seeds the seen-set used by VIS
   computeDerived();
   render();
