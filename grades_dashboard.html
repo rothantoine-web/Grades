@@ -27,30 +27,37 @@
   .controls { display:flex; gap:18px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
   .controls label { color:var(--muted); font-size:13px; cursor:pointer; user-select:none; }
   .controls input { vertical-align:middle; margin-right:5px; }
-  /* Compact subjects above the chart; display controls below the canvas. */
+  /* Compact subjects above the chart; aligned controls below the canvas. */
   .trend-chartbox { min-width:0; width:100%; }
   .trend-chartbox canvas { max-width:100%; }
-  .chart-toolbar { margin:12px 0 0; padding:6px; border:1px solid var(--line); border-radius:12px; background:var(--bg); }
-  .chart-legend { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:4px; padding:0; }
-  .chart-legend[hidden] { display:none; }
-  .cl-item { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:36px; padding:6px 9px; border:1px solid transparent; border-radius:999px; color:var(--muted); background:transparent; font:inherit; font-size:12px; cursor:pointer; transition:background .15s,border-color .15s; }
-  .cl-item:hover { color:var(--ink); border-color:var(--line); }
-  .cl-item[aria-pressed="true"] { color:var(--ink); border-color:var(--line); background:var(--panel); font-weight:600; }
-  .cl-item .dot { width:11px; height:3px; border-radius:2px; display:inline-block; flex:0 0 auto; background:#c9d2f0; }
-  .cl-item .dot.class-line { background:none; border-top:2px dashed #9aa3c0; }
-  .cl-item .dot.ring { background:none; border-top:2px dotted #fff; }
-  .viewbar { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px; margin-top:8px; padding:8px 2px 2px; border-top:1px solid var(--line); }
-  .viewbar .chip { display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:8px 8px; border:1px solid var(--line); border-radius:10px; color:var(--muted); background:var(--bg); font-size:12px; cursor:pointer; }
-  .viewbar .chip:has(input:checked) { color:var(--ink); border-color:#6ea8ff; background:rgba(110,168,255,.14); }
-  .viewbar .chip input { accent-color:#6ea8ff; margin:0; width:16px; height:16px; }
-  .viewbar .period { display:inline-flex; align-items:center; gap:6px; color:var(--muted); font-size:12px; }
-  .viewbar select { max-width:150px; min-height:44px; padding:8px 8px; border:1px solid var(--line); border-radius:10px; color:var(--ink); background:var(--bg); font:inherit; }
-  .chart-toolbar .chart-info { position:static; width:44px; height:44px; margin-left:auto; }
-  .chart-mode-note { color:var(--muted); font-size:12px; margin:10px 0; }
-  .cl-item:focus-visible, .swatch:focus-visible, .viewbar select:focus-visible { outline:2px solid #6ea8ff; outline-offset:2px; }
+  .chart-toolbar { margin:16px 0 0; padding:12px; border:1px solid rgba(154,163,192,.18); border-radius:14px; background:rgba(15,18,32,.72); }
+  .filter-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 8px; }
+  .filter-head h3 { margin:0; font-size:13px; font-weight:600; color:var(--ink); }
+  .chart-toolbar .chart-info { display:inline-flex; align-items:center; justify-content:center; position:static; min-width:44px; width:auto; height:32px; padding:4px 6px; border:0; border-radius:5px; background:transparent; color:var(--muted); font:inherit; font-size:12px; cursor:pointer; }
+  .chart-toolbar .chart-info:hover, .chart-toolbar .chart-info[aria-expanded="true"] { color:#a8c7ff; }
+  .viewbar { margin:0 0 10px; }
+  .viewbar .period { display:flex; align-items:center; gap:10px; width:100%; min-width:0; padding:0 10px; border:1px solid rgba(154,163,192,.2); border-radius:8px; background:rgba(26,31,53,.5); }
+  .viewbar .period > span { flex:0 0 auto; color:var(--muted); font-size:12px; }
+  .viewbar select { flex:1; min-width:0; width:100%; min-height:44px; padding:8px 2px; border:0; border-radius:6px; color:var(--ink); background:transparent; font:inherit; font-size:13px; cursor:pointer; }
+  .viewbar select option { background:var(--panel); color:var(--ink); }
+  .chart-legend { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+  .cl-item, .gap-control { position:relative; display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; min-height:44px; padding:8px 9px; border:1px solid rgba(154,163,192,.12); border-radius:8px; color:var(--ink); background:rgba(26,31,53,.38); font:inherit; font-size:12px; line-height:1.25; text-align:left; cursor:pointer; }
+  .cl-item:hover, .gap-control:hover { border-color:rgba(154,163,192,.35); }
+  .cl-item[aria-pressed="true"], .gap-control:has(input:checked) { border-color:rgba(110,168,255,.28); background:rgba(110,168,255,.08); }
+  .cl-item:disabled { opacity:.4; cursor:default; }
+  .filter-label { min-width:0; }
+  .filter-switch { position:relative; flex:0 0 30px; width:30px; height:18px; border:1px solid #56617a; border-radius:999px; background:#364057; transition:background .15s,border-color .15s; }
+  .filter-switch::after { content:''; position:absolute; top:2px; left:2px; width:12px; height:12px; border-radius:50%; background:#c2c9d8; transition:transform .15s,background .15s; }
+  .cl-item[aria-pressed="true"] .filter-switch, .gap-control:has(input:checked) .filter-switch { background:#6ea8ff; border-color:#6ea8ff; }
+  .cl-item[aria-pressed="true"] .filter-switch::after, .gap-control:has(input:checked) .filter-switch::after { transform:translateX(12px); background:#fff; }
+  .gap-control input { position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:pointer; }
+  .chart-mode-note { margin:10px 0 0; color:var(--muted); font-size:11px; line-height:1.4; }
+  .cl-item:focus-visible, .swatch:focus-visible, .chart-info:focus-visible, .gap-control:focus-within, .viewbar select:focus-visible { outline:2px solid #6ea8ff; outline-offset:2px; }
   .chart-caption { margin:12px 0 0; color:var(--muted); font-size:12px; }
   .chart-method { margin-top:8px; color:var(--muted); font-size:12px; }
   .chart-method summary { min-height:44px; padding:12px 0; cursor:pointer; }
+  @media (min-width:900px) { .chart-legend { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  @media (prefers-reduced-motion:reduce) { .filter-switch, .filter-switch::after { transition:none; } }
   .info-btn { display:inline-flex; align-items:center; justify-content:center;
     width:28px; height:28px; border-radius:999px; border:1px solid var(--line);
     background:color-mix(in srgb, var(--panel) 82%, transparent); color:var(--muted); font-size:13px; cursor:pointer; transition:.15s; }
@@ -168,8 +175,9 @@
     .range-lab { width:120px; }
     .sub { font-size:12px; margin:0 0 14px; }
     .subjlegend { gap:6px 10px; }
-    .chart-legend .cl-item { padding:6px 8px; font-size:11px; }
-    .viewbar { gap:8px; }
+    .chart-toolbar { padding:10px; }
+    .chart-legend .cl-item, .gap-control { font-size:12px; }
+
   }
 </style>
 </head>
@@ -201,20 +209,22 @@
       <canvas class="chart" role="img" aria-label="Assessment grades and class averages over the selected period"></canvas>
     </div>
     <div class="chart-toolbar" role="group" aria-label="Chart filters">
-      <div class="chart-legend" role="group" aria-label="Chart series toggles">
-        <button type="button" class="cl-item" data-ctrl="grade" aria-pressed="true"><i class="dot" aria-hidden="true"></i><span>Grades</span></button>
-        <button type="button" class="cl-item" data-ctrl="class" aria-pressed="true"><i class="dot class-line" aria-hidden="true"></i><span>Class average</span></button>
-        <button type="button" class="cl-item" data-ctrl="trend" aria-pressed="false"><i class="dot ring" aria-hidden="true"></i><span>Overall trend</span></button>
-
-        <button type="button" class="cl-item" data-ctrl="crowns" aria-pressed="false"><span aria-hidden="true">&#128081;</span>Crowns</button>
-        <button type="button" class="cl-item" data-ctrl="vs" aria-pressed="false"><span aria-hidden="true">&#128994;</span>Beat class</button>
+      <div class="filter-head">
+        <h3>Graph options</h3>
+        <button type="button" class="info-btn chart-info" aria-expanded="false" aria-label="Explain chart options">Help</button>
       </div>
-      <p class="chart-mode-note" hidden>Showing the cumulative gap to the class average. Turn off Subjects vs class to return to grades.</p>
       <div class="viewbar">
-        <label class="chip"><input type="checkbox" class="toggleSubjVs"><span>Subjects vs class</span></label>
         <label class="period"><span>Period</span><select class="periodSel" aria-label="Chart period"></select></label>
-        <button type="button" class="info-btn chart-info" aria-expanded="false" aria-label="Explain chart options">&#9432;</button>
       </div>
+      <div class="chart-legend" role="group" aria-label="Chart display options">
+        <button type="button" class="cl-item" data-ctrl="grade" aria-pressed="true"><span class="filter-label">Grades</span><span class="filter-switch" aria-hidden="true"></span></button>
+        <button type="button" class="cl-item" data-ctrl="class" aria-pressed="true"><span class="filter-label">Class average</span><span class="filter-switch" aria-hidden="true"></span></button>
+        <button type="button" class="cl-item" data-ctrl="trend" aria-pressed="false"><span class="filter-label">Overall trend</span><span class="filter-switch" aria-hidden="true"></span></button>
+        <button type="button" class="cl-item" data-ctrl="crowns" aria-pressed="false"><span class="filter-label">Crowns</span><span class="filter-switch" aria-hidden="true"></span></button>
+        <button type="button" class="cl-item" data-ctrl="vs" aria-pressed="false"><span class="filter-label">Beat class</span><span class="filter-switch" aria-hidden="true"></span></button>
+        <label class="gap-control"><span class="filter-label">Subjects vs class</span><input type="checkbox" class="toggleSubjVs"><span class="filter-switch" aria-hidden="true"></span></label>
+      </div>
+      <p class="chart-mode-note" hidden>Comparing cumulative subject results with the class. Turn off Subjects vs class to return to grades.</p>
     <div class="ctrl-legend" role="region" aria-label="Control legend">
       <div class="row"><i class="dot" style="background:#c9d2f0"></i><span><b>Grades</b> — the student’s grade on each assessment (point size = coefficient).</span></div>
       <div class="row"><i class="dot" style="background:rgba(154,163,192,0.85)"></i><span><b>Class average</b> — dashed overlay of the class mean.</span></div>
@@ -1399,7 +1409,7 @@ function renderDashboard(root, data, palette, opts={}){
       chart.data.labels = labelsFor();
       chart.data.datasets = subjDatasets();
       chart.options.scales.y = gapY;
-      if(chartLegendEl) chartLegendEl.hidden=true;
+      if(chartLegendEl) chartLegendEl.querySelectorAll('button').forEach(btn=>btn.disabled=true);
       chart.update();
     };
     subjBox.onchange = e=>{
@@ -1408,7 +1418,7 @@ function renderDashboard(root, data, palette, opts={}){
       root.querySelector('.chart-mode-note').hidden=!showingGap;
       root.querySelector('.chart-caption').hidden=showingGap;
       if(showingGap){ renderGap(); }
-      else { chart.options.scales.y = normalY; if(chartLegendEl) chartLegendEl.hidden=false; refresh(); }
+      else { chart.options.scales.y = normalY; if(chartLegendEl) chartLegendEl.querySelectorAll('button').forEach(btn=>btn.disabled=false); refresh(); }
     };
   }
 
