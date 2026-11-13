@@ -27,34 +27,27 @@
   .controls { display:flex; gap:18px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
   .controls label { color:var(--muted); font-size:13px; cursor:pointer; user-select:none; }
   .controls input { vertical-align:middle; margin-right:5px; }
-  /* Chart controls occupy their own space above the canvas. */
-  .chart-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:16px 0 12px; }
-  .chart-heading h2 { margin:0; text-transform:none; letter-spacing:0; color:var(--ink); font-size:16px; }
-  .chart-heading .period { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:12px; }
-  .chart-heading select { max-width:160px; min-height:44px; padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); font:inherit; }
+  /* Compact subjects above the chart; display controls below the canvas. */
   .trend-chartbox { min-width:0; width:100%; }
   .trend-chartbox canvas { max-width:100%; }
-  .chart-toolbar { margin:12px 0 16px; }
-  .chart-legend { display:flex; flex-wrap:wrap; gap:6px; }
+  .chart-toolbar { margin:12px 0 0; }
+  .chart-legend { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:4px; padding:6px; border:1px solid var(--line); border-radius:12px; background:var(--bg); }
   .chart-legend[hidden] { display:none; }
-  .cl-item { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:44px; padding:9px 13px; border:1px solid var(--line); border-radius:10px; color:var(--muted); background:var(--bg); font:inherit; font-size:12px; cursor:pointer; transition:background .15s,border-color .15s; }
-  .cl-item:hover { color:var(--ink); border-color:#52638e; }
-  .cl-item[aria-pressed="true"] { color:var(--ink); border-color:#6ea8ff; background:rgba(110,168,255,.14); font-weight:600; }
-  .cl-item:disabled { opacity:.45; cursor:default; }
-  .cl-item .dot { width:14px; height:3px; border-radius:2px; display:inline-block; flex:0 0 auto; background:#c9d2f0; }
+  .cl-item { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:36px; padding:6px 9px; border:1px solid transparent; border-radius:999px; color:var(--muted); background:transparent; font:inherit; font-size:12px; cursor:pointer; transition:background .15s,border-color .15s; }
+  .cl-item:hover { color:var(--ink); border-color:var(--line); }
+  .cl-item[aria-pressed="true"] { color:var(--ink); border-color:var(--line); background:var(--panel); font-weight:600; }
+  .cl-item .dot { width:11px; height:3px; border-radius:2px; display:inline-block; flex:0 0 auto; background:#c9d2f0; }
   .cl-item .dot.class-line { background:none; border-top:2px dashed #9aa3c0; }
   .cl-item .dot.ring { background:none; border-top:2px dotted #fff; }
-  .chart-options { margin-top:8px; border:1px solid var(--line); border-radius:10px; background:var(--bg); }
-  .chart-options summary { padding:10px 12px; min-height:44px; color:var(--muted); cursor:pointer; font-size:12px; }
-  .chart-options[open] summary { color:var(--ink); border-bottom:1px solid var(--line); }
-  .chart-options .viewbar { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:12px; }
-  .viewbar .chip { display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:9px 12px; color:var(--muted); border:1px solid var(--line); border-radius:10px; font-size:12px; cursor:pointer; }
+  .viewbar { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .viewbar .chip { display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:8px 10px; border:1px solid var(--line); border-radius:10px; color:var(--muted); background:var(--bg); font-size:12px; cursor:pointer; }
   .viewbar .chip:has(input:checked) { color:var(--ink); border-color:#6ea8ff; background:rgba(110,168,255,.14); }
   .viewbar .chip input { accent-color:#6ea8ff; margin:0; width:16px; height:16px; }
+  .viewbar .period { display:inline-flex; align-items:center; gap:6px; color:var(--muted); font-size:12px; }
+  .viewbar select { max-width:150px; min-height:44px; padding:8px 10px; border:1px solid var(--line); border-radius:10px; color:var(--ink); background:var(--bg); font:inherit; }
   .chart-toolbar .chart-info { position:static; width:44px; height:44px; margin-left:auto; }
-  .chart-mode-note { color:var(--muted); font-size:12px; margin:0 0 10px; }
-  .chart-options .ctrl-legend { margin:0 12px 12px; }
-  .cl-item:focus-visible, .swatch:focus-visible, .chart-options summary:focus-visible, .chart-heading select:focus-visible { outline:2px solid #6ea8ff; outline-offset:3px; }
+  .chart-mode-note { color:var(--muted); font-size:12px; margin:10px 0; }
+  .cl-item:focus-visible, .swatch:focus-visible, .viewbar select:focus-visible { outline:2px solid #6ea8ff; outline-offset:2px; }
   .chart-caption { margin:12px 0 0; color:var(--muted); font-size:12px; }
   .chart-method { margin-top:8px; color:var(--muted); font-size:12px; }
   .chart-method summary { min-height:44px; padding:12px 0; cursor:pointer; }
@@ -77,14 +70,15 @@
   .stat .v { font-size:20px; font-weight:600; margin-top:4px; }
   .stat .sub { font-size:12px; color:var(--muted); margin-top:2px; }
   .legend-note { color:var(--muted); font-size:12px; margin-top:10px; }
-  .subjlegend { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px; }
-  .subjlegend .swatch { display:inline-flex; align-items:center; gap:6px; min-height:44px; max-width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--muted); font:inherit; font-size:12px; cursor:pointer; }
-  .subjlegend .swatch i { width:8px; height:8px; border-radius:50%; flex:0 0 auto; }
-  .subjlegend .subj-emoji { font-size:16px; line-height:1; }
-  .subjlegend .subj-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .subjlegend .swatch.off { opacity:.6; }
-  .subjlegend .swatch.active { color:var(--ink); border-color:#6ea8ff; background:rgba(110,168,255,.14); font-weight:600; }
-  .subjlegend .swatch.reset { color:var(--ink); }
+  .subjlegend { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin:6px 0 12px; }
+  .subjlegend .swatch { display:inline-flex; align-items:center; gap:6px; min-height:40px; max-width:100%; padding:3px 8px; border:1px solid transparent; border-radius:7px; color:var(--muted); background:transparent; font:inherit; font-size:12px; cursor:pointer; transition:background .15s,border-color .15s; }
+  .subjlegend .swatch:hover { background:var(--bg); border-color:var(--line); }
+  .subjlegend .swatch i { width:10px; height:10px; border-radius:50%; flex:0 0 auto; }
+  .subjlegend .subj-emoji { font-size:20px; line-height:1; }
+  .subjlegend .subj-name { min-width:0; overflow-wrap:anywhere; }
+  .subjlegend .swatch.off { opacity:.4; }
+  .subjlegend .swatch.active { color:var(--ink); border-color:var(--line); background:var(--bg); font-weight:600; }
+  .subjlegend .swatch.reset { color:var(--ink); border-color:var(--line); }
   h2 { font-size:15px; margin:0 0 12px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
   /* replay final-result strip (static end-state, shown without playing) */
   .replayResult { margin:10px 0 2px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; }
@@ -173,17 +167,9 @@
     .controls { gap:10px; }
     .range-lab { width:120px; }
     .sub { font-size:12px; margin:0 0 14px; }
-    .chart-heading { gap:8px; align-items:flex-start; }
-    .chart-heading h2 { font-size:15px; padding-top:11px; }
-    .chart-heading .period { flex-direction:column; align-items:flex-start; gap:2px; }
-    .chart-heading .period > span { font-size:10px; }
-    .chart-heading select { max-width:130px; min-height:44px; font-size:12px; }
-    .subjlegend { flex-wrap:nowrap; overflow-x:auto; padding:2px 2px 8px; scrollbar-width:thin; scroll-padding:4px; }
-    .subjlegend .swatch { flex:0 0 auto; max-width:220px; }
-    .chart-legend { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
-    .chart-legend[hidden] { display:none; }
-    .chart-legend .cl-item { padding:8px 4px; font-size:11px; gap:4px; }
-    .chart-legend .dot { width:10px; }
+    .subjlegend { gap:6px 10px; }
+    .chart-legend .cl-item { padding:6px 8px; font-size:11px; }
+    .viewbar { gap:8px; }
   }
 </style>
 </head>
@@ -210,26 +196,25 @@
 <template id="dashTemplate">
   <div class="card">
     <div class="replayResult"></div>
-    <div class="chart-heading">
-      <h2>Grade history</h2>
-      <label class="period"><span>Period</span><select class="periodSel" aria-label="Chart period"></select></label>
-    </div>
     <div class="subjlegend" role="group" aria-label="Filter by subject"></div>
+    <div class="chartbox trend-chartbox">
+      <canvas class="chart" role="img" aria-label="Assessment grades and class averages over the selected period"></canvas>
+    </div>
     <div class="chart-toolbar">
       <div class="chart-legend" role="group" aria-label="Chart series toggles">
         <button type="button" class="cl-item" data-ctrl="grade" aria-pressed="true"><i class="dot" aria-hidden="true"></i><span>Grades</span></button>
         <button type="button" class="cl-item" data-ctrl="class" aria-pressed="true"><i class="dot class-line" aria-hidden="true"></i><span>Class average</span></button>
         <button type="button" class="cl-item" data-ctrl="trend" aria-pressed="false"><i class="dot ring" aria-hidden="true"></i><span>Overall trend</span></button>
+
+        <button type="button" class="cl-item" data-ctrl="crowns" aria-pressed="false"><span aria-hidden="true">&#128081;</span>Crowns</button>
+        <button type="button" class="cl-item" data-ctrl="vs" aria-pressed="false"><span aria-hidden="true">&#128994;</span>Beat class</button>
       </div>
       <p class="chart-mode-note" hidden>Showing the cumulative gap to the class average. Turn off Subjects vs class to return to grades.</p>
-      <details class="chart-options">
-        <summary>Options</summary>
-        <div class="viewbar" role="group" aria-label="Additional chart options">
-          <button type="button" class="cl-item" data-ctrl="crowns" aria-pressed="false"><span aria-hidden="true">&#128081;</span>Crowns</button>
-          <button type="button" class="cl-item" data-ctrl="vs" aria-pressed="false"><span aria-hidden="true">&#128994;</span>Beat class</button>
-          <label class="chip"><input type="checkbox" class="toggleSubjVs"><span>Subjects vs class</span></label>
-          <button type="button" class="info-btn chart-info" aria-expanded="false" aria-label="Explain chart options">&#9432;</button>
-        </div>
+      <div class="viewbar">
+        <label class="chip"><input type="checkbox" class="toggleSubjVs"><span>Subjects vs class</span></label>
+        <label class="period"><span>Period</span><select class="periodSel" aria-label="Chart period"></select></label>
+        <button type="button" class="info-btn chart-info" aria-expanded="false" aria-label="Explain chart options">&#9432;</button>
+      </div>
     <div class="ctrl-legend" role="region" aria-label="Control legend">
       <div class="row"><i class="dot" style="background:#c9d2f0"></i><span><b>Grades</b> — the student’s grade on each assessment (point size = coefficient).</span></div>
       <div class="row"><i class="dot" style="background:rgba(154,163,192,0.85)"></i><span><b>Class average</b> — dashed overlay of the class mean.</span></div>
@@ -239,10 +224,6 @@
       <div class="row"><span class="gi">📊</span><span><b>Subjects vs class</b> — overlays how each subject compares with the class.</span></div>
       <div class="row"><span class="gi">⏱️</span><span><b>Period</b> — limit the chart to one term, or show the full year.</span></div>
     </div>
-      </details>
-    </div>
-    <div class="chartbox trend-chartbox">
-      <canvas class="chart" role="img" aria-label="Assessment grades and class averages over the selected period"></canvas>
     </div>
     <p class="chart-caption">Tap a point for the assessment details. Point size reflects its coefficient. The pale line connects grades; Overall trend shows the weighted direction.</p>
     <details class="chart-method"><summary>How to read this chart</summary>
@@ -1224,32 +1205,7 @@ function renderDashboard(root, data, palette, opts={}){
     seq.forEach(d=>{ if(d.matiere===s && d.normClass!=null){ n+=d.norm*d.coef; w+=d.coef; cn+=d.normClass*d.coef; cw+=d.coef; any=true; } });
     return any ? (n/w)-(cn/cw) : null;
   }
-  // Display names remain separate from the original filtering keys.
-  function chartSubjectName(label){
-    const s=label.toUpperCase();
-    if(s.startsWith('HG') || ((s.includes('HIST') || s.includes('GEO')) && (s.includes('ANGL') || s.includes('AGL')))) return 'History / EN';
-    if(s.includes('HIST') || s.includes('GEO')) return 'History / geo';
-    if(s.includes('LLC1')) return 'English 1';
-    if(s.includes('LLC2')) return 'English 2';
-    if(s.includes('BILING') || s.includes('EBS')) return 'Bilingual English';
-    if(s.includes('ANGL') || s.includes('AGL')) return 'English';
-    if(s.includes('MATH')) return 'Maths';
-    if(s.includes('SPORT') || s.includes('EPS')) return 'PE';
-    if(s.includes('CHIM')) return 'Physics / chem';
-    if(s.includes('SVT') || s.includes('SCIENCES DE LA VIE')) return 'SVT';
-    if(s.includes('EIS') || s.includes('SCIENCE')) return 'Science';
-    if(s.includes('FRANC')) return 'French';
-    if(s.includes('MUSI')) return 'Music';
-    if(s.includes('ART') || s.includes('PLASTIQ')) return 'Arts';
-    if(s.includes('ESP')) return 'Spanish';
-    if(s.includes('ALL') || s.includes('DEUTSCH')) return 'German';
-    if(s.includes('ITAL')) return 'Italian';
-    if(s.includes('TECHNO')) return 'Technology';
-    if(s.includes('MORAL') || s.includes('EMC')) return 'Civics';
-    return label;
-  }
   function renderSubjLegend(){
-    const scrollLeft=legendEl.scrollLeft;
     const focusKey=legendEl.contains(document.activeElement) ? document.activeElement.dataset.subj : null;
     const ordered=subjects.slice().sort((a,b)=>{
       const ga=gapForSubject(a), gb=gapForSubject(b);
@@ -1266,17 +1222,17 @@ function renderDashboard(root, data, palette, opts={}){
       legendEl.appendChild(button);
       return button;
     }
-    chip('__all','All subjects',activeSubject===null).textContent='All subjects';
+    if(activeSubject!==null){ const reset=chip('__all','Show all subjects',false); reset.classList.add('reset'); reset.textContent='Show all'; }
     ordered.forEach(s=>{
       const selected=activeSubject===s, g=gapForSubject(s), em=subjEmoji(s);
       const button=chip(s,s,selected);
       if(activeSubject!==null && !selected) button.classList.add('off');
       const dot=document.createElement('i'); dot.style.background=color(s); dot.setAttribute('aria-hidden','true'); button.appendChild(dot);
       if(em){ const emoji=document.createElement('span'); emoji.className='subj-emoji'; emoji.textContent=em; emoji.setAttribute('aria-hidden','true'); button.appendChild(emoji); }
-      const name=document.createElement('span'); name.className='subj-name'; name.textContent=chartSubjectName(s); button.appendChild(name);
+      if(selected || !em){ const name=document.createElement('span'); name.className='subj-name'; name.textContent=s; button.appendChild(name); }
       if(g!=null){ const badge=document.createElement('b'); badge.style.color=gapInk(g); badge.textContent=(g>=0?'+':'')+g.toFixed(1); button.appendChild(badge); button.title+=': '+(g>=0?'+':'')+g.toFixed(2)+' vs class'; }
+      button.setAttribute('aria-label',button.title);
     });
-    legendEl.scrollLeft=scrollLeft;
     legendEl.querySelectorAll('.swatch').forEach(button=>{ if(button.dataset.subj===focusKey) button.focus({preventScroll:true}); });
   }
 
@@ -1451,7 +1407,6 @@ function renderDashboard(root, data, palette, opts={}){
       if(e.target.checked && !subjSeries.length){ e.target.checked=false; return; }
       root.querySelector('.chart-mode-note').hidden=!showingGap;
       root.querySelector('.chart-caption').hidden=showingGap;
-      root.querySelectorAll('.viewbar .cl-item').forEach(btn=>btn.disabled=showingGap);
       if(showingGap){ renderGap(); }
       else { chart.options.scales.y = normalY; if(chartLegendEl) chartLegendEl.hidden=false; refresh(); }
     };
