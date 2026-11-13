@@ -20,7 +20,7 @@
   :root { --bg:#0f1220; --panel:#1a1f35; --ink:#e8ecf7; --muted:#9aa3c0; --line:#2a3150; }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; padding:24px; }
-  h1 { font-size:22px; margin:0 0 4px; }
+  h1 { font-size:22px; margin:0 0 16px; }
   .sub { color:var(--muted); margin:0 0 20px; font-size:13px; }
   .wrap { max-width:1180px; margin:0 auto; }
   .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:22px; }
@@ -30,8 +30,8 @@
   /* Compact subjects above the chart; display controls below the canvas. */
   .trend-chartbox { min-width:0; width:100%; }
   .trend-chartbox canvas { max-width:100%; }
-  .chart-toolbar { margin:12px 0 0; }
-  .chart-legend { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:4px; padding:6px; border:1px solid var(--line); border-radius:12px; background:var(--bg); }
+  .chart-toolbar { margin:12px 0 0; padding:6px; border:1px solid var(--line); border-radius:12px; background:var(--bg); }
+  .chart-legend { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:4px; padding:0; }
   .chart-legend[hidden] { display:none; }
   .cl-item { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:36px; padding:6px 9px; border:1px solid transparent; border-radius:999px; color:var(--muted); background:transparent; font:inherit; font-size:12px; cursor:pointer; transition:background .15s,border-color .15s; }
   .cl-item:hover { color:var(--ink); border-color:var(--line); }
@@ -39,12 +39,12 @@
   .cl-item .dot { width:11px; height:3px; border-radius:2px; display:inline-block; flex:0 0 auto; background:#c9d2f0; }
   .cl-item .dot.class-line { background:none; border-top:2px dashed #9aa3c0; }
   .cl-item .dot.ring { background:none; border-top:2px dotted #fff; }
-  .viewbar { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:10px; }
-  .viewbar .chip { display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:8px 10px; border:1px solid var(--line); border-radius:10px; color:var(--muted); background:var(--bg); font-size:12px; cursor:pointer; }
+  .viewbar { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px; margin-top:8px; padding:8px 2px 2px; border-top:1px solid var(--line); }
+  .viewbar .chip { display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:8px 8px; border:1px solid var(--line); border-radius:10px; color:var(--muted); background:var(--bg); font-size:12px; cursor:pointer; }
   .viewbar .chip:has(input:checked) { color:var(--ink); border-color:#6ea8ff; background:rgba(110,168,255,.14); }
   .viewbar .chip input { accent-color:#6ea8ff; margin:0; width:16px; height:16px; }
   .viewbar .period { display:inline-flex; align-items:center; gap:6px; color:var(--muted); font-size:12px; }
-  .viewbar select { max-width:150px; min-height:44px; padding:8px 10px; border:1px solid var(--line); border-radius:10px; color:var(--ink); background:var(--bg); font:inherit; }
+  .viewbar select { max-width:150px; min-height:44px; padding:8px 8px; border:1px solid var(--line); border-radius:10px; color:var(--ink); background:var(--bg); font:inherit; }
   .chart-toolbar .chart-info { position:static; width:44px; height:44px; margin-left:auto; }
   .chart-mode-note { color:var(--muted); font-size:12px; margin:10px 0; }
   .cl-item:focus-visible, .swatch:focus-visible, .viewbar select:focus-visible { outline:2px solid #6ea8ff; outline-offset:2px; }
@@ -176,7 +176,7 @@
 <body>
 <div class="wrap">
   <h1>Grades dashboard</h1>
-  <p class="sub">Single trend line per child/year, colored by subject · class average overlaid · coefficient-weighted trend. Values normalized to /20.</p>
+
 
   <div id="dropHome" style="display:none">
     <div id="drop" class="drop">
@@ -200,7 +200,7 @@
     <div class="chartbox trend-chartbox">
       <canvas class="chart" role="img" aria-label="Assessment grades and class averages over the selected period"></canvas>
     </div>
-    <div class="chart-toolbar">
+    <div class="chart-toolbar" role="group" aria-label="Chart filters">
       <div class="chart-legend" role="group" aria-label="Chart series toggles">
         <button type="button" class="cl-item" data-ctrl="grade" aria-pressed="true"><i class="dot" aria-hidden="true"></i><span>Grades</span></button>
         <button type="button" class="cl-item" data-ctrl="class" aria-pressed="true"><i class="dot class-line" aria-hidden="true"></i><span>Class average</span></button>
