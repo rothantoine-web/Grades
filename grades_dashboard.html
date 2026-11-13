@@ -16,6 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Grades">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="assets/future-paths/profile.js"></script>
 <style>
   :root { --bg:#0f1220; --panel:#1a1f35; --ink:#e8ecf7; --muted:#9aa3c0; --line:#2a3150; }
   * { box-sizing:border-box; }
@@ -272,31 +273,33 @@
   <div class="card bridge-card" style="border:1px dashed var(--line);background:linear-gradient(0deg,rgba(255,255,255,0.015),transparent)">
     <h2 style="opacity:.92">Estimation nationale indicative <span style="text-transform:none;font-weight:400;color:var(--muted)">(heuristique, pas une mesure)</span></h2>
     <p class="legend-note" style="margin:0 0 10px">
-      <b>Un pont, pas un instrument de mesure.</b> On combine ici trois choses que les repères
-      mesurés gardent séparées&nbsp;: la <b>position de l'enfant dans sa classe</b> (ses notes),
-      et le <b>niveau national de son collège</b> — calibré par l'<b>évaluation nationale de 6ᵉ</b>
-      (à l'entrée) et le <b>brevet / DNB</b> (à la sortie) — pour estimer une <b>fourchette de
-      percentile national</b> par matière. C'est une <b>estimation modélisée</b>&nbsp;: la barre est
-      une <i>plage</i>, jamais un point. Là où un <b>vrai score d'évaluation</b> existe, on affiche
-      le point <b>mesuré</b> (◆) à côté — on ne le fond pas dans l'estimation.
-      <b>Rappel&nbsp;:</b> ce collège est à <b>IPS très élevé (groupe&nbsp;5)</b>, donc «&nbsp;dans la
-      classe&nbsp;» est une barre bien plus exigeante que «&nbsp;en France&nbsp;»&nbsp;: un élève moyen
-      de cette classe est déjà au-dessus de la moyenne nationale.
+      <b>Les taux de réussite par question permettent un rang modélisé par sous-test national.</b>
+      Le score de l’enfant est observé ; son rang est estimé sous une hypothèse sur les
+      corrélations entre réponses. Ce modèle et ses résultats sont détaillés dans le panneau suivant.
+      <b>Le contexte du collège aide aussi à lire les notes.</b> Les évaluations nationales de 6ᵉ
+      comparent le collège à la France en <b>français et en maths</b>, sur le même test et la
+      même session. Le graphique montre l'<b>écart de moyenne de l'enfant à sa classe</b>,
+      en points sur 20. Ces informations ne suffisent pas à déterminer son <b>rang national</b>&nbsp;:
+      les notes et les tests évaluent des compétences différentes, et une classe peut différer
+      de l'ensemble du collège. Un IPS élevé décrit le profil social du public&nbsp;; il ne
+      garantit pas le niveau d'un élève. Les résultats individuels des sous-tests de 6ᵉ restent
+      visibles dans le panneau suivant, chacun avec son score et ses limites.
     </p>
-    <div class="chartbox" style="height:360px"><canvas class="bridgeChart"></canvas></div>
+    <div class="chartbox bridgeChartBox" style="height:360px"><canvas class="bridgeChart"></canvas></div>
     <p class="legend-note bridgeOnTrack" style="margin:10px 0 0;font-size:13px"></p>
+    <div class="bridgeContext" style="margin:14px 0 0"></div>
     <p class="legend-note bridgeNote" style="margin:6px 0 0;font-size:11px;color:var(--muted)"></p>
   </div>
   <div class="card horizon-card">
     <h2>Horizon — positionnement national &amp; écoles</h2>
     <p class="legend-note" style="margin:0 0 10px">
       <b>Deux repères, honnêtes et distincts.</b>
-      <b>(1) National</b> : la moyenne de l'enfant est placée sur les
-      <b>bandes de mention du brevet</b> (AB&nbsp;12 / B&nbsp;14 / TB&nbsp;16) — le seul
-      vrai repère national sur l'échelle /20 (≥16 ≈ top&nbsp;25%, ≥14 ≈ top&nbsp;48%,
-      ≥12 ≈ top&nbsp;69%). À titre de contexte, au <b>test national de 6ᵉ (sur 300, 2025)</b>
-      la moyenne nationale est d'environ <b>252 en français</b> et <b>248 en maths</b> —
-      mais c'est un test différent de la note Pronote, donc on ne convertit pas l'un en l'autre.
+      <b>(1) National</b> : les sous-tests de 6ᵉ permettent un rang <b>modélisé par test</b>
+      à partir des taux de réussite nationaux, sous les hypothèses expliquées sous le graphique.
+      Les <b>bandes de mention du brevet</b> (AB&nbsp;12 / B&nbsp;14 / TB&nbsp;16) restent des repères
+      de cet examen&nbsp;: une même moyenne au bulletin ne donne ni cette mention ni son percentile.
+      En 2025, les scores standardisés moyens de l'évaluation de 6ᵉ sont <b>256 en français</b>
+      et <b>254 en maths</b>, sans maximum fixé à 300. Ce test diffère des notes du bulletin.
       <b>(2) Horizon écoles</b> : des profils d'<i>élèves admis</i>, en grande majorité
       <b>post-bac</b> (prépas, universités) — ce sont des <b>repères lointains, pas des
       seuils d'admission</b>, et une moyenne de collège <b>ne les prédit pas</b>.
@@ -305,7 +308,7 @@
     </p>
     <div class="natTestRow" style="margin:0 0 16px">
       <div class="legend-note" style="margin:0 0 6px;font-weight:600;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
-        <span>Évaluation nationale de début de 6ᵉ — score réel par test &amp; position estimée</span>
+        <span>Évaluation nationale de début de 6ᵉ — score observé et rang modélisé par sous-test</span>
         <span class="natResultNote" style="font-weight:400;font-size:12px;color:var(--muted)"></span>
       </div>
       <div class="chartbox" style="height:380px"><canvas class="horizonNatTest"></canvas></div>
@@ -313,7 +316,7 @@
     </div>
     <div style="display:flex;gap:18px;flex-wrap:wrap">
       <div style="flex:1;min-width:280px">
-        <div class="legend-note" style="margin:0 0 6px;font-weight:600">Positionnement national /20 (mention brevet)</div>
+        <div class="legend-note" style="margin:0 0 6px;font-weight:600">Repères du brevet /20 (sans équivalence avec le bulletin)</div>
         <div class="chartbox" style="height:260px"><canvas class="horizonNat"></canvas></div>
       </div>
       <div style="flex:1;min-width:320px">
@@ -361,8 +364,9 @@
       réel des admis d'une <b>formation Parcoursup</b> (université) ou d'un <b>lycée sélectif</b>.
       <b>Attention&nbsp;:</b> une moyenne actuelle <b>n'est pas</b> une note de bac&nbsp;— projeter une
       mention future est une <b>forte hypothèse</b>, montrée en <b>fourchette</b> avec un niveau de
-      confiance. Le score combine trois éléments (sélectivité officielle, correspondance de mention,
-      percentile national estimé)&nbsp;: c'est un <b>repère heuristique</b>, pas une probabilité d'admission.
+      confiance. Le classement combine les <b>métriques des établissements</b> décrites ci-dessous&nbsp;;
+      aucun rang national de l'enfant n'est déduit de ses notes. C'est un <b>repère heuristique</b>,
+      pas une probabilité d'admission.
       <b>Lycées&nbsp;:</b> la plupart des lycées publics sont <b>sectorisés (Affelnet, par adresse)</b>,
       sans sélection sur notes&nbsp;— <b>exclus</b>. Seuls les lycées <b>estimés sélectifs</b>
       (privé, ou public à section sélective comme le CIV Valbonne) sont évalués.
@@ -443,7 +447,7 @@ const CONFIG = {
 
 /* =====================================================================
    Planning the Future — admission-confidence (live Opendatasoft search)
-   HEURISTIC layered on the bridge (itself a heuristic). A /20 average is
+   HEURISTIC for future mentions; no national student rank is inferred. A /20 average is
    NOT a Bac score; projecting a future mention is a strong assumption,
    shown as a band + confidence tag, never a prediction. CORS on
    data.education.gouv.fr is open (ACAO:*), so live browser calls work
@@ -476,30 +480,15 @@ function salIndex(s){ return s==null ? null : clamp((s-SAL_FLOOR)/(SAL_CEIL-SAL_
 
 function debounce(fn, ms){ let t; return function(){ const a=arguments, c=this; clearTimeout(t); t=setTimeout(()=>fn.apply(c,a), ms); }; }
 
-// shared source of truth for the bridge card's GLOBAL "top X%" (mean of per-subject midpoints).
-// Returns {pct, conf, n} or null when no subject has class stats.
-function bridgeOverallTopPct(data, subjects, opts){
-  const ss = opts.subjectStats || {}, uai = opts.uai || null;
-  const gc = {}; data.forEach(d=>{ gc[d.matiere]=(gc[d.matiere]||0)+1; });
-  const mids=[]; let worst='high', nTot=0;
-  const rank={none:0,low:1,medium:2,high:3}, inv=['none','low','medium','high'];
-  subjects.forEach(s=>{ const b=bridgeSubjectBand(ss[s], uai, s, gc[s]||0);
-    if(b){ mids.push((b.pctLo+b.pctHi)/2); nTot+=(gc[s]||0); if(rank[b.conf]<rank[worst]) worst=b.conf; } });
-  if(!mids.length) return null;
-  return { pct: mids.reduce((a,b)=>a+b,0)/mids.length, conf:worst, n:nTot };
-}
-
 // project a future Bac mention from the current /20 average — as a probability VECTOR, not a point.
-// you = overallAvg(data); bridgePct = bridgeOverallTopPct().pct (may be null).
-function projectMention(you, bridgePct, bridgeConf){
+// This separate, unvalidated projection cannot inherit confidence from school aggregates.
+function projectMention(you){
   const pEff = Math.max(0, Math.min(20, you - BAC_HARDER_SHIFT));   // Bac stricter than the DNB bands
   const pGE = thr => 1 - normCdf((thr - pEff)/MENTION_SD);          // soft P(final >= threshold)
   const pTB=pGE(16), pB=pGE(14), pAB=pGE(12);
   const vector = { tb:pTB, b:Math.max(0,pB-pTB), ab:Math.max(0,pAB-pB), sans:Math.max(0,1-pAB) };
   const modal = Object.keys(vector).reduce((m,k)=> vector[k]>vector[m]?k:m, 'sans');
-  // confidence: inherit the bridge's, knock down a notch if the bridge had none
-  const conf = bridgeConf && bridgeConf!=='none' ? bridgeConf : 'low';
-  return { you, pEff, vector, modal, pctNational: bridgePct, conf };
+  return { you, pEff, vector, modal, pctNational:null, conf:'low' };
 }
 
 const MENTION_LABEL = { tb:'Très Bien', b:'Bien', ab:'Assez Bien', sans:'sans mention' };
@@ -885,9 +874,22 @@ const MENTION = { ab:12, b:14, tb:16, pctAtOrAbove:{12:69, 14:48, 16:25} };
    This is a MODEL estimate (national, not IPS-specific), never a bare z-score on
    a /300 scale we don't have. Load a child's data via the Settings tab (future)
    or inline below; the loader reads __natEval6_items from a file too.            */
-function nat6TopPct(itemRates, maxItems, seuilSat, natSatPct, score){
-  // itemRates: national success rate (%) per item; returns modelled P(score≥child)
-  const n=maxItems, p=itemRates.map(x=>x/100), mbar=p.reduce((a,b)=>a+b,0)/n;
+const NAT6_MODEL_CACHE = new Map();
+function nat6Estimate(itemRates, maxItems, seuilSat, natSatPct, score){
+  // Marginal item rates identify the mean, not the distribution of the total.
+  // This exchangeable beta-binomial approximates them by their mean and fits
+  // the published satisfactory share. Calibration is not external validation.
+  const n=maxItems;
+  if(!Number.isInteger(n) || n<1 || !Array.isArray(itemRates) || itemRates.length!==n
+      || !itemRates.every(x=>Number.isFinite(x) && x>=0 && x<=100)
+      || !Number.isInteger(seuilSat) || seuilSat<1 || seuilSat>n
+      || !Number.isFinite(natSatPct) || natSatPct<=0 || natSatPct>=100
+      || !Number.isInteger(score) || score<0 || score>n){
+    return {valid:false, reason:'Données de calibrage ou score incomplets / invalides.'};
+  }
+  const mbar=itemRates.reduce((a,b)=>a+b,0)/n/100;
+  if(mbar<=0 || mbar>=1) return {valid:false, reason:'Moyenne incompatible avec ce modèle.'};
+  const key=JSON.stringify([itemRates,n,seuilSat,natSatPct]);
   const lg=x=>{ // Lanczos log-gamma
     const g=7, c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,
       771.32342877765313,-176.61502916214059,12.507343278686905,
@@ -900,13 +902,43 @@ function nat6TopPct(itemRates, maxItems, seuilSat, natSatPct, score){
   const bb=rho=>{ const tt=(1-rho)/rho, a=mbar*tt, b=(1-mbar)*tt, out=[];
     for(let k=0;k<=n;k++){ out.push(Math.exp(
       lg(n+1)-lg(k+1)-lg(n-k+1)+lg(k+a)+lg(n-k+b)-lg(n+a+b)-(lg(a)+lg(b)-lg(a+b)))); }
-    return out; };
+    const sum=out.reduce((a,b)=>a+b,0);
+    return out.map(x=>x/sum); };
   const tailFrom=(d,x)=>d.slice(x).reduce((a,b)=>a+b,0);
-  // calibrate rho so P(score≥seuilSat) == natSatPct
-  const target=natSatPct/100; let lo=0.0005, hi=0.5, flo=tailFrom(bb(lo),seuilSat);
-  for(let i=0;i<80;i++){ const m=(lo+hi)/2, fm=tailFrom(bb(m),seuilSat);
-    if((fm-target)*(flo-target)<=0) hi=m; else { lo=m; flo=fm; } }
-  return tailFrom(bb((lo+hi)/2), score)*100;   // "top X%"
+  let fits=NAT6_MODEL_CACHE.get(key);
+  if(!fits){
+    fits=[];
+    const target=natSatPct/100, residual=rho=>tailFrom(bb(rho),seuilSat)-target;
+    // Search multiple brackets: a tail need not be monotone in correlation.
+    // Never return a boundary pretending that an impossible target was fitted.
+    let prev=0.0005, fp=residual(prev);
+    for(let j=1;j<=128;j++){
+      const next=0.0005+(0.99-0.0005)*j/128, fn=residual(next);
+      if(fp===0 || fp*fn<0 || fn===0){
+        let lo=prev, hi=next, flo=fp;
+        for(let k=0;k<48;k++){
+          const mid=(lo+hi)/2, fm=residual(mid);
+          if(flo*fm<=0) hi=mid; else {lo=mid; flo=fm;}
+        }
+        const rho=fp===0?prev:(fn===0?next:(lo+hi)/2);
+        if(Math.abs(residual(rho))<1e-7 && !fits.some(f=>Math.abs(f.rho-rho)<1e-6)){
+          fits.push({rho, distribution:bb(rho)});
+        }
+      }
+      prev=next; fp=fn;
+    }
+    if(NAT6_MODEL_CACHE.size>=64) NAT6_MODEL_CACHE.clear();
+    NAT6_MODEL_CACHE.set(key,fits);
+  }
+  if(!fits.length) return {valid:false, reason:'Aucun calibrage trouvé dans le domaine de corrélation testé.'};
+  return { valid:true, topPct:Math.max(...fits.map(f=>tailFrom(f.distribution,score)*100)),
+    topStrictPct:Math.min(...fits.map(f=>tailFrom(f.distribution,score+1)*100)),
+    calibratedSat:tailFrom(fits[0].distribution,seuilSat)*100,
+    mean:n*mbar, rho:fits[0].rho, nFits:fits.length };
+}
+function nat6TopLabel(estimate){
+  if(!estimate || !estimate.valid) return 'rang non estimable';
+  return estimate.topPct<1 ? '~top <1%' : '~top '+Math.round(estimate.topPct)+'%';
 }
 function nat6Band(score, maxItems, seuilSat){
   // DEPP bands: Satisfaisant ≥ seuilSat; the two lower cuts aren't needed for the
@@ -937,65 +969,35 @@ function normCdf(z){ const t=1/(1+0.2316419*Math.abs(z)), d=0.3989423*Math.exp(-
   let p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));
   return z>0 ? 1-p : p; }
 
-/* ── National "bridge" estimate (ROUGH HEURISTIC — not a measured percentile) ──
-   Blends what the measured instruments keep separate: (a) the kid's standing
-   WITHIN class (from grades), (b) how far the SCHOOL sits above/below national
-   (calibrated by the per-school 6e eval at ENTRY and the DNB at EXIT),
-   → an estimated national percentile BAND. An inference layer built ON TOP of
-   the honest instruments; never converts one instrument into another, never
-   fabricates item scores. Where a real 6e-eval item score exists (nat6TopPct),
-   we show that MEASURED point beside the band — we do not blend it in.
-   Reference baked from data.education.gouv.fr (6e+4e eval, DNB/IVAC, IPS).      */
+/* ── National context: observed school results and local grade gaps ──
+   No conversion from bulletin grades to national student percentiles.
+   Individual national sub-test estimates use nat6Estimate separately.
+   Reference baked from data.education.gouv.fr (6e+4e eval, DNB/IVAC, IPS). */
 const SCHOOLS = { "Louis":"0062011D", "Valentina":"0061119J" };   // child -> UAI (like NAT6_ITEMS)
 const EVAL6E_REF = {"source":"data.education.gouv.fr — fr-en-evaluations_nationales_6eme_par_etablissement (API v2.1)","dataset":"fr-en-evaluations_nationales_6eme_par_etablissement","fetched":"2026-11-04","note":"Evaluations nationales de debut de 6e. score_moyen/ecart_type on DEPP national scale (~mean 250, SD 50). groups = % of pupils in national performance groups 1..6 (6=top). National baseline = rows with uai null.","national":{"2025":{"Français":{"score_moyen":256.0,"ecart_type":49.0,"effectif":null,"groups":[12.6,15.4,19.9,19.5,14.8,17.8]},"Mathématiques":{"score_moyen":254.0,"ecart_type":53.0,"effectif":null,"groups":[15.2,17.3,18.7,16.8,13.1,18.9]}},"2024":{"Français":{"score_moyen":256.0,"ecart_type":49.0,"effectif":null,"groups":[11.7,15.2,20.1,20.1,15.0,17.9]},"Mathématiques":{"score_moyen":254.0,"ecart_type":53.0,"effectif":null,"groups":[15.0,17.2,18.8,16.9,13.0,19.0]}},"2023":{"Français":{"score_moyen":257.0,"ecart_type":48.0,"effectif":null,"groups":[11.3,15.7,20.1,19.3,15.3,18.2]},"Mathématiques":{"score_moyen":254.0,"ecart_type":53.0,"effectif":null,"groups":[14.8,17.3,19.0,17.0,13.1,18.9]}},"2022":{"Français":{"score_moyen":257.0,"ecart_type":47.0,"effectif":null,"groups":[11.2,15.8,19.9,19.3,15.6,18.3]},"Mathématiques":{"score_moyen":253.0,"ecart_type":52.0,"effectif":null,"groups":[14.9,17.4,19.2,17.0,13.0,18.4]}},"2021":{"Français":{"score_moyen":261.0,"ecart_type":46.0,"effectif":null,"groups":[8.4,13.8,20.4,20.5,16.6,20.3]},"Mathématiques":{"score_moyen":254.0,"ecart_type":53.0,"effectif":null,"groups":[15.1,16.1,18.5,17.4,13.9,19.0]}},"2020":{"Français":{"score_moyen":261.0,"ecart_type":48.0,"effectif":null,"groups":[9.2,13.8,19.5,19.9,16.6,21.1]},"Mathématiques":{"score_moyen":253.0,"ecart_type":52.0,"effectif":null,"groups":[15.4,15.9,18.7,17.7,14.0,18.3]}},"2019":{"Français":{"score_moyen":255.0,"ecart_type":49.0,"effectif":null,"groups":[13.6,14.8,17.8,18.5,16.3,19.1]},"Mathématiques":{"score_moyen":249.0,"ecart_type":52.0,"effectif":null,"groups":[16.8,17.5,19.2,17.1,12.9,16.5]}},"2018":{"Français":{"score_moyen":254.0,"ecart_type":50.0,"effectif":null,"groups":[11.9,17.1,21.7,18.4,13.4,17.5]},"Mathématiques":{"score_moyen":249.0,"ecart_type":48.0,"effectif":null,"groups":[13.4,17.9,21.7,19.2,13.4,14.3]}},"2017":{"Français":{"score_moyen":250.0,"ecart_type":50.0,"effectif":null,"groups":[13.3,18.4,20.9,18.3,13.5,15.6]},"Mathématiques":{"score_moyen":250.0,"ecart_type":50.0,"effectif":null,"groups":[12.7,18.1,22.2,18.9,13.2,15.0]}}},"schools":{"0062011D":{"nom":"College International de Valbonne","commune":"VALBONNE","by_year":{"2025":{"Français":{"score_moyen":302.0,"ecart_type":43.0,"effectif":187,"groups":[2.1,2.7,4.8,16.0,18.7,55.6]},"Mathématiques":{"score_moyen":318.0,"ecart_type":50.0,"effectif":186,"groups":[0.0,2.7,3.8,12.9,15.1,65.6]}},"2024":{"Français":{"score_moyen":309.0,"ecart_type":46.0,"effectif":155,"groups":[0.6,1.3,3.9,16.1,21.9,56.1]},"Mathématiques":{"score_moyen":325.0,"ecart_type":60.0,"effectif":155,"groups":[1.3,0.0,4.5,11.6,14.2,68.4]}},"2023":{"Français":{"score_moyen":303.0,"ecart_type":44.0,"effectif":149,"groups":[0.0,2.0,8.7,15.4,26.8,47.0]},"Mathématiques":{"score_moyen":316.0,"ecart_type":58.0,"effectif":151,"groups":[2.0,2.0,6.6,14.6,14.6,60.3]}},"2022":{"Français":{"score_moyen":301.0,"ecart_type":47.0,"effectif":167,"groups":[1.2,2.4,10.2,13.2,24.0,49.1]},"Mathématiques":{"score_moyen":303.0,"ecart_type":46.0,"effectif":164,"groups":[1.2,4.3,7.3,13.4,17.7,56.1]}},"2021":{"Français":{"score_moyen":304.0,"ecart_type":42.0,"effectif":169,"groups":[0.6,1.2,5.9,13.6,27.2,51.5]},"Mathématiques":{"score_moyen":307.0,"ecart_type":49.0,"effectif":169,"groups":[0.0,2.4,6.5,14.8,24.3,52.1]}},"2020":{"Français":{"score_moyen":312.0,"ecart_type":41.0,"effectif":179,"groups":[0.0,2.2,4.5,11.7,20.1,61.5]},"Mathématiques":{"score_moyen":314.0,"ecart_type":44.0,"effectif":180,"groups":[0.6,1.7,1.7,13.3,22.8,60.0]}},"2019":{"Français":{"score_moyen":297.0,"ecart_type":38.0,"effectif":173,"groups":[1.2,1.7,6.9,19.1,21.4,49.7]},"Mathématiques":{"score_moyen":303.0,"ecart_type":47.0,"effectif":174,"groups":[0.6,1.1,10.9,16.1,21.3,50.0]}},"2018":{"Français":{"score_moyen":309.0,"ecart_type":54.0,"effectif":168,"groups":[1.2,4.2,7.7,14.3,19.0,53.6]},"Mathématiques":{"score_moyen":309.0,"ecart_type":50.0,"effectif":167,"groups":[0.6,1.2,5.4,14.4,24.0,54.5]}},"2017":{"Français":{"score_moyen":305.0,"ecart_type":49.0,"effectif":182,"groups":[1.1,2.7,8.2,15.9,17.0,54.9]},"Mathématiques":{"score_moyen":313.0,"ecart_type":52.0,"effectif":182,"groups":[0.5,2.2,5.5,15.4,20.3,56.0]}}},"exit_dnb":{"2025":{"brevet_note_ecrit_g":14.4,"va_note_g":-0.3,"taux_reussite_g":100.0,"va_taux_reussite_g":1.0,"taux_acces_6e_3e":93.0,"nb_candidats_g":180,"mentions":{"ab":12,"b":26,"tb":141,"total":179},"pct_tb":78.8},"2024":{"brevet_note_ecrit_g":15.4,"va_note_g":0.3,"taux_reussite_g":100.0,"va_taux_reussite_g":1.0,"taux_acces_6e_3e":94.0,"nb_candidats_g":184,"mentions":{"ab":6,"b":25,"tb":152,"total":183},"pct_tb":83.1},"2023":{"brevet_note_ecrit_g":15.4,"va_note_g":0.4,"taux_reussite_g":100.0,"va_taux_reussite_g":1.0,"taux_acces_6e_3e":89.0,"nb_candidats_g":179,"mentions":{"ab":8,"b":27,"tb":140,"total":175},"pct_tb":80.0},"2022":{"brevet_note_ecrit_g":15.0,"va_note_g":0.4,"taux_reussite_g":99.0,"va_taux_reussite_g":0.0,"taux_acces_6e_3e":90.0,"nb_candidats_g":171,"mentions":{"ab":4,"b":25,"tb":141,"total":170},"pct_tb":82.9}}},"0061119J":{"nom":"College Prive Notre Dame de la Tramontane","commune":"ANTIBES","by_year":{"2025":{"Français":{"score_moyen":269.0,"ecart_type":44.0,"effectif":154,"groups":[3.2,11.0,22.7,27.3,13.6,22.1]},"Mathématiques":{"score_moyen":276.0,"ecart_type":46.0,"effectif":152,"groups":[2.0,5.9,23.0,28.3,17.1,23.7]}},"2024":{"Français":{"score_moyen":284.0,"ecart_type":45.0,"effectif":151,"groups":[1.3,7.3,13.9,25.2,13.9,38.4]},"Mathématiques":{"score_moyen":293.0,"ecart_type":58.0,"effectif":152,"groups":[2.6,9.9,14.5,13.2,14.5,45.4]}},"2023":{"Français":{"score_moyen":293.0,"ecart_type":45.0,"effectif":164,"groups":[1.2,4.3,12.8,18.9,20.7,42.1]},"Mathématiques":{"score_moyen":291.0,"ecart_type":55.0,"effectif":162,"groups":[2.5,6.2,13.6,23.5,13.0,41.4]}},"2022":{"Français":{"score_moyen":275.0,"ecart_type":48.0,"effectif":150,"groups":[5.3,8.0,15.3,24.0,16.0,31.3]},"Mathématiques":{"score_moyen":293.0,"ecart_type":58.0,"effectif":153,"groups":[4.6,5.9,18.3,16.3,9.8,45.1]}},"2021":{"Français":{"score_moyen":281.0,"ecart_type":43.0,"effectif":150,"groups":[1.3,8.0,14.7,18.7,22.7,34.7]},"Mathématiques":{"score_moyen":286.0,"ecart_type":46.0,"effectif":151,"groups":[2.6,7.3,9.3,23.8,21.2,35.8]}},"2020":{"Français":{"score_moyen":300.0,"ecart_type":43.0,"effectif":149,"groups":[1.3,1.3,8.1,16.1,26.8,46.3]},"Mathématiques":{"score_moyen":297.0,"ecart_type":49.0,"effectif":150,"groups":[0.7,5.3,10.7,22.0,16.7,44.7]}},"2019":{"Français":{"score_moyen":265.0,"ecart_type":48.0,"effectif":148,"groups":[8.8,12.2,16.2,17.6,20.3,25.0]},"Mathématiques":{"score_moyen":278.0,"ecart_type":45.0,"effectif":147,"groups":[4.1,8.2,18.4,17.7,17.7,34.0]}},"2018":{"Français":{"score_moyen":292.0,"ecart_type":53.0,"effectif":148,"groups":[5.4,5.4,10.8,13.5,20.3,44.6]},"Mathématiques":{"score_moyen":273.0,"ecart_type":46.0,"effectif":149,"groups":[6.7,8.1,17.4,16.8,22.8,28.2]}},"2017":{"Français":{"score_moyen":293.0,"ecart_type":49.0,"effectif":151,"groups":[2.6,5.3,7.9,16.6,25.8,41.7]},"Mathématiques":{"score_moyen":282.0,"ecart_type":54.0,"effectif":151,"groups":[2.6,11.3,12.6,20.5,14.6,38.4]}}},"exit_dnb":{"2025":{"brevet_note_ecrit_g":12.9,"va_note_g":0.1,"taux_reussite_g":100.0,"va_taux_reussite_g":3.0,"taux_acces_6e_3e":94.0,"nb_candidats_g":146,"mentions":{"ab":27,"b":55,"tb":51,"total":133},"pct_tb":38.3},"2024":{"brevet_note_ecrit_g":14.1,"va_note_g":0.2,"taux_reussite_g":99.0,"va_taux_reussite_g":1.0,"taux_acces_6e_3e":94.0,"nb_candidats_g":142,"mentions":{"ab":18,"b":49,"tb":70,"total":137},"pct_tb":51.1},"2023":{"brevet_note_ecrit_g":14.1,"va_note_g":0.9,"taux_reussite_g":100.0,"va_taux_reussite_g":2.0,"taux_acces_6e_3e":94.0,"nb_candidats_g":147,"mentions":{"ab":32,"b":37,"tb":66,"total":135},"pct_tb":48.9},"2022":{"brevet_note_ecrit_g":13.6,"va_note_g":0.8,"taux_reussite_g":100.0,"va_taux_reussite_g":3.0,"taux_acces_6e_3e":93.0,"nb_candidats_g":152,"mentions":{"ab":30,"b":52,"tb":68,"total":150},"pct_tb":45.3}}}},"eval4e":{"note":"4e eval nationale is published only at departement/academie level (NOT per school). Use as national + departmental reference curve for kids currently in 4e; cannot isolate a specific school offset. Years 2023-2025.","national":{"2025":{"Mathématiques":{"score_moyen":250.0,"ecart_type":51.2,"groups":[15.0,18.8,20.7,17.5,12.2,15.8]},"Français":{"score_moyen":247.0,"ecart_type":50.4,"groups":[17.4,17.7,20.5,17.6,12.5,14.4]}},"2024":{"Français":{"score_moyen":248.0,"ecart_type":50.2,"groups":[16.7,17.5,20.4,17.9,12.7,14.8]},"Mathématiques":{"score_moyen":249.0,"ecart_type":50.3,"groups":[15.1,19.2,21.2,17.5,12.1,14.9]}},"2023":{"Mathématiques":{"score_moyen":250.0,"ecart_type":50.0,"groups":[14.0,19.1,21.5,17.9,12.4,15.2]},"Français":{"score_moyen":250.0,"ecart_type":50.0,"groups":[15.2,17.1,20.3,18.2,13.4,15.8]}}},"dept06":{"2025":{"Français":{"score_moyen":249.0,"ecart_type":51.7,"groups":[17.0,16.8,19.9,17.4,13.5,15.4]},"Mathématiques":{"score_moyen":253.0,"ecart_type":51.2,"groups":[13.9,18.0,20.7,18.0,12.8,16.6]}},"2024":{"Mathématiques":{"score_moyen":252.0,"ecart_type":48.8,"groups":[12.8,18.5,21.9,18.7,12.7,15.5]},"Français":{"score_moyen":251.0,"ecart_type":50.8,"groups":[14.8,16.7,20.8,18.0,13.4,16.3]}},"2023":{"Mathématiques":{"score_moyen":252.0,"ecart_type":50.3,"groups":[12.6,18.3,21.8,19.0,12.7,15.5]},"Français":{"score_moyen":252.0,"ecart_type":50.1,"groups":[14.3,17.0,20.1,18.4,13.5,16.7]}}}},"exit_note":"exit_dnb per school from fr-en-indicateurs-valeur-ajoutee-colleges (IVAC): brevet written note /20, value-added (va_*), mention mix. va ~0 => school performs as its intake/IPS predicts (no exceptional lift). Sessions 2022-2025.","sources":{"eval6e":"fr-en-evaluations_nationales_6eme_par_etablissement","eval4e":"fr-en-evaluations_nationales_4eme_departement","dnb_ivac":"fr-en-indicateurs-valeur-ajoutee-colleges","ips":"fr-en-ips-colleges-ap2023"}};
-const BRIDGE_K = 0.75;   // within-class spread is narrower than national; damp class-z
-function evalDiscipline(matiere){
-  const m=(matiere||'').toUpperCase();
-  if(m.includes('FRAN')) return 'Français';
-  if(m.includes('MATH')) return 'Mathématiques';
-  return null;
+function classComparisonRows(subjects, stats){
+  return subjects.map(s=>{
+    const st=stats[s];
+    if(!st || ![st.studentAvg,st.classAvg].every(x=>Number.isFinite(x) && x>=0 && x<=20)) return null;
+    return {s, studentAvg:st.studentAvg, classAvg:st.classAvg, gap:st.studentAvg-st.classAvg};
+  }).filter(Boolean).sort((a,b)=>b.gap-a.gap);
 }
-// school offset in NATIONAL-SD units, bracketed by entry(6e eval) and exit(DNB).
-function schoolOffset(uai, discipline){
-  const sc = uai && EVAL6E_REF.schools[uai];
-  if(!sc) return {off:0, lo:0, hi:0, conf:'none', parts:{}};
-  const parts={}, by=sc.by_year||{}, years=Object.keys(by).sort().reverse();
-  function entryFor(disc){
-    for(const y of years){ const row=by[y]&&by[y][disc], nat=EVAL6E_REF.national[y]&&EVAL6E_REF.national[y][disc];
-      if(row && nat && nat.ecart_type) return (row.score_moyen-nat.score_moyen)/nat.ecart_type; }
-    return null;
-  }
-  let entry = discipline ? entryFor(discipline) : null;
-  if(entry==null){ const fr=entryFor('Français'), ma=entryFor('Mathématiques'), a=[fr,ma].filter(v=>v!=null); if(a.length) entry=a.reduce((x,y)=>x+y,0)/a.length; }
-  if(entry!=null) parts.entry=entry;
-  const ex=sc.exit_dnb||{}, exYears=Object.keys(ex).sort().reverse(); let exit=null;
-  for(const y of exYears){ const n=ex[y]&&ex[y].brevet_note_ecrit_g; if(n!=null){ exit=(n-10.5)/3.3; break; } }
-  if(exit!=null) parts.exit=exit;
-  const vals=[entry,exit].filter(v=>v!=null);
-  if(!vals.length) return {off:0, lo:0, hi:0, conf:'none', parts};
-  const off=vals.reduce((a,b)=>a+b,0)/vals.length;
-  const gap=(entry!=null&&exit!=null)?Math.abs(entry-exit):0.6, half=Math.max(0.15, gap/2);
-  const conf=(entry!=null&&exit!=null)?(gap<0.5?'high':'medium'):'low';
-  return {off, lo:off-half, hi:off+half, conf, parts};
-}
-function classZ(st){
-  if(!st || st.studentAvg==null || st.classAvg==null) return null;
-  let sd=null;
-  if(st.hi!=null && st.lo!=null && st.hi>st.lo) sd=(st.hi-st.lo)/4;
-  if(!sd || sd<=0) sd=2.5;
-  return (st.studentAvg-st.classAvg)/sd;
-}
-function bridgeSubjectBand(st, uai, matiere, nGrades){
-  const zc=classZ(st); if(zc==null) return null;
-  const so=schoolOffset(uai, evalDiscipline(matiere));
-  const z=zc*BRIDGE_K + so.off;
-  const pct=(1-normCdf(z))*100;
-  // class-position uncertainty shrinks with the number of grades (~0.5/√n), clamped [0.08,0.30].
-  // 1 grade → ±0.30σ (honestly wide); a full term (~10) → ±0.16; many → ±0.08.
-  const n=Math.max(1, nGrades||1);
-  const classSlack=Math.min(0.30, Math.max(0.08, 0.5/Math.sqrt(n)));
-  const a=(1-normCdf(z+(so.hi-so.off)+classSlack))*100, b=(1-normCdf(z-(so.off-so.lo)-classSlack))*100;
-  return {pct, pctLo:Math.min(a,b), pctHi:Math.max(a,b), conf:so.conf, z, zc, off:so.off, n, classSlack};
+function nationalSchoolContext(uai, schoolYear){
+  const sc=uai && EVAL6E_REF.schools[uai];
+  if(!sc) return null;
+  const match=String(schoolYear||'').match(/^([0-9]{4})/), cutoff=match?Number(match[1]):Infinity;
+  const rows=[], by=sc.by_year||{};
+  ['Français','Mathématiques'].forEach(discipline=>{
+    Object.keys(by).filter(y=>Number(y)<=cutoff).sort().reverse().filter(y=>{
+      const school=by[y][discipline], national=EVAL6E_REF.national[y]?.[discipline];
+      return school && national && Number.isFinite(school.score_moyen) && Number.isFinite(national.score_moyen);
+    }).slice(0,3).forEach(year=>{
+      const school=by[year][discipline], national=EVAL6E_REF.national[year][discipline];
+      rows.push({discipline,year,school,national,delta:school.score_moyen-national.score_moyen});
+    });
+  });
+  const exit=sc.exit_dnb||{}, dnbYear=Object.keys(exit).filter(y=>Number(y)<=cutoff).sort().reverse()[0];
+  return {name:sc.nom,rows,dnb:dnbYear?{year:dnbYear,...exit[dnbYear]}:null};
 }
 // top-school horizon rungs, sorted hi→lo; moment ∈ prepa|univ-intl|lycee
 const HORIZON = [
@@ -1829,86 +1831,82 @@ function renderDashboard(root, data, palette, opts={}){
   })();
 
   (function drawBridge(){
-    const el = root.querySelector('.bridgeChart');
-    const onTrackEl = root.querySelector('.bridgeOnTrack');
-    const noteEl = root.querySelector('.bridgeNote');
+    const el=root.querySelector('.bridgeChart'), box=root.querySelector('.bridgeChartBox');
+    const summary=root.querySelector('.bridgeOnTrack'), note=root.querySelector('.bridgeNote');
+    const contextEl=root.querySelector('.bridgeContext');
     if(!el) return;
-    const uai = opts.uai || null;
-    const ss = opts.subjectStats || {};
-    // measured anchors available this year (real eval item scores) -> top% per discipline
-    const nat = opts.natEval;
-    const measured = {};   // discipline -> best measured top% (lower=better); keep min across tests
-    if(nat && Array.isArray(nat.tests)){
-      nat.tests.forEach(t=>{
-        try{ const p = nat6TopPct(t.rates, t.max, t.seuilSat, t.natSatPct, t.score);
-          const disc = t.discipline==='maths' ? 'Mathématiques' : (t.discipline==='francais' ? 'Français' : null);
-          if(disc!=null && (measured[disc]==null || p<measured[disc])) measured[disc]=p;
-        }catch(e){}
-      });
-    }
-    // one row per subject that has class stats
-    const gradeCount = {};
-    data.forEach(d=>{ gradeCount[d.matiere]=(gradeCount[d.matiere]||0)+1; });
-    const rows = subjects.map(s=>{
-      const band = bridgeSubjectBand(ss[s], uai, s, gradeCount[s]||0);
-      if(!band) return null;
-      const disc = evalDiscipline(s);
-      return { s, band, disc, meas: disc ? measured[disc] : null };
-    }).filter(Boolean).sort((a,b)=> a.band.pct - b.band.pct);   // best (lowest top%) first
-    if(!rows.length){ if(onTrackEl) onTrackEl.textContent='Pas assez de données de classe pour estimer une position nationale.'; return; }
-
-    const confColor = { high:'#6ee7a8', medium:'#ffd27d', low:'#9aa3c0', none:'#9aa3c0' };
-    const confFr = { high:'confiance élevée', medium:'confiance moyenne', low:'confiance faible', none:'—' };
-    // floating bars = the [pctLo, pctHi] band; x axis is "top X% nationally" (reversed: left=best)
-    const data2 = rows.map(r=>[r.band.pctLo, r.band.pctHi]);
-    const bridgeChart = new Chart(el, {
-      type:'bar',
-      data:{ labels: rows.map(r=>r.s), datasets:[{
-        data: data2, backgroundColor: rows.map(r=>color(r.s)+'cc'),
-        borderColor: rows.map(r=>confColor[r.band.conf]), borderWidth:2, borderSkipped:false,
-        borderRadius:3, barPercentage:0.7
-      }]},
-      options:{ maintainAspectRatio:false, indexAxis:'y',
-        scales:{
-          x:{ min:0, max:100, reverse:true, grid:{color:'#2a3150'},
-              title:{display:true, text:'≈ top % national (gauche = mieux ; plage estimée)', color:'#9aa3c0', font:{size:11}},
-              ticks:{color:'#9aa3c0', callback:v=>'top '+v+'%'} },
-          y:{ grid:{display:false}, ticks:{color:'#e8ecf7', font:{size:11}} }
-        },
-        plugins:{ legend:{display:false},
-          tooltip:{callbacks:{ label:ctx=>{ const r=rows[ctx.dataIndex], b=r.band;
-            const out=[`estimation : top ${b.pctLo.toFixed(0)}–${b.pctHi.toFixed(0)}% national`,
-                      `(position classe z=${b.zc.toFixed(2)}, décalage collège +${b.off.toFixed(2)}σ, ${confFr[b.conf]})`];
-            if(r.meas!=null) out.push(`◆ mesuré (éval 6ᵉ) : ~top ${r.meas.toFixed(1)}%`);
-            return out; } }}
+    const rows=classComparisonRows(subjects, opts.subjectStats||{});
+    if(rows.length){
+      const extent=Math.max(1,...rows.map(r=>Math.abs(r.gap)))*1.15;
+      root.__bridgeChart=new Chart(el, {
+        type:'bar',
+        data:{labels:rows.map(r=>r.s),datasets:[{
+          label:'Écart à la moyenne de classe (/20)', data:rows.map(r=>r.gap),
+          backgroundColor:rows.map(r=>color(r.s)+'cc'),borderRadius:3,barPercentage:0.7
+        }]},
+        options:{maintainAspectRatio:false,indexAxis:'y',
+          scales:{
+            x:{min:-extent,max:extent,grid:{color:'#2a3150'},
+              title:{display:true,text:'Écart à la classe en points sur 20 (droite = au-dessus)',color:'#9aa3c0'},
+              ticks:{color:'#9aa3c0',callback:v=>(v>0?'+':'')+Number(v.toFixed(1))}},
+            y:{grid:{display:false},ticks:{color:'#e8ecf7',font:{size:11}}}
+          },
+          plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{
+            const r=rows[ctx.dataIndex];
+            return ['Élève '+r.studentAvg.toFixed(2)+'/20 · classe '+r.classAvg.toFixed(2)+'/20',
+              'Écart '+(r.gap>0?'+':'')+r.gap.toFixed(2)+' point(s) ; aucun rang déduit.'];
+          }}}}
         }
-      },
-      plugins:[{ id:'measMarker', afterDatasetsDraw(c){
-        const {ctx, scales:{x,y}} = c;
-        rows.forEach((r,i)=>{ if(r.meas==null) return;
-          const px=x.getPixelForValue(r.meas), py=y.getPixelForValue(i);
-          ctx.save(); ctx.fillStyle='#ffffff'; ctx.strokeStyle='#0f1220'; ctx.lineWidth=1.5;
-          ctx.beginPath(); ctx.moveTo(px,py-7); ctx.lineTo(px+7,py); ctx.lineTo(px,py+7); ctx.lineTo(px-7,py); ctx.closePath();
-          ctx.fill(); ctx.stroke(); ctx.restore();
+      });
+      const above=rows.filter(r=>r.gap>0).length;
+      if(summary) summary.textContent='Moyenne supérieure à celle de la classe dans '+above+' matière(s) sur '+rows.length
+        +'. Ce constat local ne détermine ni un rang national global ni une chance d’admission.';
+    }else{
+      if(box) box.hidden=true;
+      if(summary) summary.textContent='Moyennes de classe indisponibles. Aucun rang national déduit ; les repères du collège restent présentés ci-dessous.';
+    }
+    const context=nationalSchoolContext(opts.uai, opts.year);
+    if(contextEl){
+      if(context && context.rows.length){
+        const name=document.createElement('p'); name.className='legend-note';
+        name.style.fontWeight='600';
+        name.textContent=context.name+' — début de 6ᵉ, trois dernières sessions disponibles';
+        contextEl.appendChild(name);
+        const scroll=document.createElement('div'); scroll.style.overflowX='auto';
+        const table=document.createElement('table');
+        table.style.cssText='width:100%;font-size:12px;border-collapse:collapse;text-align:left';
+        const head=document.createElement('thead'), tr=document.createElement('tr');
+        ['Test','Session','Score collège','Score national','Écart de scores','Effectif'].forEach(label=>{
+          const th=document.createElement('th'); th.textContent=label;
+          th.style.cssText='padding:6px;border-bottom:1px solid var(--line);white-space:nowrap'; tr.appendChild(th);
         });
-      }}]
-    });
-
-    // "on track" readout: overall coef-weighted blend of subject midpoints vs top-10–20% threshold
-    const mids = rows.map(r=>(r.band.pctLo+r.band.pctHi)/2);
-    const overall = mids.reduce((a,b)=>a+b,0)/mids.length;
-    const anyMeas = rows.some(r=>r.meas!=null);
-    const verdict = overall<=20
-      ? `<b style="color:#6ee7a8">Dans la zone des établissements sélectifs</b> (≈ top 10–20% national) sur l'estimation globale.`
-      : overall<=40
-      ? `<b style="color:#ffd27d">Au-dessus de la moyenne nationale</b>, un peu en-dessous de la zone des plus sélectifs (top&nbsp;10–20%).`
-      : `<b style="color:#9aa3c0">Autour de la moyenne nationale</b> sur cette estimation.`;
-    if(onTrackEl) onTrackEl.innerHTML = `Estimation globale ≈ <b>top ${overall.toFixed(0)}%</b> national (moyenne des matières). ${verdict}`;
-    if(noteEl) noteEl.innerHTML = `Méthode&nbsp;: position dans la classe (amortie ×${BRIDGE_K}) + décalage du collège vs national (éval 6ᵉ à l'entrée, DNB à la sortie), converti en percentile normal. `
-      + (anyMeas ? `Le losange ◆ est le <b>vrai</b> résultat d'évaluation (modèle bêta-binomial), à comparer à la plage estimée.` : `Aucun score d'évaluation réel cette année&nbsp;: tout est estimé.`)
-      + ` Les bordures de barre indiquent la confiance (vert = élevée, jaune = moyenne, gris = faible).`;
-    // expose for teardown
-    root.__bridgeChart = bridgeChart;
+        head.appendChild(tr);table.appendChild(head);
+        const body=document.createElement('tbody');
+        context.rows.forEach(r=>{
+          const row=document.createElement('tr');
+          [r.discipline,r.year,r.school.score_moyen,r.national.score_moyen,
+            (r.delta>0?'+':'')+r.delta,r.school.effectif??'—'].forEach(value=>{
+            const td=document.createElement('td');td.textContent=String(value);
+            td.style.cssText='padding:6px;border-bottom:1px solid var(--line);white-space:nowrap';row.appendChild(td);
+          });body.appendChild(row);
+        });table.appendChild(body);scroll.appendChild(table);contextEl.appendChild(scroll);
+        const explain=document.createElement('p');explain.className='legend-note';
+        explain.textContent='Scores sur l’échelle standardisée DEPP (référence initiale : moyenne 250, écart-type 50), sans maximum fixé à 300. '
+          +'Chaque écart compare la même session et le même test. Ces cohortes de 6ᵉ ne représentent pas nécessairement la classe actuelle.';
+        contextEl.appendChild(explain);
+        if(context.dnb && Number.isFinite(context.dnb.brevet_note_ecrit_g)){
+          const dnb=context.dnb,p=document.createElement('p');p.className='legend-note';
+          p.textContent='Repère séparé — DNB '+dnb.year+' : moyenne aux écrits '+dnb.brevet_note_ecrit_g.toFixed(1)
+            +'/20 (ensemble des épreuves). Il concerne une autre cohorte et n’entre pas dans le calcul d’un percentile.';
+          contextEl.appendChild(p);
+        }
+      }else{
+        contextEl.textContent='Référence nationale du collège indisponible pour cette année. Aucun décalage supposé égal à zéro.';
+      }
+    }
+    if(note) note.textContent='Méthode : écarts de moyennes observés et contexte officiel présentés séparément. '
+      +'Le modèle par sous-test ci-dessous utilise les taux de réussite par question et la part nationale « Satisfaisant ». '
+      +'Les scores individuels sont observés ; leurs percentiles sont modélisés, sans validation externe. Aucune confiance élevée n’est attribuée à partir du seul contexte du collège.';
   })();
 
   /* ---- Horizon: national positioning (left) + hedged school ladder (right) ----
@@ -1941,12 +1939,21 @@ function renderDashboard(root, data, palette, opts={}){
       const DISC = { maths:'#6ea8fe', francais:'#c792ea' };
       // normalise each test onto a shared 0→100% of its own max so bars are comparable
       const rows = nat.tests.map(t=>{
-        const topPct = nat6TopPct(t.rates, t.max, t.seuilSat, t.natSatPct, t.score);
+        const estimate = nat6Estimate(t.rates, t.max, t.seuilSat, t.natSatPct, t.score);
+        const topPct = estimate.valid ? estimate.topPct : null;
         const b1 = t.cut ? t.cut[0] : Math.round(t.max*0.3);   // À besoins ≤ b1
         const b2 = t.cut ? t.cut[1] : (t.seuilSat-1);          // Fragile ≤ b2
-        return { ...t, topPct, b1, b2 };
+        return { ...t, topPct, estimate, b1, b2 };
       });
-      const labels = rows.map(r=>r.label);
+      const labels = rows.map(r=>{
+        const lines=[''];
+        r.label.split(' ').forEach(word=>{
+          const last=lines.length-1;
+          if(lines[last] && (lines[last]+' '+word).length>18) lines.push(word);
+          else lines[last]+=(lines[last]?' ':'')+word;
+        });
+        return lines;
+      });
       // stacked segments expressed as fraction of max (so every bar is full-width)
       const seg = (r,a,b)=> Math.max(0,(b-a))/r.max*100;
       const dsBesoins = { label:'À besoins', backgroundColor:Z.besoins, data:rows.map(r=>seg(r,0,r.b1)), stack:'z', borderWidth:0, barPercentage:0.5, categoryPercentage:0.9, base:0 };
@@ -1956,11 +1963,11 @@ function renderDashboard(root, data, palette, opts={}){
         type:'bar',
         data:{ labels, datasets:[dsBesoins, dsFragile, dsSatis] },
         options:{ maintainAspectRatio:false, indexAxis:'y',
-          layout:{padding:{right:92, top:4}},
+          layout:{padding:{right:78, top:4}},
           scales:{
             x:{ stacked:true, min:0, max:100, grid:{color:'#2a3150'},
                 ticks:{color:'#9aa3c0', callback:v=>v+'%'},
-                title:{display:true, color:'#9aa3c0', text:'barre = position dans le test (0→max, zones officielles) · ligne = percentile national (◆)'} },
+                title:{display:true, color:'#9aa3c0', text:['Barre : score observé','Jaune : rang modélisé'],font:{size:10}} },
             y:{ stacked:true, grid:{display:false}, ticks:{color:'#e8ecf7', font:{size:11}} }
           },
           plugins:{ legend:{display:true, labels:{color:'#e8ecf7', boxWidth:12, font:{size:11}}},
@@ -1969,7 +1976,8 @@ function renderDashboard(root, data, palette, opts={}){
               label:ctx=>{ const r=rows[ctx.dataIndex];
                 return [`Score de ${nat.eleve||'l’élève'} : ${r.score}/${r.max}  ·  ${nat6Band(r.score,r.max,r.seuilSat)}`,
                   `Seuil « Satisfaisant » : ≥ ${r.seuilSat}/${r.max}`,
-                  `Position estimée : ~top ${r.topPct<1?r.topPct.toFixed(2):r.topPct.toFixed(1)}% (≈ ${(100-r.topPct).toFixed(r.topPct<1?2:1)}e percentile national)`]; }
+                  r.estimate.valid ? nat6TopLabel(r.estimate)+' — modèle bêta-binomial, au moins ce score.' : r.estimate.reason,
+                  r.estimate.valid ? 'Le segment couvre les ex æquo et les solutions de calibrage ; ce n’est pas un intervalle de confiance.' : 'Le score reste observé ; aucun rang calculé.']; }
             }}
           }},
         plugins:[{ id:'natscore', afterDraw(c){
@@ -1990,7 +1998,11 @@ function renderDashboard(root, data, palette, opts={}){
             ctx.fillStyle='#0b0f1e'; ctx.font='bold 11px sans-serif'; ctx.textBaseline='middle';
             ctx.textAlign = frac>12?'right':'left';
             ctx.fillText(`${r.score}/${r.max}`, px+(frac>12?-6:6), yc);
-            // --- percentile lane just below the bar ---
+            if(!r.estimate.valid){
+              ctx.fillStyle='#9aa3c0';ctx.font='10px sans-serif';ctx.textAlign='left';
+              ctx.fillText('rang indisponible',area.right+8,yc);ctx.restore();return;
+            }
+            // Modelled percentile lane, separate from the observed score.
             const laneY = bBot + 11, pctile = Math.max(0, Math.min(100, 100 - r.topPct));
             const lpx = xs.getPixelForValue(pctile);
             ctx.strokeStyle='#3a4266'; ctx.lineWidth=2; ctx.beginPath();
@@ -1999,15 +2011,13 @@ function renderDashboard(root, data, palette, opts={}){
             ctx.fillStyle='#6b7398'; ctx.font='9px sans-serif'; ctx.textBaseline='middle';
             ctx.textAlign='left';  ctx.fillText('0', area.left-2, laneY+9);
             ctx.textAlign='right'; ctx.fillText('100e', area.right+2, laneY+9);
-            // diamond at the child's percentile
-            ctx.fillStyle='#ffd166'; ctx.strokeStyle='#0b0f1e'; ctx.lineWidth=1;
-            const d=5; ctx.beginPath();
-            ctx.moveTo(lpx, laneY-d); ctx.lineTo(lpx+d, laneY); ctx.lineTo(lpx, laneY+d); ctx.lineTo(lpx-d, laneY); ctx.closePath();
-            ctx.fill(); ctx.stroke();
-            // --- "~top X%" to the right of the plot (aligned to the diamond) ---
-            const pct = r.topPct<1 ? r.topPct.toFixed(2) : r.topPct.toFixed(1);
+            // Ties span P(S > score)..P(S >= score), not a measured point.
+            const end=xs.getPixelForValue(100-r.estimate.topStrictPct);
+            ctx.strokeStyle='#ffd166';ctx.lineWidth=6;ctx.beginPath();
+            ctx.moveTo(lpx,laneY);ctx.lineTo(Math.max(lpx+1,end),laneY);ctx.stroke();
+            // "~top X%" labels the model's inclusive upper-tail share.
             ctx.fillStyle='#ffd166'; ctx.font='bold 12px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
-            ctx.fillText(`~top ${pct}%`, area.right+8, yc);
+            ctx.fillText(nat6TopLabel(r.estimate), area.right+8, yc);
             ctx.restore();
           });
         }}]
@@ -2015,22 +2025,15 @@ function renderDashboard(root, data, palette, opts={}){
       if(natResultNote) natResultNote.textContent =
         `${nat.eleve||''}${nat.school?.nom?' · '+nat.school.nom:''}  (réf. nationale ${NAT6.year})`.trim();
       if(natModelNote) natModelNote.textContent =
-        'Score = comptage réel par question (fiches détaillées). « ~top X% » = estimation modèle (beta-binomial calé sur les taux de réussite par item + le % national « Satisfaisant » de la DEPP), au niveau national — en contexte IPS élevé, la position relative aux pairs est un peu moins extrême.';
+        'Score = comptage observé par question. « ~top X% » = part modélisée obtenant au moins ce score dans ce sous-test. Le bêta-binomial utilise la moyenne des taux par question et est calibré sur la part nationale « Satisfaisant » ; il ne reproduit pas chaque difficulté individuellement. Les corrélations réelles et la distribution nationale des scores ne sont pas connues : calibrage vérifié, précision des rangs non validée. Le segment jaune couvre les ex æquo et les solutions de calibrage, sans représenter l’incertitude du modèle. Les références d’une autre session restent une hypothèse de stabilité. Aucun meilleur sous-test n’est retenu comme rang global.';
     } else if(natTestEl && is6eme && !haveNat){
       if(natResultNote) natResultNote.textContent = '⚠ résultats non chargés';
       if(natModelNote) natModelNote.textContent = 'Charge la feuille « réponses détaillées » de l’éval nationale dans les Réglages pour voir la position par test.';
     }
 
-    // === LEFT: national positioning — only the HONEST /20→national bridge ===
-    // The DNB mention bands are a real national /20 anchor; we place the child's
-    // overall average on them. We DO NOT fake a /20→/300-eval conversion (different
-    // instruments); the national 6ᵉ distribution is shown separately as context.
+    // DNB thresholds are exam references, not a bulletin-to-percentile mapping.
     const natEl = root.querySelector('.horizonNat');
     if(natEl){
-      const topPct = you>=MENTION.tb ? MENTION.pctAtOrAbove[16]
-                   : you>=MENTION.b  ? MENTION.pctAtOrAbove[14]
-                   : you>=MENTION.ab ? MENTION.pctAtOrAbove[12] : 85;
-      const mentionLab = you>=16?'Très Bien':you>=14?'Bien':you>=12?'Assez Bien':'(sous AB)';
       // Horizontal "mention ladder": fixed rungs 12/14/16/20 + a ★ YOU line.
       new Chart(natEl, {
         type:'bar',
@@ -2045,9 +2048,9 @@ function renderDashboard(root, data, palette, opts={}){
           },
           plugins:{ legend:{display:false},
             tooltip:{callbacks:{
-              title:()=>`Repère national · éval. 6ᵉ ${NAT6.year} : Fr ${NAT6.Francais.moy}/300, Maths ${NAT6.Maths.moy}/300`,
-              label:ctx=>{ const b=[['≥16','~top 25%'],['≥14','~top 48%'],['≥12','~top 69%']][ctx.dataIndex];
-              return [`Mention à ${b[0]}/20`, `nationalement ${b[1]} des candidats au brevet`]; } }}
+              title:()=>'Seuils de mention du brevet',
+              label:ctx=>['Seuil : '+[16,14,12][ctx.dataIndex]+'/20 à cet examen.',
+                'La moyenne au bulletin ne permet pas de déduire une mention ou un rang national.'] }}
           }},
         plugins:[{ id:'younat', afterDraw(c){ const xs=c.scales.x,a=c.chartArea; if(!xs)return;
           const px=xs.getPixelForValue(you), ctx=c.ctx; ctx.save();
@@ -2055,7 +2058,7 @@ function renderDashboard(root, data, palette, opts={}){
           ctx.moveTo(px,a.top); ctx.lineTo(px,a.bottom); ctx.stroke();
           ctx.fillStyle='#ffd166'; ctx.font='bold 11px sans-serif';
           ctx.textAlign = px>(a.left+a.right)/2?'right':'left';
-          ctx.fillText(`★ ${you.toFixed(1)} → ${mentionLab} · ~top ${topPct}%`, px+(ctx.textAlign==='right'?-6:6), a.top+12);
+          ctx.fillText(`★ bulletin ${you.toFixed(1)}/20 (autre évaluation)`, px+(ctx.textAlign==='right'?-6:6), a.top+12);
           ctx.restore(); } }]
       });
     }
@@ -2230,10 +2233,8 @@ function renderFuture(holder, data, opts){
     const leadersEl= card.querySelector('.futLeaders');
     const commEl   = card.querySelector('.futCommentary');
 
-    const subjects = [...new Set(data.map(d=>d.matiere))];
     const you = futOverallAvg(data, opts.method);
-    const bo = bridgeOverallTopPct(data, subjects, opts);
-    const proj = projectMention(you, bo ? bo.pct : null, bo ? bo.conf : null);
+    const proj = projectMention(you);
     const kid = { dep:null };
     // department: prefer the school block, else derive from the UAI prefix (first 3 digits =
     // zero-padded dept code: 0062011D -> "06"). uai is reliably present via SCHOOLS map.
@@ -2470,6 +2471,16 @@ const futureTpl = document.getElementById('futureTemplate');
 // store = { child: { label, years:[ {key,label,data,palette,count} ], active, handle, area, panel, tabBtn } }
 const store = {};
 let activeChild = null;
+let initialFutureViewHandled = false;
+window.addEventListener('message', e=>{
+  if(location.origin!=='null' && e.origin!==location.origin) return;
+  const c=Object.values(store).find(c=>c.pathsFrame && c.pathsFrame.isConnected && c.pathsFrame.contentWindow===e.source);
+  if(!c || !e.data) return;
+  if(e.data.type==='futurepaths:ready') c.pathsFrame.contentWindow.postMessage({type:'futurepaths:init',payload:FutureProfile.fromStore(store,activeChild)},location.origin==='null'?'*':location.origin);
+  if(e.data.type==='futurepaths:height' && Number.isFinite(e.data.height)) c.pathsFrame.style.height=Math.min(20000,Math.max(800,e.data.height))+'px';
+  if(e.data.type==='futurepaths:grades'){ c.year=c.years.some(y=>y.key===c.lastGradeYear)?c.lastGradeYear:c.years.at(-1).key; renderChild(activeChild); }
+  if(e.data.type==='futurepaths:child' && store[e.data.child]){ activeChild=e.data.child; store[activeChild].year='__future__'; rebuildUI(); }
+});
 
 function addDataset(meta, data, subjectStats, method, natEval, school){
   const child = meta.child;
@@ -2490,6 +2501,15 @@ function addDataset(meta, data, subjectStats, method, natEval, school){
 function rebuildUI(){
   const tabsEl=document.getElementById('tabs'), panelsEl=document.getElementById('panels');
   const children=Object.keys(store);
+  if(!initialFutureViewHandled && children.length){
+    initialFutureViewHandled=true;
+    const query=new URLSearchParams(location.search);
+    if(children.includes(query.get('child'))) activeChild=query.get('child');
+    if(['future','paths','future-legacy'].includes(query.get('view'))){
+      activeChild=children.includes(query.get('child'))?query.get('child'):children[0];
+      store[activeChild].year=query.get('view')==='future-legacy'?'__future_legacy__':'__future__';
+    }
+  }
   document.getElementById('empty').style.display = children.length? 'none':'block';
   tabsEl.innerHTML='';
   // rescue the drop zone (lives inside Settings while that tab is open) back to
@@ -2515,12 +2535,13 @@ function rebuildUI(){
     c.panel=panel; c.holder=holder; c.yearbar=yearbar;
 
     // default to latest real year (never the Planning pseudo-year)
-    if(!c.year || (c.year!=='__future__' && !c.years.find(y=>y.key===c.year))) c.year = c.years[c.years.length-1].key;
+    if(c.year==='__paths__') c.year='__future__';
+    if(!c.year || (!['__future__','__future_legacy__'].includes(c.year) && !c.years.find(y=>y.key===c.year))) c.year = c.years[c.years.length-1].key;
     // yearbar = real years, then a "Planning the future" pseudo-year forced rightmost.
     yearbar.innerHTML = c.years.map(y=>
       `<button data-key="${y.key}" class="${y.key===c.year?'active':''}">${y.label} <span class="cnt">${y.count}</span></button>`).join('')
-      + `<button data-key="__future__" class="future-year${c.year==='__future__'?' active':''}">🎓 Planning the future</button>`
-      + `<button class="playful-btn" data-playful="1"${c.year==='__future__'?' style="display:none"':''}>⭐ Koompa</button>`;
+      + `<button data-key="__future__" class="future-year${c.year==='__future__'?' active':''}">🧭 Planifier le futur</button>`
+      + `<button class="playful-btn" data-playful="1"${['__future__','__future_legacy__'].includes(c.year)?' style="display:none"':''}>⭐ Koompa</button>`;
     yearbar.querySelectorAll('button[data-key]').forEach(b=>b.onclick=()=>{ c.year=b.dataset.key; renderChild(child); });
     const pb=yearbar.querySelector('button[data-playful]');
     if(pb) pb.onclick=()=> launchKidApp(child);
@@ -2543,24 +2564,44 @@ function rebuildUI(){
 
 function renderChild(child){
   const c=store[child];
-  // mark active year button (incl. the "__future__" pseudo-year)
+  if(c.year==='__paths__') c.year='__future__';
+  if(c.years.some(y=>y.key===c.year)) c.lastGradeYear=c.year;
+  const playfulButton=c.yearbar.querySelector('button[data-playful]');
+  if(playfulButton) playfulButton.style.display=['__future__','__future_legacy__'].includes(c.year)?'none':'';
+  // mark the active year or planning view
   c.yearbar.querySelectorAll('button[data-key]').forEach(b=>b.classList.toggle('active', b.dataset.key===c.year));
   if(c.handle){ c.handle.destroy && c.handle.destroy(); c.handle=null; }
+  c.pathsFrame=null;
   c.holder.innerHTML='';   // always clear — the Planning view sets no c.handle, so it would otherwise stack
   const area=document.createElement('div'); c.holder.appendChild(area); c.area=area;
 
-  // Planning-the-Future pseudo-year: render the full confidence view instead of the dashboard.
+  // Official planning view; the old experimental key is migrated above.
   if(c.year==='__future__'){
+    const frame=document.createElement('iframe');
+    frame.title='Planifier le futur — '+child;
+    frame.style.cssText='display:block;width:100%;height:1200px;border:0;border-radius:14px;';
+    c.pathsFrame=frame;
+    frame.onload=()=>frame.contentWindow.postMessage({type:'futurepaths:init',payload:FutureProfile.fromStore(store,child)},location.origin==='null'?'*':location.origin);
+    frame.src='future_paths.html'; area.appendChild(frame);
+    return;
+  }
+
+  // Planning-the-Future pseudo-year: render the full confidence view instead of the dashboard.
+  if(c.year==='__future_legacy__'){
+    const archive=document.createElement('div'); archive.className='card';
+    archive.innerHTML='<strong>Ancienne vue de planification · archive</strong><p>La nouvelle page Planifier le futur est la version officielle.</p>';
+    const open=document.createElement('button'); open.textContent='Ouvrir Planifier le futur';
+    open.onclick=()=>{c.year='__future__';renderChild(child);}; archive.appendChild(open); area.appendChild(archive);
     area.appendChild(futureTpl.content.cloneNode(true));
     // use the kid's most-recent real year for the projection ("current trajectory")
     const latest = c.years[c.years.length-1];
-    renderFuture(area, latest.data, {subjectStats: latest.subjectStats, method: latest.method, level: latest.level, natEval: latest.natEval, uai: latest.uai, school: latest.school});
+    renderFuture(area, latest.data, {subjectStats: latest.subjectStats, method: latest.method, level: latest.level, year: latest.year, natEval: latest.natEval, uai: latest.uai, school: latest.school});
     return;
   }
 
   area.appendChild(tpl.content.cloneNode(true));
   const y=c.years.find(x=>x.key===c.year);
-  c.handle = renderDashboard(area, y.data, y.palette, {subjectStats: y.subjectStats, method: y.method, allYears: c.years, level: y.level, natEval: y.natEval, uai: y.uai, school: y.school});
+  c.handle = renderDashboard(area, y.data, y.palette, {subjectStats: y.subjectStats, method: y.method, allYears: c.years, level: y.level, year: y.year, natEval: y.natEval, uai: y.uai, school: y.school});
 }
 
 /* ---------- Playful kid-app launch ----------
@@ -2587,7 +2628,7 @@ function kidAdapt(data){
 }
 function launchKidApp(child){
   const c=store[child]; if(!c) return;
-  if(c.year==='__future__') return;                       // no real grades on the Planning pseudo-year
+  if(['__future__','__future_legacy__'].includes(c.year)) return;                       // no real grades on the Planning pseudo-year
   const y=c.years.find(x=>x.key===c.year); if(!y) return;
   const grades = kidAdapt(y.data);
   const gradesAll = c.years.reduce((acc,yr)=> acc.concat(kidAdapt(yr.data)), []);  // cumulative XP
