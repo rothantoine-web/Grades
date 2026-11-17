@@ -6,13 +6,14 @@
      offline. The app ALSO keeps data in localStorage, so this is belt-and-braces.
 
    Bump CACHE_VERSION whenever the shell files change to force an update. */
-const CACHE_VERSION = 'grades-v60';
+const CACHE_VERSION = 'grades-v61-dashboard-cleanup';
 const SHELL = [
   './',
   './grades_dashboard.html',
   './future_paths.html',
   './assets/future-paths/profile.js',
   './assets/future-paths/statistics.js',
+  './assets/future-paths/lycees.js',
   './assets/future-paths/catalogue.js',
   './assets/future-paths/demos.js',
   './assets/future-paths/page.js',

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Grades Dashboard</title>
+<title>Koompa</title>
 <!-- browser-tab favicon: reuse the PWA icons -->
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
@@ -126,13 +126,26 @@
   .axis-track { height:16px; }
   .axis-track::before { display:none; }
   /* heatmap */
-  .heatmap { width:100%; }
-  .heatgrid { display:grid; gap:2px; grid-auto-rows:22px; align-content:start; width:100%; }
+  .heatmap { width:100%; overflow-x:auto; padding:4px 0; }
+  details.card > summary { cursor:pointer; font-size:16px; font-weight:600; }
+  details.card[hidden] { display:none; }
+  details.card[open] > summary { margin-bottom:15px; }
+  .heat-controls { margin-bottom:12px; flex-wrap:wrap; gap:12px; }
+  .heat-controls label { display:flex; flex-wrap:wrap; align-items:center; gap:7px; }
+  .heat-controls select { min-width:0; max-width:100%; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--ink); padding:7px; font:inherit; font-size:12px; }
+  .heat-detail { padding:10px; background:var(--panel); border-radius:6px; }
+  .national-score { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px 15px; margin:18px 0; }
+  .national-score progress { grid-column:1 / -1; width:100%; height:14px; accent-color:#6ea8fe; }
+  .national-score .legend-note { grid-column:1 / -1; }
+  .planning-link-card p { margin:0; font-size:14px; }
+  .open-planning { font:inherit; cursor:pointer; border:1px solid var(--line); border-radius:6px; padding:7px 10px; background:var(--panel); color:var(--ink); }
+  .heatgrid { display:grid; gap:2px; grid-auto-rows:30px; align-content:start; width:100%; }
   .heatgrid .hlabel { font-size:10px; color:var(--ink); white-space:nowrap; padding-right:8px; display:flex; align-items:center; justify-content:flex-end; overflow:hidden; text-overflow:ellipsis; }
+  .heatgrid .hlabel { position:sticky; left:0; z-index:1; background:var(--panel); }
   .heatgrid .hhead { font-size:10px; color:var(--muted); white-space:nowrap; display:flex; align-items:flex-end; justify-content:center; border-left:1px solid var(--line); }
   .heatgrid .headrow { height:22px; }
-  .heatgrid .cell { height:22px; min-width:0; border-radius:2px; cursor:default; }
-  .heatgrid .cell.carry { opacity:.42; }
+  .heatgrid .cell { height:30px; min-width:0; border:0; padding:0; border-radius:3px; cursor:pointer; }
+  .heatgrid .cell:focus-visible, .heatgrid .cell.selected { outline:2px solid var(--ink); outline-offset:-2px; }
   .heatgrid .cell.empty { background:#141a2e; }
   .heatlegend { display:flex; align-items:center; gap:8px; font-size:11px; color:var(--muted); margin-top:12px; flex-wrap:wrap; }
   .heatlegend .scale { display:flex; height:12px; border-radius:3px; overflow:hidden; width:220px; }
@@ -193,7 +206,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Grades dashboard</h1>
+  <h1>Koompa</h1>
 
 
   <div id="dropHome" style="display:none">
@@ -214,149 +227,78 @@
 <template id="dashTemplate">
   <div class="card">
     <div class="replayResult"></div>
-    <div class="subjlegend" role="group" aria-label="Filter by subject"></div>
+    <div class="subjlegend" role="group" aria-label="Filtrer par matière"></div>
     <div class="chartbox trend-chartbox">
-      <canvas class="chart" role="img" aria-label="Assessment grades and class averages over the selected period"></canvas>
+      <canvas class="chart" role="img" aria-label="Notes et moyennes de classe pendant la période choisie"></canvas>
     </div>
-    <div class="chart-toolbar" role="group" aria-label="Chart filters">
-      <div class="chart-legend" role="group" aria-label="Chart display options">
-        <button type="button" class="cl-item" data-ctrl="grade" aria-pressed="true"><i class="dot" style="background:#c9d2f0" aria-hidden="true"></i><span class="filter-label">Grades</span></button>
-        <button type="button" class="cl-item" data-ctrl="class" aria-pressed="true"><i class="dot" style="background:rgba(154,163,192,.85)" aria-hidden="true"></i><span class="filter-label">Class average</span></button>
-        <button type="button" class="cl-item" data-ctrl="trend" aria-pressed="false"><i class="dot ring" aria-hidden="true"></i><span class="filter-label">Trend</span></button>
-        <button type="button" class="cl-item" data-ctrl="crowns" aria-pressed="false"><span class="gi" aria-hidden="true">👑</span><span class="filter-label">Crowns</span></button>
-        <button type="button" class="cl-item" data-ctrl="vs" aria-pressed="false"><span class="gi" aria-hidden="true">🟢</span><span class="filter-label">Beat class</span></button>
+    <div class="chart-toolbar" role="group" aria-label="Filtres du graphique">
+      <div class="chart-legend" role="group" aria-label="Options du graphique">
+        <button type="button" class="cl-item" data-ctrl="grade" aria-pressed="true"><i class="dot" style="background:#c9d2f0" aria-hidden="true"></i><span class="filter-label">Notes</span></button>
+        <button type="button" class="cl-item" data-ctrl="class" aria-pressed="true"><i class="dot" style="background:rgba(154,163,192,.85)" aria-hidden="true"></i><span class="filter-label">Moyenne de classe</span></button>
+        <button type="button" class="cl-item" data-ctrl="trend" aria-pressed="false"><i class="dot ring" aria-hidden="true"></i><span class="filter-label">Tendance</span></button>
+        <button type="button" class="cl-item" data-ctrl="crowns" aria-pressed="false"><span class="gi" aria-hidden="true">👑</span><span class="filter-label">Couronnes</span></button>
+        <button type="button" class="cl-item" data-ctrl="vs" aria-pressed="false"><span class="gi" aria-hidden="true">🟢</span><span class="filter-label">Au-dessus de la classe</span></button>
       </div>
       <div class="viewbar">
-        <label class="gap-control"><span class="filter-label"><span class="gi" aria-hidden="true">📊</span> Subjects vs class</span><input type="checkbox" class="toggleSubjVs"></label>
-        <label class="period"><select class="periodSel" aria-label="Chart period"></select></label>
-        <button type="button" class="info-btn chart-info" aria-expanded="false" aria-label="Explain chart options" title="Explain chart options">ⓘ</button>
+        <label class="gap-control"><span class="filter-label"><span class="gi" aria-hidden="true">📊</span> Matières et classe</span><input type="checkbox" class="toggleSubjVs"></label>
+        <label class="period"><select class="periodSel" aria-label="Période du graphique"></select></label>
+        <button type="button" class="info-btn chart-info" aria-expanded="false" aria-label="Comprendre les options du graphique" title="Comprendre les options du graphique">ⓘ</button>
       </div>
 
-      <p class="chart-mode-note" hidden>Comparing cumulative subject results with the class. Turn off Subjects vs class to return to grades.</p>
-    <div class="ctrl-legend" role="region" aria-label="Control legend">
-      <div class="row"><i class="dot" style="background:#c9d2f0"></i><span><b>Grades</b> — the student’s grade on each assessment (point size = coefficient).</span></div>
-      <div class="row"><i class="dot" style="background:rgba(154,163,192,0.85)"></i><span><b>Class average</b> — dashed overlay of the class mean.</span></div>
-      <div class="row"><i class="dot ring"></i><span><b>Overall trend</b> — the coefficient-weighted direction of grades.</span></div>
-      <div class="row"><span class="gi">👑</span><span><b>Crowns</b> — marks each assessment where the student was top of the class.</span></div>
-      <div class="row"><span class="gi">🟢</span><span><b>Beat class</b> — recolors points: above class average = green, below = red.</span></div>
-      <div class="row"><span class="gi">📊</span><span><b>Subjects vs class</b> — overlays how each subject compares with the class.</span></div>
-      <div class="row"><span class="gi">⏱️</span><span><b>Period</b> — limit the chart to one term, or show the full year.</span></div>
+      <p class="chart-mode-note" hidden>Comparaison des moyennes par matière avec la classe. Décoche Matières et classe pour revenir aux notes.</p>
+    <div class="ctrl-legend" role="region" aria-label="Légende des options">
+      <div class="row"><i class="dot" style="background:#c9d2f0"></i><span><b>Notes</b> — la note de chaque évaluation (taille du point = coefficient).</span></div>
+      <div class="row"><i class="dot" style="background:rgba(154,163,192,0.85)"></i><span><b>Moyenne de classe</b> — la ligne en pointillés représente la moyenne de la classe.</span></div>
+      <div class="row"><i class="dot ring"></i><span><b>Tendance générale</b> — l’évolution des notes, pondérée par les coefficients.</span></div>
+      <div class="row"><span class="gi">👑</span><span><b>Couronnes</b> — repèrent les évaluations où la note atteint le maximum de la classe.</span></div>
+      <div class="row"><span class="gi">🟢</span><span><b>Au-dessus de la classe</b> — colore les points : vert au-dessus de la moyenne de classe, rouge en dessous.</span></div>
+      <div class="row"><span class="gi">📊</span><span><b>Matières et classe</b> — compare la moyenne de chaque matière à celle de la classe.</span></div>
+      <div class="row"><span class="gi">⏱️</span><span><b>Période</b> — affiche une période choisie ou toute l’année.</span></div>
     </div>
     </div>
-    <p class="chart-caption">Tap a point for the assessment details. Point size reflects its coefficient. The pale line connects grades; Overall trend shows the weighted direction.</p>
-    <details class="chart-method"><summary>How to read this chart</summary>
-      <p>Subject colors identify assessments. The dashed line shows the class average; the shaded area below 10/20 marks the passing threshold. Crowns mark top-of-class results when enabled.</p>
-      <p><b>Vs-class here is per test:</b> the gap to the class is the coefficient-weighted average of each test's gap, using the class average printed on that test. It can differ slightly from EcoleDirecte's official subject average (shown in the per-subject range below), because the official class average weights by the pupils who actually sat each test — so varying attendance shifts it. Trust the per-subject range for the official standing.</p>
+    <p class="chart-caption">Touche un point pour voir l’évaluation. Sa taille reflète le coefficient. La ligne claire relie les notes ; la tendance montre leur évolution pondérée.</p>
+    <details class="chart-method"><summary>Comment lire ce graphique</summary>
+      <p>Les couleurs distinguent les matières. La ligne en pointillés montre la moyenne de classe ; la zone sous 10/20 sert de repère. Les couronnes signalent les notes au maximum de la classe lorsqu’elles sont activées.</p>
+      <p><b>L’écart à la classe est calculé par évaluation :</b> chaque écart est pondéré par le coefficient de l’évaluation. Le résultat peut différer de la moyenne officielle ÉcoleDirecte par matière, affichée ci-dessous : celle-ci tient compte des élèves ayant réellement passé chaque évaluation. Utilise les moyennes officielles par matière lorsqu’elles sont disponibles.</p>
     </details>
   </div>
   <div class="card">
-    <h2>At a glance</h2>
+    <h2>En un coup d’œil</h2>
     <div class="stats"></div>
   </div>
   <div class="card">
-    <h2>Per-subject range — class min · avg · student · max (/20, full year)</h2>
-    <p class="legend-note" style="margin:0 0 10px">Band = class range (lowest→highest student average in the class). <b>◆</b> = student average · <b>○</b> = class average. Full-year figures: EcoleDirecte semester averages are averaged across terms. Shows where she sits within the headroom each subject offered.</p>
+    <h2>Moyennes par matière · élève et classe (/20, année entière)</h2>
+    <p class="legend-note" style="margin:0 0 10px">La bande va de la moyenne la plus basse à la plus haute dans la classe. <b>◆</b> = moyenne de l’élève · <b>○</b> = moyenne de classe. Pour l’année entière, les moyennes semestrielles ÉcoleDirecte sont regroupées. Ces repères situent l’élève dans chaque matière.</p>
     <div class="chartbox" style="height:380px"><canvas class="barChart"></canvas></div>
   </div>
-  <div class="card">
-    <div class="controls" style="justify-content:space-between">
-      <h2 style="margin:0">Heatmap — by subject & week</h2>
-      <label><input type="checkbox" class="toggleHeatMode"> Show raw grade /20 (off = difference vs class)</label>
+  <details class="card heat-card">
+    <summary>Évolution par semaine</summary>
+    <div class="controls heat-controls">
+      <label>Mesure <select class="heatMode"><option value="class">Écart à la classe</option><option value="grades">Note /20</option></select></label>
+      <label>Période <select class="heatPeriod"><option value="recent">12 dernières semaines de la période</option><option value="all">Toute l’année</option></select></label>
     </div>
-    <div class="heatmap"></div>
-    <div class="heatlegend"></div>
-    <p class="legend-note">Each cell = that subject's <b>coefficient-weighted</b> result for the week. Weeks with no new grade keep the previous week's color (faded) until the next grade. Hover a cell for details.</p>
-  </div>
+    <div class="heatmap"></div><div class="heatlegend"></div>
+    <p class="legend-note">Une case colorée indique une nouvelle note cette semaine. Les résultats sont pondérés par les coefficients. Les semaines sans nouvelle note restent vides. Touche une case pour voir les évaluations.</p>
+    <p class="heat-detail legend-note" role="status" aria-live="polite">Choisis une case pour voir son détail.</p>
+  </details>
   <div class="card radar-card">
-    <h2>Subject radar — standing within class, by year</h2>
-    <p class="legend-note" style="margin:0 0 10px">Each axis = a subject; distance from center = where her average sits <b>within the class range</b> — 0% = the lowest class average, 100% = the top. Subjects with no data yet sit at 50% (hollow marker). One polygon per year — see how the shape of strengths shifts.</p>
+    <h2>Radar par matière · position dans la classe, par année</h2>
+    <p class="legend-note radar-method" style="margin:0 0 10px">Chaque axe représente une matière. La distance au centre situe la moyenne de l’élève <b>dans l’étendue des résultats de la classe</b> — 0 % correspond au minimum, 100 % au maximum. Les moyennes officielles sont utilisées lorsqu’elles sont disponibles ; sinon, les repères sont estimés à partir des évaluations et de leurs coefficients. Les matières sans données sont placées à 50 % avec un repère vide. Chaque forme correspond à une année ; ce graphique ne donne pas un rang exact.</p>
+    <p class="legend-note radar-status" role="status" hidden></p>
     <div class="chartbox" style="height:420px"><canvas class="radarChart"></canvas></div>
   </div>
-  <div class="card">
-    <h2>Standing in class <span class="standing-title" style="text-transform:none;font-weight:400">over time</span> <span style="text-transform:none;font-weight:400;color:var(--muted)">(estimated)</span></h2>
-    <p class="legend-note" style="margin:0 0 10px">Estimated position within the class on each assessment, from the grade's place on the min→average→max line (50% = class average, 100% = top score, 0% = lowest). A position proxy, <b>not</b> an exact rank.</p>
+  <details class="card standing-card">
+    <summary>Position dans la classe au fil du temps · estimée</summary>
+    <p class="legend-note" style="margin:0 0 10px">Position estimée à chaque évaluation, entre le minimum, la moyenne et le maximum de la classe (50 % = moyenne de classe, 100 % = maximum, 0 % = minimum). Ce repère <b>ne donne pas</b> un rang exact.</p>
     <div class="chartbox" style="height:320px"><canvas class="standingChart"></canvas></div>
-  </div>
-  <div class="card bridge-card" style="border:1px dashed var(--line);background:linear-gradient(0deg,rgba(255,255,255,0.015),transparent)">
-    <h2 style="opacity:.92">Estimation nationale indicative <span style="text-transform:none;font-weight:400;color:var(--muted)">(heuristique, pas une mesure)</span></h2>
-    <p class="legend-note" style="margin:0 0 10px">
-      <b>Les taux de réussite par question permettent un rang modélisé par sous-test national.</b>
-      Le score de l’enfant est observé ; son rang est estimé sous une hypothèse sur les
-      corrélations entre réponses. Ce modèle et ses résultats sont détaillés dans le panneau suivant.
-      <b>Le contexte du collège aide aussi à lire les notes.</b> Les évaluations nationales de 6ᵉ
-      comparent le collège à la France en <b>français et en maths</b>, sur le même test et la
-      même session. Le graphique montre l'<b>écart de moyenne de l'enfant à sa classe</b>,
-      en points sur 20. Ces informations ne suffisent pas à déterminer son <b>rang national</b>&nbsp;:
-      les notes et les tests évaluent des compétences différentes, et une classe peut différer
-      de l'ensemble du collège. Un IPS élevé décrit le profil social du public&nbsp;; il ne
-      garantit pas le niveau d'un élève. Les résultats individuels des sous-tests de 6ᵉ restent
-      visibles dans le panneau suivant, chacun avec son score et ses limites.
-    </p>
-    <div class="chartbox bridgeChartBox" style="height:360px"><canvas class="bridgeChart"></canvas></div>
-    <p class="legend-note bridgeOnTrack" style="margin:10px 0 0;font-size:13px"></p>
-    <div class="bridgeContext" style="margin:14px 0 0"></div>
-    <p class="legend-note bridgeNote" style="margin:6px 0 0;font-size:11px;color:var(--muted)"></p>
-  </div>
-  <div class="card horizon-card">
-    <h2>Horizon — positionnement national &amp; écoles</h2>
-    <p class="legend-note" style="margin:0 0 10px">
-      <b>Deux repères, honnêtes et distincts.</b>
-      <b>(1) National</b> : les sous-tests de 6ᵉ permettent un rang <b>modélisé par test</b>
-      à partir des taux de réussite nationaux, sous les hypothèses expliquées sous le graphique.
-      Les <b>bandes de mention du brevet</b> (AB&nbsp;12 / B&nbsp;14 / TB&nbsp;16) restent des repères
-      de cet examen&nbsp;: une même moyenne au bulletin ne donne ni cette mention ni son percentile.
-      En 2025, les scores standardisés moyens de l'évaluation de 6ᵉ sont <b>256 en français</b>
-      et <b>254 en maths</b>, sans maximum fixé à 300. Ce test diffère des notes du bulletin.
-      <b>(2) Horizon écoles</b> : des profils d'<i>élèves admis</i>, en grande majorité
-      <b>post-bac</b> (prépas, universités) — ce sont des <b>repères lointains, pas des
-      seuils d'admission</b>, et une moyenne de collège <b>ne les prédit pas</b>.
-      Les classes à <b>IPS élevé</b> (secteur privé ≈124 vs public ≈101) tirent la moyenne
-      de classe vers le haut : à garder en tête.
-    </p>
-    <div class="natTestRow" style="margin:0 0 16px">
-      <div class="legend-note" style="margin:0 0 6px;font-weight:600;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
-        <span>Évaluation nationale de début de 6ᵉ — score observé et rang modélisé par sous-test</span>
-        <span class="natResultNote" style="font-weight:400;font-size:12px;color:var(--muted)"></span>
-      </div>
-      <div class="chartbox" style="height:380px"><canvas class="horizonNatTest"></canvas></div>
-      <p class="legend-note natModelNote" style="margin:6px 0 0;font-size:11px;color:var(--muted)"></p>
-    </div>
-    <div style="display:flex;gap:18px;flex-wrap:wrap">
-      <div style="flex:1;min-width:280px">
-        <div class="legend-note" style="margin:0 0 6px;font-weight:600">Repères du brevet /20 (sans équivalence avec le bulletin)</div>
-        <div class="chartbox" style="height:260px"><canvas class="horizonNat"></canvas></div>
-      </div>
-      <div style="flex:1;min-width:320px">
-        <div class="legend-note" style="margin:0 0 6px;font-weight:600;display:flex;justify-content:space-between;align-items:center">
-          <span>Horizon écoles (repères indicatifs, pas des seuils)</span>
-          <label style="font-weight:400;font-size:12px"><input type="checkbox" class="toggleIntl"> inclure l'international</label>
-        </div>
-        <div class="chartbox" style="height:420px"><canvas class="horizonLadder"></canvas></div>
-      </div>
-    </div>
-    <div class="amLyceesRow" style="margin:18px 0 0">
-      <div class="legend-note" style="margin:0 0 6px;font-weight:600;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
-        <span>Lycées <b>généraux &amp; technologiques</b> des Alpes-Maritimes — classés par <b>valeur ajoutée</b></span>
-        <span style="font-weight:400;font-size:12px;display:flex;gap:12px;flex-wrap:wrap">
-          <label><input type="checkbox" class="toggleLyceeMetric"> trié par réussite au bac</label>
-          <label><input type="checkbox" class="toggleLycee3y"> valeur ajoutée 3 ans</label>
-        </span>
-      </div>
-      <p class="legend-note" style="margin:0 0 8px;font-size:12px;color:var(--muted)">
-        Une barre par lycée. Par défaut, longueur = <b>valeur ajoutée</b> (IVAL, Éducation nationale)
-        = <b>résultat réel − résultat attendu</b> (le résultat attendu est modélisé sur le <b>profil social
-        et le niveau des élèves à l'entrée</b>, note au brevet) ; barres <b>bleu = public, violet = privé</b>,
-        du meilleur (+) en haut au moins bon (−) en bas. C'est le seul critère honnête pour comparer des
-        lycées — un taux brut élevé peut juste refléter un public favorisé. Coche <b>« trié par réussite au
-        bac »</b> pour classer par <b>taux de mention</b>, la barre montrant alors la composition
-        🟡 Assez Bien · 🔵 Bien · 🟢 Très Bien (le taux de réussite reste dans l'infobulle).
-        <b>Une seule année est bruitée</b> (petits effectifs) : <b>« valeur ajoutée 3 ans »</b> est plus
-        fiable. <b>Ni un score Affelnet, ni un seuil d'entrée.</b> Les lycées professionnels n'y figurent pas.
-      </p>
-      <input type="text" class="amFilter" placeholder="🔍 filtrer par nom ou ville (ex. Stanislas, Antibes)…"
-        style="width:100%;box-sizing:border-box;margin:0 0 8px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:6px 10px;font:inherit;font-size:13px">
-      <div class="chartbox" style="height:760px"><canvas class="amLycees"></canvas></div>
-    </div>
+  </details>
+  <details class="card national-results" hidden>
+    <summary>Évaluations nationales · résultats observés</summary>
+    <p class="legend-note">Ces sous-tests donnent un autre repère sur les acquis. Les scores et les bandes de maîtrise sont ceux du test ; ils ne donnent pas un rang national.</p>
+    <div class="national-scores"></div>
+  </details>
+  <div class="card planning-link-card">
+    <p>Pour explorer les parcours, comparer les lycées et garder un projet, ouvre <button type="button" class="open-planning">Planifier le futur →</button></p>
   </div>
 </template>
 
@@ -1092,6 +1034,7 @@ const AM_LYCEES_YEAR = 2025;   // single-year fields; *3 = moyenne 2023-2025
    Dashboard renderer (one trend line, clickable legend, weighted trend)
    =================================================================== */
 function renderDashboard(root, data, palette, opts={}){
+  const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   data = data.map(d => ({
     ...d,
     norm: +(d.valeur / d.noteSur * 20).toFixed(2),
@@ -1118,7 +1061,7 @@ function renderDashboard(root, data, palette, opts={}){
       const dd=new Date(d.dateSaisie), m=dd.getFullYear()+'-'+dd.getMonth();
       if(m===prevMonth) return '';
       prevMonth = m;
-      return dd.toLocaleDateString('en-GB',{month:'short'});     // Sep, Oct, Nov…
+      return dd.toLocaleDateString('fr-FR',{month:'short'});     // Sep, Oct, Nov…
     });
   }
 
@@ -1127,7 +1070,7 @@ function renderDashboard(root, data, palette, opts={}){
 
   function studentDataset(colorByVs){
     return {
-      label:"Grade",
+      label:"Note",
       data: seq.map((d,i)=>({x:i, y:visible(d)?d.norm:null, raw:d})),
       parsing:false, spanGaps:true,
       borderColor:"#c9d2f0", borderWidth:2.2, tension:0.3, fill:false,
@@ -1142,7 +1085,7 @@ function renderDashboard(root, data, palette, opts={}){
   }
   function classDataset(){
     return {
-      label:"Class average",
+      label:"Moyenne de classe",
       data: seq.map((d,i)=>({x:i, y:visible(d)?d.normClass:null, raw:d})),
       parsing:false, spanGaps:true,
       borderColor:"rgba(154,163,192,0.55)", borderWidth:1.6, borderDash:[6,4], tension:0.3, fill:false,
@@ -1154,13 +1097,13 @@ function renderDashboard(root, data, palette, opts={}){
   }
   function trendDataset(){
     const items = seq.map((d,i)=>({x:i, y:d.norm, w:d.coef})).filter((_,i)=>visible(seq[i]));
-    if(items.length<2) return {label:"Overall trend",_kind:"trend",data:[],pointRadius:0};
+    if(items.length<2) return {label:"Tendance générale",_kind:"trend",data:[],pointRadius:0};
     const W=items.reduce((s,p)=>s+p.w,0);
     const sx=items.reduce((s,p)=>s+p.w*p.x,0), sy=items.reduce((s,p)=>s+p.w*p.y,0);
     const sxx=items.reduce((s,p)=>s+p.w*p.x*p.x,0), sxy=items.reduce((s,p)=>s+p.w*p.x*p.y,0);
     const b=(W*sxy-sx*sy)/(W*sxx-sx*sx), a=(sy-b*sx)/W;
     const x0=items[0].x, x1=items[items.length-1].x;
-    return { label:"Overall trend (coef-weighted)", _kind:"trend", parsing:false,
+    return { label:"Tendance générale (pondérée)", _kind:"trend", parsing:false,
       data:[{x:x0,y:+(a+b*x0).toFixed(2)},{x:x1,y:+(a+b*x1).toFixed(2)}],
       borderColor:"#ffffff", borderWidth:2, borderDash:[2,3], pointRadius:0, tension:0, fill:false };
   }
@@ -1241,7 +1184,7 @@ function renderDashboard(root, data, palette, opts={}){
       legendEl.appendChild(button);
       return button;
     }
-    if(activeSubject!==null){ const reset=chip('__all','Show all subjects',false); reset.classList.add('reset'); reset.textContent='Show all'; }
+    if(activeSubject!==null){ const reset=chip('__all','Afficher toutes les matières',false); reset.classList.add('reset'); reset.textContent='Tout afficher'; }
     ordered.forEach(s=>{
       const selected=activeSubject===s, g=gapForSubject(s), em=subjEmoji(s);
       const button=chip(s,s,selected);
@@ -1249,7 +1192,7 @@ function renderDashboard(root, data, palette, opts={}){
       const dot=document.createElement('i'); dot.style.background=color(s); dot.setAttribute('aria-hidden','true'); button.appendChild(dot);
       if(em){ const emoji=document.createElement('span'); emoji.className='subj-emoji'; emoji.textContent=em; emoji.setAttribute('aria-hidden','true'); button.appendChild(emoji); }
       if(selected || !em){ const name=document.createElement('span'); name.className='subj-name'; name.textContent=s; button.appendChild(name); }
-      if(g!=null){ const badge=document.createElement('b'); badge.style.color=gapInk(g); badge.textContent=(g>=0?'+':'')+g.toFixed(1); button.appendChild(badge); button.title+=': '+(g>=0?'+':'')+g.toFixed(2)+' vs class'; }
+      if(g!=null){ const badge=document.createElement('b'); badge.style.color=gapInk(g); badge.textContent=(g>=0?'+':'')+g.toFixed(1); button.appendChild(badge); button.title+=': '+(g>=0?'+':'')+g.toFixed(2)+' par rapport à la classe'; }
       button.setAttribute('aria-label',button.title);
     });
     legendEl.querySelectorAll('.swatch').forEach(button=>{ if(button.dataset.subj===focusKey) button.focus({preventScroll:true}); });
@@ -1263,22 +1206,22 @@ function renderDashboard(root, data, palette, opts={}){
     options:{ maintainAspectRatio:false, animation:{duration:400}, interaction:{mode:'nearest', intersect:true},
       layout:{padding:{top:12, bottom:4}},
       scales:{ x:{type:'category', grid:{display:false}, ticks:{color:'#9aa3c0', autoSkip:false, maxRotation:0, minRotation:0}},
-        y:{min:0, max:20, grid:{color:'rgba(154,163,192,0.12)'}, ticks:{color:'#9aa3c0', stepSize:2}, title:{display:true, text:'Grade (/20)', color:'#9aa3c0'}} },
+        y:{min:0, max:20, grid:{color:'rgba(154,163,192,0.12)'}, ticks:{color:'#9aa3c0', stepSize:2}, title:{display:true, text:'Note (/20)', color:'#9aa3c0'}} },
       plugins:{ legend:{display:false},
         tooltip:{ callbacks:{
-          title:items=>items[0].raw.raw ? new Date(items[0].raw.raw.dateSaisie).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '',
+          title:items=>items[0].raw.raw ? new Date(items[0].raw.raw.dateSaisie).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}) : '',
           label:ctx=>{ const d=ctx.raw.raw; if(!d) return ctx.dataset.label+': '+ctx.parsed.y+'/20';
-            if(ctx.dataset._kind==='class') return `Class average: ${ctx.parsed.y}/20`;
+            if(ctx.dataset._kind==='class') return `Moyenne de classe : ${ctx.parsed.y}/20`;
             const typeLine = d.type ? `${d.type} · coef ${d.coef}` : `coef ${d.coef}`;
-            return [ `${d.matiere}${d.devoir?' — '+d.devoir:''}`, `Grade: ${d.valeur}/${d.noteSur}  →  ${d.norm}/20`, typeLine,
-              d.normClass!=null ? `Class avg: ${d.normClass}/20 (you ${d.vsClass>=0?'+':''}${d.vsClass})` : '',
-              (d.minClasse!=null && d.maxClasse!=null) ? `Class range: ${d.minClasse}–${d.maxClasse}/${d.noteSur} (${d.normMin}–${d.normMax}/20)` : '' ].filter(Boolean);
+            return [ `${d.matiere}${d.devoir?' — '+d.devoir:''}`, `Note : ${d.valeur}/${d.noteSur}  →  ${d.norm}/20`, typeLine,
+              d.normClass!=null ? `Moyenne de classe : ${d.normClass}/20 (élève ${d.vsClass>=0?'+':''}${d.vsClass})` : '',
+              (d.minClasse!=null && d.maxClasse!=null) ? `Minimum et maximum de classe : ${d.minClasse}–${d.maxClasse}/${d.noteSur} (${d.normMin}–${d.normMax}/20)` : '' ].filter(Boolean);
           } } } }
     }, plugins:[passZone, examRangePlugin, crownPlugin]
   });
 
   function refresh(){
-    // while the "Subjects vs class" box is ticked, every refresh (subject filter,
+    // while the "Matières et classe" box is ticked, every refresh (subject filter,
     // period change) re-renders the gap view instead of falling back to grades.
     if(showingGap){ renderGap(); return; }
     chart.data.labels=labelsFor(); chart.data.datasets=datasets();
@@ -1309,8 +1252,8 @@ function renderDashboard(root, data, palette, opts={}){
   const periodSel = root.querySelector('.periodSel');
   if(periodSel){
     const months = [...new Set(seqAll.map(d=>{const m=new Date(d.dateSaisie); return m.getFullYear()+'-'+String(m.getMonth()+1).padStart(2,'0');}))].sort();
-    const monthLabel = ym=>{ const [y,m]=ym.split('-'); return new Date(y,m-1,1).toLocaleDateString('en-GB',{month:'short',year:'2-digit'}); };
-    let opts2 = '<option value="all">Full year</option>';
+    const monthLabel = ym=>{ const [y,m]=ym.split('-'); return new Date(y,m-1,1).toLocaleDateString('fr-FR',{month:'short',year:'2-digit'}); };
+    let opts2 = '<option value="all">Année entière</option>';
     months.forEach(ym=> opts2+=`<option value="${ym}">${monthLabel(ym)}</option>`);
     // also offer first-half / second-half if the span is long
     if(months.length>=6){
@@ -1339,7 +1282,7 @@ function renderDashboard(root, data, palette, opts={}){
     if(!resultBox) return;
     const rows = seq;                                   // active period view (filter-aware)
     const full = (rows===seqAll) || rows.length===seqAll.length;
-    // Match the "At a glance" overall tile: pooled for Pronote, per-20 weighted otherwise.
+    // Match the "En un coup d’œil" overall tile: pooled for Pronote, per-20 weighted otherwise.
     const m = opts.method || 'per20';
     let you=null, cls=null;
     if(m==='pool'){
@@ -1360,15 +1303,15 @@ function renderDashboard(root, data, palette, opts={}){
     // Pooled class figure is an estimate: we only have each test's class average, not every
     // pupil's raw points, so a true pooled class average can't be reconstructed. Mark it "~".
     const clsApprox = (m==='pool' && cls!=null);
-    const clsTitle = clsApprox ? ' title="Estimate — pooled from each test’s class average; true pooled class average needs per-pupil data we don’t have"' : '';
-    resultBox.innerHTML = `<span class="rr-year">${full?'Year':'Period'}: <b>You ${fmt1(you)}</b> <span class="rr-cls"${clsTitle}>· Class ${clsApprox?'~':''}${fmt1(cls)}</span>`
+    const clsTitle = clsApprox ? ' title="Estimation calculée à partir des moyennes de chaque évaluation ; le calcul officiel nécessite les données de chaque élève."' : '';
+    resultBox.innerHTML = `<span class="rr-year">${full?'Année':'Période'}: <b>Élève ${fmt1(you)}</b> <span class="rr-cls"${clsTitle}>· Classe ${clsApprox?'~':''}${fmt1(cls)}</span>`
       + (gap!=null ? ` <span class="rr-gap" style="background:${gapCol(gap)};color:${gapInk(gap)}">${gap>=0?'+':''}${gap.toFixed(1)}</span>` : '')
       + `</span>`;
   }
   renderResult();
 
 
-  /* ---- "Subjects vs class" static view (checkbox toggle, no animation) ----
+  /* ---- "Matières et classe" static view (checkbox toggle, no animation) ----
      Flattens the class average to a horizontal zero line and shows each subject's
      full-year cumulative coef-weighted gap vs class (student − class), clamped ±6.
      Stays on until the checkbox is unticked; respects the active subject filter
@@ -1403,7 +1346,7 @@ function renderDashboard(root, data, palette, opts={}){
         label:s, data:indices.map(i=>data[i]), parsing:true, spanGaps:true,
         borderColor:color(s), borderWidth:2.5, tension:0.3, fill:false,
         pointRadius:0, _kind:"subjgap" }));
-      lines.unshift({ label:"Class average", data:baseline(), parsing:true,
+      lines.unshift({ label:"Moyenne de classe", data:baseline(), parsing:true,
         borderColor:"rgba(154,163,192,0.65)", borderWidth:1.6, borderDash:[6,4],
         pointRadius:0, tension:0, fill:false, _kind:"baseline" });
       return lines;
@@ -1411,7 +1354,7 @@ function renderDashboard(root, data, palette, opts={}){
     const normalY = chart.options.scales.y;
     const gapY = { min:-CLAMP, max:CLAMP, grid:{color:'#2a3150'},
       ticks:{color:'#9aa3c0', stepSize:1, callback:v=> (v>0?'+':'')+v },
-      title:{display:true, text:'Gap vs class (pts)', color:'#9aa3c0'} };
+      title:{display:true, text:'Écart à la classe (points)', color:'#9aa3c0'} };
     // render the gap view (also called by refresh() while the box is ticked)
     const chartLegendEl = root.querySelector('.chart-legend');
     renderGap = ()=>{
@@ -1446,7 +1389,7 @@ function renderDashboard(root, data, palette, opts={}){
     const w=rows.reduce((s,d)=>s+d.coef,0);
     return w>0 ? rows.reduce((s,d)=>s+d.norm*d.coef,0)/w : null;
   }
-  const avgLabel = method==='pool' ? 'Average (pooled)' : 'Weighted avg';
+  const avgLabel = method==='pool' ? 'Moyenne (points cumulés)' : 'Moyenne pondérée';
   const rated=data.filter(d=>d.vsClass!=null);              // grades that have a class average
   const beat=rated.filter(d=>d.vsClass>0).length;
   const beatPct = rated.length ? Math.round(beat/rated.length*100) : 0;
@@ -1459,19 +1402,19 @@ function renderDashboard(root, data, palette, opts={}){
   const topStat = data.length
     ? [`${topCount} / ${data.length}`,
        withMax.length < data.length
-         ? `${data.length - withMax.length} grade(s) lack class-max data`
-         : `${Math.round(topCount/data.length*100)}% of graded`]
-    : ['n/a', 'no grades'];
+         ? `${data.length - withMax.length} note(s) sans maximum de classe`
+         : `${Math.round(topCount/data.length*100)}% des notes`]
+    : ['n/a', 'Aucune note'];
   const stats=[
-    ["Grades", data.length],
+    ["Notes", data.length],
     [avgLabel, overallAvg(data).toFixed(2)+"/20"],
-    ["Best", Math.max(...norms).toFixed(1)+"/20"],
-    ["Lowest", Math.min(...norms).toFixed(1)+"/20"],
-    ["Beat class %", beatPct+"%", `${beat} / ${rated.length}`],
-    ["👑 Top of class", topStat[0], topStat[1]],
+    ["Meilleure note", Math.max(...norms).toFixed(1)+"/20"],
+    ["Note la plus basse", Math.min(...norms).toFixed(1)+"/20"],
+    ["Au-dessus de la classe", beatPct+"%", `${beat} / ${rated.length}`],
+    ["👑 Maximum de la classe", topStat[0], topStat[1]],
   ];
   root.querySelector('.stats').innerHTML = stats.map(([k,v,sub])=>
-    `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`).join('');
+    `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div>${sub?`<div class="sub">${escapeHtml(sub)}</div>`:''}</div>`).join('');
 
   // per-subject range: band = class min..max, markers = class avg (○) & student (◆).
   // Prefer authoritative subject-level stats (Pronote); else derive from per-assessment data.
@@ -1506,7 +1449,7 @@ function renderDashboard(root, data, palette, opts={}){
         const band=document.createElement('div'); band.className='range-band';
         band.style.left=pct(x.lo)+'%'; band.style.width=Math.max(0.8,pct(x.hi)-pct(x.lo))+'%';
         band.style.background=hexA(color(x.s),0.35); band.style.borderColor=color(x.s);
-        band.title=`Class range: ${fmt(x.lo)} – ${fmt(x.hi)}`;
+        band.title=`Minimum et maximum de classe : ${fmt(x.lo)} – ${fmt(x.hi)}`;
         track.appendChild(band);
         // min & max end caps + labels so they're clearly visible
         [['lo',x.lo],['hi',x.hi]].forEach(([k,v])=>{
@@ -1518,11 +1461,11 @@ function renderDashboard(root, data, palette, opts={}){
       }
       if(x.classAvg!=null){
         const cm=document.createElement('div'); cm.className='range-mark class'; cm.style.left=pct(x.classAvg)+'%';
-        cm.title=`Class average: ${fmt(x.classAvg)}`; track.appendChild(cm);
+        cm.title=`Moyenne de classe : ${fmt(x.classAvg)}`; track.appendChild(cm);
       }
       if(x.avg!=null){
         const sm=document.createElement('div'); sm.className='range-mark student'; sm.style.left=pct(x.avg)+'%';
-        sm.style.background=color(x.s); sm.title=`Student: ${fmt(x.avg)}`; track.appendChild(sm);
+        sm.style.background=color(x.s); sm.title=`Élève : ${fmt(x.avg)}`; track.appendChild(sm);
       }
       row.appendChild(lab); row.appendChild(track); wrap.appendChild(row);
     });
@@ -1538,7 +1481,9 @@ function renderDashboard(root, data, palette, opts={}){
   /* ---------- heatmap: subject × ISO-week, color = diff-vs-class or raw /20 ---------- */
   const heatEl = root.querySelector('.heatmap');
   const heatLegEl = root.querySelector('.heatlegend');
-  const heatToggle = root.querySelector('.toggleHeatMode');
+  const heatMode=root.querySelector('.heatMode');
+  const heatPeriod=root.querySelector('.heatPeriod');
+  const heatDetail=root.querySelector('.heat-detail');
 
   // ISO week key + Monday date for a given date
   function isoWeek(d){
@@ -1564,9 +1509,9 @@ function renderDashboard(root, data, palette, opts={}){
     Object.assign(all, wk); Object.keys(all).forEach(k=>wk[k]=all[k]);
   }
   const weeks = Object.keys(wk).sort();
-  const weekLabel = k => { const m=wk[k].monday; return m.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}); };
+  const weekLabel = k => { const m=wk[k].monday; return m.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}); };
 
-  // per subject × week: coefficient-weighted norm + diff vs class (only real grades)
+  // per subject × week: pondéré par les coefficients norm + diff vs class (only real grades)
   const cellData = {};                 // subj -> { weekKey -> {norm, diff, items[]} }
   subjects.forEach(s=> cellData[s]={});
   data.forEach(d=>{
@@ -1600,121 +1545,97 @@ function renderDashboard(root, data, palette, opts={}){
   }
 
   function drawHeatmap(){
-    const rawMode = heatToggle.checked;
-    const grid=document.createElement('div'); grid.className='heatgrid';
-    grid.style.gridTemplateColumns = `130px repeat(${weeks.length}, minmax(0,1fr))`;
-    grid.style.gridTemplateRows = `22px`;   // header (month) row; rest use grid-auto-rows
-    // header row: one label per MONTH, spanning the weeks that fall in it
-    grid.appendChild(Object.assign(document.createElement('div'),{className:'hlabel headrow'}));
-    const monthOf = k => { const m=wk[k].monday; return m.getFullYear()+'-'+m.getMonth(); };
-    let col = 2;                                  // grid col 1 is the subject-label column
-    for(let i=0;i<weeks.length;){
-      const mk = monthOf(weeks[i]); let span=1;
-      while(i+span<weeks.length && monthOf(weeks[i+span])===mk) span++;
-      const m = wk[weeks[i]].monday;
-      const h=document.createElement('div'); h.className='hhead headrow';
-      h.textContent = m.toLocaleDateString('en-GB',{month:'short'}) + (m.getMonth()===0 ? " '"+String(m.getFullYear()).slice(2) : "");
-      h.style.gridColumn = `${col} / ${col+span}`;
-      grid.appendChild(h);
-      i+=span; col+=span;
-    }
-    // subject rows (same order as bar chart: by student avg desc)
-    const order = subjects.slice().sort((a,b)=>{
-      const ma=mean(data.filter(d=>d.matiere===a).map(d=>d.norm));
-      const mb=mean(data.filter(d=>d.matiere===b).map(d=>d.norm)); return mb-ma;
-    });
+    const rawMode=heatMode.value==='grades';
+    const shownWeeks=heatPeriod.value==='all'?weeks:weeks.slice(-12);
+    const grid=document.createElement('div');grid.className='heatgrid';
+    grid.style.gridTemplateColumns='minmax(90px,130px) repeat('+shownWeeks.length+',30px)';
+    grid.appendChild(Object.assign(document.createElement('div'),{className:'hlabel headrow',textContent:'Semaine du'}));
+    shownWeeks.forEach(k=>{const h=document.createElement('div');h.className='hhead headrow';h.textContent=wk[k].monday.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});h.title=weekLabel(k);grid.appendChild(h);});
+    const order=subjects.slice().sort((a,b)=>mean(data.filter(d=>d.matiere===b).map(d=>d.norm))-mean(data.filter(d=>d.matiere===a).map(d=>d.norm)));
     order.forEach(s=>{
-      const lab=document.createElement('div'); lab.className='hlabel'; lab.textContent=s; lab.style.color=color(s);
-      grid.appendChild(lab);
-      let carryVal=null, carryStarted=false, carriedFromLast=false;
-      weeks.forEach(k=>{
-        const c=cellData[s][k];
-        const cell=document.createElement('div'); cell.className='cell';
-        let val=null, isReal=false;
-        if(c){ val = rawMode ? c.norm : c.diff; isReal=true; carryStarted=true; carryVal=val; }
-        else if(carryStarted && carryVal!=null){ val=carryVal; }     // fill-forward
-        if(val==null){ cell.classList.add('empty'); }
-        else {
-          cell.style.background = rawMode ? rawColor(val) : diffColor(val);
-          if(!isReal) cell.classList.add('carry');
-          // tooltip
-          if(isReal){
-            const parts=c.items.map(it=>`${it.devoir||'(devoir)'}: ${it.valeur}/${it.noteSur}${it.normClass!=null?` (classe ${it.normClass})`:''}`);
-            cell.title = `${s} — ${weekLabel(k)}\n`+
-              (rawMode?`Grade: ${c.norm.toFixed(1)}/20`:`Diff vs class: ${c.diff>=0?'+':''}${c.diff.toFixed(1)}`)+
-              `\n`+parts.join('\n');
-          } else {
-            cell.title = `${s} — ${weekLabel(k)}\n(no new grade — showing previous week)`;
-          }
+      const label=document.createElement('div');label.className='hlabel';label.textContent=s;label.style.color=color(s);label.title=s;grid.appendChild(label);
+      shownWeeks.forEach(k=>{
+        const c=cellData[s][k],value=c?(rawMode?c.norm:c.diff):null;
+        const cell=document.createElement('button');cell.type='button';cell.className='cell';
+        const heading=s+' — semaine du '+weekLabel(k);
+        const parts=c?c.items.map(it=>(it.devoir||'Évaluation')+' : '+it.valeur+'/'+it.noteSur+(it.normClass!=null?' · classe '+it.normClass.toFixed(1)+'/20':'')):[];
+        let detail;
+        if(Number.isFinite(value)){
+          cell.style.background=rawMode?rawColor(value):diffColor(value);
+          detail=heading+' : '+(rawMode?value.toFixed(1)+'/20':(value>=0?'+':'')+value.toFixed(1)+' point(s) par rapport à la classe')+'. '+parts.join(' ; ');
+        }else{
+          cell.classList.add('empty');
+          detail=heading+' : '+(!c?'aucune nouvelle note.':rawMode?'résultat pondéré indisponible (coefficients nuls).':'moyenne de classe indisponible pour ces évaluations.')+(parts.length?' '+parts.join(' ; '):'');
         }
+        cell.title=detail;cell.setAttribute('aria-label',detail);
+        cell.onclick=()=>{grid.querySelectorAll('.selected').forEach(el=>el.classList.remove('selected'));cell.classList.add('selected');heatDetail.textContent=detail;};
         grid.appendChild(cell);
       });
     });
-    heatEl.innerHTML=''; heatEl.appendChild(grid);
-
-    // legend
-    if(rawMode){
-      heatLegEl.innerHTML = `<span>0</span><div class="scale">`+
-        Array.from({length:41},(_,i)=>`<span style="background:${rawColor(i*0.5)}"></span>`).join('')+
-        `</div><span>20 /20</span> &nbsp;·&nbsp; <span>red ≤ 10, green → 20</span>`;
-    } else {
-      heatLegEl.innerHTML = `<span>−5 (below class)</span><div class="scale">`+
-        Array.from({length:21},(_,i)=>`<span style="background:${diffColor(-5+i*0.5)}"></span>`).join('')+
-        `</div><span>+5 (above class)</span> &nbsp;·&nbsp; <span style="opacity:.42">faded = carried from previous week</span>`;
-    }
+    heatEl.replaceChildren(grid);heatDetail.textContent=shownWeeks.length?'Choisis une case pour voir son détail.':'Aucune note à afficher.';
+    heatLegEl.innerHTML=rawMode?'<span>0</span><div class="scale">'+Array.from({length:41},(_,i)=>'<span style="background:'+rawColor(i*0.5)+'"></span>').join('')+'</div><span>20 /20</span> · rouge ≤ 10, vert → 20':'<span>−5 (sous la classe)</span><div class="scale">'+Array.from({length:21},(_,i)=>'<span style="background:'+diffColor(-5+i*0.5)+'"></span>').join('')+'</div><span>+5 (au-dessus)</span>';
   }
-  heatToggle.onchange = drawHeatmap;
-  drawHeatmap();
+  heatMode.onchange=drawHeatmap;heatPeriod.onchange=drawHeatmap;drawHeatmap();
 
   /* ---------- subject radar: vs-class per subject, one polygon per year ---------- */
   const radarEl = root.querySelector('.radarChart');
   let radarChart = null;
   (function drawRadar(){
     const years = (opts.allYears || []).filter(y=>y.data && y.data.length);
-    const card = root.querySelector('.radar-card');
-    if(years.length<1){ if(card) card.style.display='none'; return; }
+    const status = root.querySelector('.radar-status'), box = radarEl.closest('.chartbox'), method = root.querySelector('.radar-method');
+    const unavailable = ()=>{
+      box.hidden=true;method.hidden=true;status.hidden=false;
+      status.textContent='Le radar sera disponible lorsque les minimums et maximums de classe permettront de comparer les matières. Les autres graphiques restent accessibles.';
+    };
+    if(years.length<1){ unavailable(); return; }
     const mean = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
-    // per year: canonical-subject -> % of class ceiling reached = studentAvg / classMax(moyMax) × 100
+    const number = value => value===null||value===undefined||value==='' ? null : Number.isFinite(Number(value)) ? Number(value) : null;
+    // Stored years contain raw records, independently of the selected chart.
+    // Use that year's averaging method and preserve zero coefficients/bounds.
+    function fromRecords(records,field,method){
+      const usable=records.filter(d=>number(d[field])!==null&&number(d.noteSur)>0&&(number(d.coef)??1)>=0);
+      const weight=usable.reduce((sum,d)=>sum+(number(d.coef)??1),0);
+      if(!weight)return null;
+      const denominator=method==='pool' ? usable.reduce((sum,d)=>sum+number(d.noteSur)*(number(d.coef)??1),0) : weight;
+      const numerator=usable.reduce((sum,d)=>sum+number(d[field])*(number(d.coef)??1)*(method==='pool'?1:20/number(d.noteSur)),0);
+      return numerator/denominator*(method==='pool'?20:1);
+    }
+    // Per year: subject -> relative position between the class minimum/maximum.
     const famLabel = {}; const perYear = [];
     years.forEach(y=>{
       const stats = y.subjectStats || {};
       // group this year's records by canonical family, keeping a display label and the raw subject label
       const byFam = {};
       y.data.forEach(d=>{
-        if(!d.noteSur) return;
+        if(number(d.noteSur)<=0||number(d.noteSur)===null||number(d.valeur)===null||(number(d.coef)??1)<0) return;
         const k = canon(d.matiere);
         const f = (byFam[k] = byFam[k] || {labels:new Set(), recs:[]});
         f.labels.add(d.matiere); f.recs.push(d);
         if(!famLabel[k]) famLabel[k] = d.matiere;
       });
-      const pct = {};
+      const pct = {}, derived = {};
       Object.keys(byFam).forEach(k=>{
         const {labels, recs} = byFam[k];
         // a family can bundle several raw subjects (e.g. LLC1 + LLC2 -> "English").
-        // Average the authoritative class stats across every bundled subject that
-        // carries them, so no course is silently dropped; derive from records only
-        // when none of them has stats.
-        const sts = [...labels].map(l=>stats[l]).filter(st=> st && st.studentAvg!=null && st.lo!=null && st.hi!=null);
-        let you, lo, hi;
-        if(sts.length){                                                                                        // authoritative
-          you = mean(sts.map(s=>s.studentAvg)); lo = mean(sts.map(s=>s.lo)); hi = mean(sts.map(s=>s.hi));
-        } else {                                                                                               // derive from records
-          you = mean(recs.map(d=>d.norm));
-          const mins = recs.filter(d=>d.normMin!=null).map(d=>d.normMin);
-          const maxes = recs.filter(d=>d.normMax!=null).map(d=>d.normMax);
-          lo = mins.length ? mean(mins) : null;
-          hi = maxes.length ? mean(maxes) : null;
-        }
-        // position within the class range: 0% = weakest class average, 100% = top class average
+        // Resolve each course independently so an official average never drops
+        // another course in the same family that needs a record-derived value.
+        const values=[...labels].map(label=>{
+          const official=stats[label]||{}, rows=recs.filter(d=>d.matiere===label);
+          const you=number(official.studentAvg),lo=number(official.lo),hi=number(official.hi);
+          return {you:you??fromRecords(rows,'valeur',y.method),lo:lo??fromRecords(rows,'minClasse',y.method),hi:hi??fromRecords(rows,'maxClasse',y.method),derived:you===null||lo===null||hi===null};
+        });
+        const complete=field=>values.every(v=>v[field]!==null)?mean(values.map(v=>v[field])):null;
+        const you=complete('you'),lo=complete('lo'),hi=complete('hi');
         if(you!=null && lo!=null && hi!=null && hi>lo)
           pct[k] = Math.max(0, Math.min(100, +((you-lo)/(hi-lo)*100).toFixed(1)));
+        derived[k]=values.some(v=>v.derived);
       });
-      perYear.push({ label:y.label||y.key, pct });
+      perYear.push({ label:y.label||y.key, pct, derived });
     });
     // axes = union of families across years
     const fams = [...new Set(perYear.flatMap(p=>Object.keys(p.pct)))];
-    if(!fams.length){ if(card) card.style.display='none'; return; }
-    if(card) card.style.display='';
+    if(!fams.length){ unavailable(); return; }
+    box.hidden=false;method.hidden=false;status.hidden=true;
     // Display-name overrides per family (raw first-seen label is used otherwise).
     const FAM_LABELS = { ANGLAIS: "Anglais LLC1+2" };
     // Axis order: group related subjects — languages, then English-taught history, then
@@ -1734,6 +1655,7 @@ function renderDashboard(root, data, palette, opts={}){
         // missing subject -> 50% placeholder (neutral midpoint), flagged for the tooltip
         data: fams.map(k=> p.pct[k]!=null ? p.pct[k] : 50),
         _missing: missing,
+        _derived: fams.map(k=>!!p.derived[k]),
         borderColor: col,
         backgroundColor: hexA(col, 0.15),
         borderWidth:2,
@@ -1760,8 +1682,8 @@ function renderDashboard(root, data, palette, opts={}){
           legend:{labels:{color:'#e8ecf7', usePointStyle:true, boxWidth:12}},
           tooltip:{callbacks:{label:c=>{
             const miss = c.dataset._missing && c.dataset._missing[c.dataIndex];
-            return miss ? `${c.dataset.label}: no data (placeholder at 50%)`
-                        : `${c.dataset.label}: ${c.parsed.r}% within class range`;
+            return miss ? `${c.dataset.label}: données absentes (repère à 50 %)`
+                        : `${c.dataset.label}: ${c.parsed.r}% dans la plage de la classe${c.dataset._derived[c.dataIndex]?' (estimé à partir des évaluations)':''}`;
           }}}
         }}
     });
@@ -1785,11 +1707,11 @@ function renderDashboard(root, data, palette, opts={}){
     const haveOverTime = pts.some(p=>p.y!=null);
 
     if(haveOverTime){
-      if(standTitle) standTitle.textContent='over time';
+      if(standTitle) standTitle.textContent='au fil du temps';
       standingChart = new Chart(standingEl, {
         type:'line',
         data:{ labels: seq.map((_,i)=>i), datasets:[{
-          label:'Standing (est.)', data:pts, parsing:false, spanGaps:true,
+          label:'Position estimée', data:pts, parsing:false, spanGaps:true,
           borderColor:'#c9d2f0', borderWidth:2, tension:0.3, fill:false,
           pointRadius: seq.map(d=>4+d.coef*2), pointHoverRadius: seq.map(d=>6+d.coef*2),
           pointBackgroundColor: seq.map(d=>color(d.matiere)), pointBorderColor:'#0f1220', pointBorderWidth:1.5
@@ -1798,13 +1720,13 @@ function renderDashboard(root, data, palette, opts={}){
           scales:{
             x:{type:'category', grid:{color:'#2a3150'}, ticks:{display:false}},
             y:{min:0,max:100, grid:{color:'#2a3150'}, ticks:{color:'#9aa3c0', stepSize:25, callback:v=>v+'%'},
-               title:{display:true,text:'Standing in class (est.)',color:'#9aa3c0'}}
+               title:{display:true,text:'Position estimée dans la classe',color:'#9aa3c0'}}
           },
           plugins:{ legend:{display:false},
             tooltip:{callbacks:{
-              title:items=> items[0].raw.raw ? new Date(items[0].raw.raw.dateSaisie).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '',
-              label:ctx=>{ const d=ctx.raw.raw; if(!d||ctx.parsed.y==null) return 'no class data';
-                return [`${d.matiere} — ${d.devoir||''}`.trim(), `~${ctx.parsed.y}th position`, `(${d.valeur}/${d.noteSur}; class ${d.normClass}/20, range ${d.normMin}–${d.normMax})`]; }
+              title:items=> items[0].raw.raw ? new Date(items[0].raw.raw.dateSaisie).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}) : '',
+              label:ctx=>{ const d=ctx.raw.raw; if(!d||ctx.parsed.y==null) return 'Données de classe indisponibles';
+                return [`${d.matiere} — ${d.devoir||''}`.trim(), `~${ctx.parsed.y}% de position estimée`, `(${d.valeur}/${d.noteSur}; classe ${d.normClass}/20, min–max ${d.normMin}–${d.normMax})`]; }
             }}
           }}
       });
@@ -1819,7 +1741,7 @@ function renderDashboard(root, data, palette, opts={}){
       return { s, pos: posInRange(st.studentAvg, st.classAvg, st.lo, st.hi), st };
     }).filter(Boolean).sort((a,b)=>b.pos-a.pos);
 
-    if(standTitle) standTitle.textContent='by subject';
+    if(standTitle) standTitle.textContent='par matière';
     standingChart = new Chart(standingEl, {
       type:'bar',
       data:{ labels: rows.map(r=>r.s), datasets:[{
@@ -1832,389 +1754,32 @@ function renderDashboard(root, data, palette, opts={}){
         },
         plugins:{ legend:{display:false},
           tooltip:{callbacks:{ label:ctx=>{ const r=rows[ctx.dataIndex];
-            return [`~${r.pos}th position in class`, `(you ${r.st.studentAvg}/20; class ${r.st.classAvg}/20, range ${r.st.lo}–${r.st.hi})`]; } }}
+            return [`~${r.pos}% de position estimée dans la classe`, `(élève ${r.st.studentAvg}/20; classe ${r.st.classAvg}/20, min–max ${r.st.lo}–${r.st.hi})`]; } }}
         }}
     });
   })();
 
-  (function drawBridge(){
-    const el=root.querySelector('.bridgeChart'), box=root.querySelector('.bridgeChartBox');
-    const summary=root.querySelector('.bridgeOnTrack'), note=root.querySelector('.bridgeNote');
-    const contextEl=root.querySelector('.bridgeContext');
-    if(!el) return;
-    const rows=classComparisonRows(subjects, opts.subjectStats||{});
-    if(rows.length){
-      const extent=Math.max(1,...rows.map(r=>Math.abs(r.gap)))*1.15;
-      root.__bridgeChart=new Chart(el, {
-        type:'bar',
-        data:{labels:rows.map(r=>r.s),datasets:[{
-          label:'Écart à la moyenne de classe (/20)', data:rows.map(r=>r.gap),
-          backgroundColor:rows.map(r=>color(r.s)+'cc'),borderRadius:3,barPercentage:0.7
-        }]},
-        options:{maintainAspectRatio:false,indexAxis:'y',
-          scales:{
-            x:{min:-extent,max:extent,grid:{color:'#2a3150'},
-              title:{display:true,text:'Écart à la classe en points sur 20 (droite = au-dessus)',color:'#9aa3c0'},
-              ticks:{color:'#9aa3c0',callback:v=>(v>0?'+':'')+Number(v.toFixed(1))}},
-            y:{grid:{display:false},ticks:{color:'#e8ecf7',font:{size:11}}}
-          },
-          plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{
-            const r=rows[ctx.dataIndex];
-            return ['Élève '+r.studentAvg.toFixed(2)+'/20 · classe '+r.classAvg.toFixed(2)+'/20',
-              'Écart '+(r.gap>0?'+':'')+r.gap.toFixed(2)+' point(s) ; aucun rang déduit.'];
-          }}}}
-        }
-      });
-      const above=rows.filter(r=>r.gap>0).length;
-      if(summary) summary.textContent='Moyenne supérieure à celle de la classe dans '+above+' matière(s) sur '+rows.length
-        +'. Ce constat local ne détermine ni un rang national global ni une chance d’admission.';
-    }else{
-      if(box) box.hidden=true;
-      if(summary) summary.textContent='Moyennes de classe indisponibles. Aucun rang national déduit ; les repères du collège restent présentés ci-dessous.';
-    }
-    const context=nationalSchoolContext(opts.uai, opts.year);
-    if(contextEl){
-      if(context && context.rows.length){
-        const name=document.createElement('p'); name.className='legend-note';
-        name.style.fontWeight='600';
-        name.textContent=context.name+' — début de 6ᵉ, trois dernières sessions disponibles';
-        contextEl.appendChild(name);
-        const scroll=document.createElement('div'); scroll.style.overflowX='auto';
-        const table=document.createElement('table');
-        table.style.cssText='width:100%;font-size:12px;border-collapse:collapse;text-align:left';
-        const head=document.createElement('thead'), tr=document.createElement('tr');
-        ['Test','Session','Score collège','Score national','Écart de scores','Effectif'].forEach(label=>{
-          const th=document.createElement('th'); th.textContent=label;
-          th.style.cssText='padding:6px;border-bottom:1px solid var(--line);white-space:nowrap'; tr.appendChild(th);
-        });
-        head.appendChild(tr);table.appendChild(head);
-        const body=document.createElement('tbody');
-        context.rows.forEach(r=>{
-          const row=document.createElement('tr');
-          [r.discipline,r.year,r.school.score_moyen,r.national.score_moyen,
-            (r.delta>0?'+':'')+r.delta,r.school.effectif??'—'].forEach(value=>{
-            const td=document.createElement('td');td.textContent=String(value);
-            td.style.cssText='padding:6px;border-bottom:1px solid var(--line);white-space:nowrap';row.appendChild(td);
-          });body.appendChild(row);
-        });table.appendChild(body);scroll.appendChild(table);contextEl.appendChild(scroll);
-        const explain=document.createElement('p');explain.className='legend-note';
-        explain.textContent='Scores sur l’échelle standardisée DEPP (référence initiale : moyenne 250, écart-type 50), sans maximum fixé à 300. '
-          +'Chaque écart compare la même session et le même test. Ces cohortes de 6ᵉ ne représentent pas nécessairement la classe actuelle.';
-        contextEl.appendChild(explain);
-        if(context.dnb && Number.isFinite(context.dnb.brevet_note_ecrit_g)){
-          const dnb=context.dnb,p=document.createElement('p');p.className='legend-note';
-          p.textContent='Repère séparé — DNB '+dnb.year+' : moyenne aux écrits '+dnb.brevet_note_ecrit_g.toFixed(1)
-            +'/20 (ensemble des épreuves). Il concerne une autre cohorte et n’entre pas dans le calcul d’un percentile.';
-          contextEl.appendChild(p);
-        }
-      }else{
-        contextEl.textContent='Référence nationale du collège indisponible pour cette année. Aucun décalage supposé égal à zéro.';
-      }
-    }
-    if(note) note.textContent='Méthode : écarts de moyennes observés et contexte officiel présentés séparément. '
-      +'Le modèle par sous-test ci-dessous utilise les taux de réussite par question et la part nationale « Satisfaisant ». '
-      +'Les scores individuels sont observés ; leurs percentiles sont modélisés, sans validation externe. Aucune confiance élevée n’est attribuée à partir du seul contexte du collège.';
-  })();
-
-  /* ---- Horizon: national positioning (left) + hedged school ladder (right) ----
-     Honesty is the whole point. The national chart maps the child's own-level
-     Français/Maths averages onto the NATIONAL début-6ᵉ distribution (/300 test,
-     indicative only — NOT the Pronote /20), plus the overall /20 on the DNB
-     mention bands. The ladder shows admitted-student profile bands (mostly
-     post-bac) as indicative references, never cutoffs. */
-  (function drawHorizon(){
-    const you = overallAvg(data);                       // same number as the "Weighted avg" tile
-
-    // === TOP: national 6ᵉ-eval — real per-test item score + modelled position ===
-    // One horizontal bar per test, x = item count (0→max). The three official zones
-    // (À besoins / Fragile / Satisfaisant) are drawn as coloured bands from the
-    // published item-count thresholds; the child's real score (counted from the QR
-    // sheets) is a bright marker. The "~top X%" beside it is a beta-binomial model
-    // calibrated on the DEPP per-item rates + the national %Satisfaisant — a model
-    // estimate, national (not IPS-specific), NOT a /300 z-score.
-    const natTestEl = root.querySelector('.horizonNatTest');
-    const natResultNote = root.querySelector('.natResultNote');
-    const natModelNote = root.querySelector('.natModelNote');
-    const natTestRow = root.querySelector('.natTestRow');
-    const is6eme = /6\s*e|sixi/i.test(opts.level||'');
-    const nat = opts.natEval;
-    const haveNat = is6eme && nat && Array.isArray(nat.tests) && nat.tests.length;
-    if(natTestRow) natTestRow.style.display = (is6eme ? '' : 'none');
-    if(natTestEl && is6eme && haveNat){
-      // zone colours: À besoins (rose) → Fragile (amber) → Satisfaisant (green)
-      const Z = { besoins:'#e06c9f', fragile:'#ffd166', satis:'#2ecc9b' };
-      const DISC = { maths:'#6ea8fe', francais:'#c792ea' };
-      // normalise each test onto a shared 0→100% of its own max so bars are comparable
-      const rows = nat.tests.map(t=>{
-        const estimate = nat6Estimate(t.rates, t.max, t.seuilSat, t.natSatPct, t.score);
-        const topPct = estimate.valid ? estimate.topPct : null;
-        const b1 = t.cut ? t.cut[0] : Math.round(t.max*0.3);   // À besoins ≤ b1
-        const b2 = t.cut ? t.cut[1] : (t.seuilSat-1);          // Fragile ≤ b2
-        return { ...t, topPct, estimate, b1, b2 };
-      });
-      const labels = rows.map(r=>{
-        const lines=[''];
-        r.label.split(' ').forEach(word=>{
-          const last=lines.length-1;
-          if(lines[last] && (lines[last]+' '+word).length>18) lines.push(word);
-          else lines[last]+=(lines[last]?' ':'')+word;
-        });
-        return lines;
-      });
-      // stacked segments expressed as fraction of max (so every bar is full-width)
-      const seg = (r,a,b)=> Math.max(0,(b-a))/r.max*100;
-      const dsBesoins = { label:'À besoins', backgroundColor:Z.besoins, data:rows.map(r=>seg(r,0,r.b1)), stack:'z', borderWidth:0, barPercentage:0.5, categoryPercentage:0.9, base:0 };
-      const dsFragile = { label:'Fragile', backgroundColor:Z.fragile, data:rows.map(r=>seg(r,r.b1,r.b2)), stack:'z', borderWidth:0, barPercentage:0.5, categoryPercentage:0.9 };
-      const dsSatis   = { label:'Satisfaisant', backgroundColor:Z.satis, data:rows.map(r=>seg(r,r.b2,r.max)), stack:'z', borderWidth:0, barPercentage:0.5, categoryPercentage:0.9 };
-      new Chart(natTestEl, {
-        type:'bar',
-        data:{ labels, datasets:[dsBesoins, dsFragile, dsSatis] },
-        options:{ maintainAspectRatio:false, indexAxis:'y',
-          layout:{padding:{right:78, top:4}},
-          scales:{
-            x:{ stacked:true, min:0, max:100, grid:{color:'#2a3150'},
-                ticks:{color:'#9aa3c0', callback:v=>v+'%'},
-                title:{display:true, color:'#9aa3c0', text:['Barre : score observé','Jaune : rang modélisé'],font:{size:10}} },
-            y:{ stacked:true, grid:{display:false}, ticks:{color:'#e8ecf7', font:{size:11}} }
-          },
-          plugins:{ legend:{display:true, labels:{color:'#e8ecf7', boxWidth:12, font:{size:11}}},
-            tooltip:{callbacks:{
-              title:items=>rows[items[0].dataIndex].label,
-              label:ctx=>{ const r=rows[ctx.dataIndex];
-                return [`Score de ${nat.eleve||'l’élève'} : ${r.score}/${r.max}  ·  ${nat6Band(r.score,r.max,r.seuilSat)}`,
-                  `Seuil « Satisfaisant » : ≥ ${r.seuilSat}/${r.max}`,
-                  r.estimate.valid ? nat6TopLabel(r.estimate)+' — modèle bêta-binomial, au moins ce score.' : r.estimate.reason,
-                  r.estimate.valid ? 'Le segment couvre les ex æquo et les solutions de calibrage ; ce n’est pas un intervalle de confiance.' : 'Le score reste observé ; aucun rang calculé.']; }
-            }}
-          }},
-        plugins:[{ id:'natscore', afterDraw(c){
-          const xs=c.scales.x, ys=c.scales.y, ctx=c.ctx, area=c.chartArea;
-          const rowH = ys.height/rows.length;
-          const barHalf = rowH*0.5*0.5*0.9;   // matches barPercentage*categoryPercentage
-          rows.forEach((r,i)=>{
-            const frac = r.score/r.max*100, px=xs.getPixelForValue(frac);
-            const yc = ys.getPixelForValue(i);
-            // bar sits centred on yc; nudge the score marker to the bar's vertical span
-            const bTop = yc - barHalf, bBot = yc + barHalf;
-            ctx.save();
-            // --- score marker on the zone bar ---
-            ctx.strokeStyle='#0b0f1e'; ctx.lineWidth=4; ctx.beginPath();
-            ctx.moveTo(px, bTop); ctx.lineTo(px, bBot); ctx.stroke();
-            ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.beginPath();
-            ctx.moveTo(px, bTop); ctx.lineTo(px, bBot); ctx.stroke();
-            ctx.fillStyle='#0b0f1e'; ctx.font='bold 11px sans-serif'; ctx.textBaseline='middle';
-            ctx.textAlign = frac>12?'right':'left';
-            ctx.fillText(`${r.score}/${r.max}`, px+(frac>12?-6:6), yc);
-            if(!r.estimate.valid){
-              ctx.fillStyle='#9aa3c0';ctx.font='10px sans-serif';ctx.textAlign='left';
-              ctx.fillText('rang indisponible',area.right+8,yc);ctx.restore();return;
-            }
-            // Modelled percentile lane, separate from the observed score.
-            const laneY = bBot + 11, pctile = Math.max(0, Math.min(100, 100 - r.topPct));
-            const lpx = xs.getPixelForValue(pctile);
-            ctx.strokeStyle='#3a4266'; ctx.lineWidth=2; ctx.beginPath();
-            ctx.moveTo(area.left, laneY); ctx.lineTo(area.right, laneY); ctx.stroke();
-            // tick at 0 and 100
-            ctx.fillStyle='#6b7398'; ctx.font='9px sans-serif'; ctx.textBaseline='middle';
-            ctx.textAlign='left';  ctx.fillText('0', area.left-2, laneY+9);
-            ctx.textAlign='right'; ctx.fillText('100e', area.right+2, laneY+9);
-            // Ties span P(S > score)..P(S >= score), not a measured point.
-            const end=xs.getPixelForValue(100-r.estimate.topStrictPct);
-            ctx.strokeStyle='#ffd166';ctx.lineWidth=6;ctx.beginPath();
-            ctx.moveTo(lpx,laneY);ctx.lineTo(Math.max(lpx+1,end),laneY);ctx.stroke();
-            // "~top X%" labels the model's inclusive upper-tail share.
-            ctx.fillStyle='#ffd166'; ctx.font='bold 12px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
-            ctx.fillText(nat6TopLabel(r.estimate), area.right+8, yc);
-            ctx.restore();
-          });
-        }}]
-      });
-      if(natResultNote) natResultNote.textContent =
-        `${nat.eleve||''}${nat.school?.nom?' · '+nat.school.nom:''}  (réf. nationale ${NAT6.year})`.trim();
-      if(natModelNote) natModelNote.textContent =
-        'Score = comptage observé par question. « ~top X% » = part modélisée obtenant au moins ce score dans ce sous-test. Le bêta-binomial utilise la moyenne des taux par question et est calibré sur la part nationale « Satisfaisant » ; il ne reproduit pas chaque difficulté individuellement. Les corrélations réelles et la distribution nationale des scores ne sont pas connues : calibrage vérifié, précision des rangs non validée. Le segment jaune couvre les ex æquo et les solutions de calibrage, sans représenter l’incertitude du modèle. Les références d’une autre session restent une hypothèse de stabilité. Aucun meilleur sous-test n’est retenu comme rang global.';
-    } else if(natTestEl && is6eme && !haveNat){
-      if(natResultNote) natResultNote.textContent = '⚠ résultats non chargés';
-      if(natModelNote) natModelNote.textContent = 'Charge la feuille « réponses détaillées » de l’éval nationale dans les Réglages pour voir la position par test.';
-    }
-
-    // DNB thresholds are exam references, not a bulletin-to-percentile mapping.
-    const natEl = root.querySelector('.horizonNat');
-    if(natEl){
-      // Horizontal "mention ladder": fixed rungs 12/14/16/20 + a ★ YOU line.
-      new Chart(natEl, {
-        type:'bar',
-        data:{ labels:['Mention Très Bien ≥16','Mention Bien ≥14','Mention AB ≥12'],
-          datasets:[{ data:[[16,20],[14,16],[12,14]],
-            backgroundColor:['rgba(46,204,155,0.45)','rgba(110,168,254,0.4)','rgba(199,146,234,0.35)'],
-            borderColor:['#2ecc9b','#6ea8fe','#c792ea'], borderWidth:1, borderRadius:3, barPercentage:0.6 }]},
-        options:{ maintainAspectRatio:false, indexAxis:'y',
-          scales:{
-            x:{min:8,max:20, grid:{color:'#2a3150'}, ticks:{color:'#9aa3c0', stepSize:2, callback:v=>v+'/20'}},
-            y:{grid:{display:false}, ticks:{color:'#e8ecf7', font:{size:11}}}
-          },
-          plugins:{ legend:{display:false},
-            tooltip:{callbacks:{
-              title:()=>'Seuils de mention du brevet',
-              label:ctx=>['Seuil : '+[16,14,12][ctx.dataIndex]+'/20 à cet examen.',
-                'La moyenne au bulletin ne permet pas de déduire une mention ou un rang national.'] }}
-          }},
-        plugins:[{ id:'younat', afterDraw(c){ const xs=c.scales.x,a=c.chartArea; if(!xs)return;
-          const px=xs.getPixelForValue(you), ctx=c.ctx; ctx.save();
-          ctx.strokeStyle='#ffd166'; ctx.lineWidth=2.5; ctx.beginPath();
-          ctx.moveTo(px,a.top); ctx.lineTo(px,a.bottom); ctx.stroke();
-          ctx.fillStyle='#ffd166'; ctx.font='bold 11px sans-serif';
-          ctx.textAlign = px>(a.left+a.right)/2?'right':'left';
-          ctx.fillText(`★ bulletin ${you.toFixed(1)}/20 (autre évaluation)`, px+(ctx.textAlign==='right'?-6:6), a.top+12);
-          ctx.restore(); } }]
-      });
-    }
-
-    // === RIGHT: hedged school ladder ===
-    const ladEl = root.querySelector('.horizonLadder');
-    const intlToggle = root.querySelector('.toggleIntl');
-    let ladderChart = null;
-    const momentColor = m => m==='prepa' ? '#6ea8fe' : m==='lycee' ? '#2ecc9b' : '#c792ea';
-    function buildLadder(){
-      if(ladderChart){ ladderChart.destroy(); ladderChart=null; }
-      const showIntl = intlToggle && intlToggle.checked;
-      const rungs = HORIZON.filter(r=> showIntl || r.moment!=='univ-intl');
-      new Chart(ladEl, {
-        type:'bar',
-        data:{ labels: rungs.map(r=>r.label), datasets:[
-          { label:'bande indicative', data: rungs.map(r=>[r.lo,r.hi]),
-            backgroundColor: rungs.map(r=>hexA(momentColor(r.moment),0.55)),
-            borderColor: rungs.map(r=>momentColor(r.moment)), borderWidth:1, borderRadius:3, barPercentage:0.7 }
-        ]},
-        options:{ maintainAspectRatio:false, indexAxis:'y',
-          scales:{
-            x:{min:8, max:20, grid:{color:'#2a3150'}, ticks:{color:'#9aa3c0', stepSize:2, callback:v=>v+'/20'}},
-            y:{grid:{display:false}, ticks:{color:'#e8ecf7', font:{size:10}}}
-          },
-          plugins:{ legend:{display:false},
-            annotation: undefined,   // (no plugin) — draw YOU via a thin dataset below
-            tooltip:{callbacks:{ label:ctx=>{ const r=rungs[ctx.dataIndex];
-              return [`${r.label}`, `profil admis indicatif ≈ ${r.lo}–${r.hi}/20`,
-                      `${r.momentFr} · source ${r.honesty==='official'?'officielle':'rapportée'}`,
-                      `⚠ repère, PAS un seuil d'admission`]; } }}
-          }},
-        plugins:[{
-          id:'youline', afterDraw(c){
-            const xs=c.scales.x, a=c.chartArea; if(!xs) return;
-            const px=xs.getPixelForValue(you);
-            const ctx=c.ctx; ctx.save();
-            ctx.strokeStyle='#ffffff'; ctx.lineWidth=2; ctx.setLineDash([4,3]);
-            ctx.beginPath(); ctx.moveTo(px,a.top); ctx.lineTo(px,a.bottom); ctx.stroke();
-            ctx.setLineDash([]); ctx.fillStyle='#ffffff'; ctx.font='bold 11px sans-serif';
-            ctx.textAlign = px > (a.left+a.right)/2 ? 'right':'left';
-            ctx.fillText(`★ ${you.toFixed(1)}/20`, px + (ctx.textAlign==='right'?-6:6), a.top+12);
-            ctx.restore();
-          }
-        }]
-      });
-      ladderChart = Chart.getChart(ladEl);
-    }
-    if(ladEl){ buildLadder(); if(intlToggle) intlToggle.addEventListener('change', buildLadder); }
-
-    // === BOTTOM: Alpes-Maritimes lycées ranked by value added (honest) ===
-    const amEl = root.querySelector('.amLycees');
-    const amToggle = root.querySelector('.toggleLyceeMetric');
-    const am3yToggle = root.querySelector('.toggleLycee3y');
-    const amFilter = root.querySelector('.amFilter');
-    let amChart = null;
-    function buildAM(){
-      if(amChart){ amChart.destroy(); amChart=null; }
-      // Two modes, each its own bar style:
-      //  · default (valeur ajoutée): ONE bar, length = va (2025 or 3-yr), coloured by
-      //    secteur (bleu = public, violet = privé). Sorted best→worst.
-      //  · "réussite au bac": STACKED bar AB→B→TB (🟡→🔵→🟢), length = taux de mention.
-      //    Sorted by total mention rate, highest first.
-      const byReussite = amToggle && amToggle.checked;
-      const use3y = am3yToggle && am3yToggle.checked;
-      const per = use3y ? '3 ans (2023-25)' : String(AM_LYCEES_YEAR);
-      const vaKey  = use3y ? 'vaMen3' : 'vaMen';
-      const menKey = use3y ? 'men3'   : 'men';
-      const reuKey = use3y ? 'reu3'   : 'reu';
-      const abKey = use3y?'bAb3':'bAb', bKey = use3y?'bB3':'bB', tbKey = use3y?'bTb3':'bTb';
-      const q = (amFilter && amFilter.value || '').trim().toLowerCase();
-      const sortVal = l => byReussite ? (l[menKey]==null?null:l[menKey]) : (l[vaKey]==null?null:l[vaKey]);
-      const rows = AM_LYCEES.filter(l=> sortVal(l)!=null
-          && (!q || (l.nom+' '+l.ville).toLowerCase().includes(q)))
-        .slice().sort((a,b)=> sortVal(b)-sortVal(a));
-      const SECTOR = l => l.secteur==='public' ? '#6ea8fe' : '#c792ea';
-      const MENT = { ab:'#ffd166', b:'#6ea8fe', tb:'#2ecc9b' };
-      const f  = v => v==null ? 'n/d' : (v>=0?'+':'')+v;
-      const f0 = v => v==null ? 'n/d' : v;
-
-      let cfg;
-      if(byReussite){
-        // stacked AB→B→TB (left→right). Rescale the count-based segments so their
-        // sum equals the official taux_men_total of the active period (2025 or 3-yr
-        // avg): keeps each mention's proportion, bar length = published rate exactly.
-        const seg = (l,key)=>{ const raw=(l[abKey]||0)+(l[bKey]||0)+(l[tbKey]||0), men=l[menKey];
-          return raw>0 && men!=null ? +(l[key]*men/raw).toFixed(1) : 0; };
-        const mk = (key,label,color)=>({ label, data: rows.map(l=>seg(l,key)),
-          backgroundColor: color, borderWidth:0, stack:'m', barPercentage:0.84 });
-        cfg = {
-          type:'bar',
-          data:{ labels: rows.map(l=>`${l.nom} · ${l.ville}`),
-            datasets:[ mk(abKey,'Assez Bien',MENT.ab), mk(bKey,'Bien',MENT.b), mk(tbKey,'Très Bien',MENT.tb) ]},
-          options:{ maintainAspectRatio:false, indexAxis:'y',
-            scales:{
-              x:{ stacked:true, min:0, max:100, grid:{color:'#2a3150'}, ticks:{color:'#9aa3c0', callback:v=>v+'%'},
-                  title:{display:true, color:'#9aa3c0', text:`taux de mention au bac — ${per} (🟡AB · 🔵B · 🟢TB)`}},
-              y:{ stacked:true, grid:{display:false}, ticks:{color:'#e8ecf7', font:{size:10}, autoSkip:false}}
-            },
-            plugins:{ legend:{display:true, labels:{color:'#e8ecf7', boxWidth:12, font:{size:11}}},
-              tooltip:{callbacks:{
-                title:items=>{ const l=rows[items[0].dataIndex]; return `${l.nom} (${l.ville})`; },
-                label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.x}%`,
-                afterBody:items=>{ const l=rows[items[0].dataIndex];
-                  return [`${l.secteur==='public'?'public':'privé sous contrat'} · ${l.bN} élèves`,
-                    `Mention totale ${f0(l[menKey])}% · Réussite ${f0(l[reuKey])}% (${per})`,
-                    `Valeur ajoutée — 2025 ${f(l.vaMen)} · 3 ans ${f(l.vaMen3)}`]; }
-              }}
-            }}
-        };
-      } else {
-        // single bar = valeur ajoutée (2025 or 3-yr), coloured by secteur
-        cfg = {
-          type:'bar',
-          data:{ labels: rows.map(l=>`${l.nom} · ${l.ville}`),
-            datasets:[{ data: rows.map(l=>l[vaKey]),
-              backgroundColor: rows.map(l=>hexA(SECTOR(l),0.75)),
-              borderColor: rows.map(SECTOR), borderWidth:1, borderRadius:3, barPercentage:0.84 }]},
-          options:{ maintainAspectRatio:false, indexAxis:'y',
-            scales:{
-              x:{ grid:{color:'#2a3150'}, ticks:{color:'#9aa3c0', callback:v=>(v>0?'+':'')+v+' pts'},
-                  title:{display:true, color:'#9aa3c0',
-                   text:`valeur ajoutée mention — ${per} (pts) · bleu=public, violet=privé`}},
-              y:{ grid:{display:false}, ticks:{color:'#e8ecf7', font:{size:10}, autoSkip:false}}
-            },
-            plugins:{ legend:{display:false},
-              tooltip:{callbacks:{
-                title:items=>{ const l=rows[items[0].dataIndex]; return `${l.nom} (${l.ville})`; },
-                label:ctx=>{ const l=rows[ctx.dataIndex];
-                  return [`${l.secteur==='public'?'public':'privé sous contrat'} · ${l.bN} élèves`,
-                    `Valeur ajoutée — 2025 ${f(l.vaMen)} · 3 ans ${f(l.vaMen3)}`,
-                    `Taux de mention ${f0(l[menKey])}% · Réussite ${f0(l[reuKey])}% (${per})`,
-                    `Mentions ${per}: 🟢TB ${f0(l[tbKey])}% · 🔵B ${f0(l[bKey])}% · 🟡AB ${f0(l[abKey])}%`]; }
-              }}
-            }}
-        };
-      }
-      new Chart(amEl, cfg);
-      amChart = Chart.getChart(amEl);
-    }
-    if(amEl){ buildAM();
-      [amToggle, am3yToggle].forEach(t=> t && t.addEventListener('change', buildAM));
-      if(amFilter) amFilter.addEventListener('input', buildAM); }
-  })();
+  // Only observed national-test results remain in the dashboard.
+  const nationalBox=root.querySelector('.national-results'),nationalScores=root.querySelector('.national-scores');
+  const tests=/6\s*e|sixi/i.test(opts.level||'')&&Array.isArray(opts.natEval?.tests)?opts.natEval.tests:[];
+  tests.forEach(t=>{
+    const score=Number(t.score),max=Number(t.max);
+    if(t.score==null||t.max==null||!Number.isFinite(score)||!Number.isFinite(max)||max<=0||score<0||score>max)return;
+    const row=document.createElement('div');row.className='national-score';
+    const label=document.createElement('strong');label.textContent=String(t.label||'Sous-test');
+    const value=document.createElement('span');value.textContent=score+'/'+max;
+    const band=document.createElement('span');band.className='legend-note';
+    const cutoff=t.seuilSat,lower=Array.isArray(t.cut)?t.cut[0]:null;
+    band.textContent=Number.isFinite(cutoff)&&cutoff>0&&cutoff<=max?(score>=cutoff?'Satisfaisant':Number.isFinite(lower)&&lower<cutoff?(score<=lower?'À besoins':'Fragile'):'Sous le seuil satisfaisant'):'Bande de maîtrise non renseignée';
+    const bar=document.createElement('progress');bar.max=max;bar.value=score;bar.setAttribute('aria-label',String(t.label||'Sous-test')+' : '+score+'/'+max);
+    row.append(label,value,band,bar);nationalScores.appendChild(row);nationalBox.hidden=false;
+  });
+  root.querySelector('.open-planning').onclick=()=>{if(store[activeChild]){store[activeChild].year='__future__';renderChild(activeChild);}};
 
 
   return { chart, barChart, radarChart, standingChart,
     destroy(){ [chart,barChart,radarChart,standingChart].forEach(c=>c&&c.destroy&&c.destroy());
-      [root.querySelector('.horizonNatTest'),root.querySelector('.horizonNat'),root.querySelector('.horizonLadder'),root.querySelector('.amLycees'),root.querySelector('.bridgeChart')].forEach(el=>{ const c=el&&Chart.getChart(el); if(c)c.destroy(); }); } };
+ } };
 }
 
 // Full-page Planning-the-Future view (rendered into a kid's holder when the

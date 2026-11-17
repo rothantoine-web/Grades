@@ -320,6 +320,7 @@
       '<section class="section" id="section-4">'+heading(4,'Des établissements pour ce parcours','Des suggestions d’abord. Tu peux ensuite chercher une école précise.')+
       '<div id="scope-controls">'+scopeControlsHTML()+'</div><div id="family-picker">'+familyPickerHTML()+'</div>'+catalogueFiltersHTML()+'<div id="proposal-slot">'+proposalsHTML()+'</div>'+
       '<div class="saved" id="saved-goals">'+savedGoalButtons()+'</div><div id="target-slot">'+(chosen?targetHTML(chosen):'')+'</div>'+
+      FutureLycees.html()+
       '<details id="school-search"><summary>🔎 Chercher un autre établissement ou une formation en France</summary><form class="searchbar" id="search-form"><label>Établissement ou formation<input id="search" placeholder="CIV, Masséna, médecine, design…" autocomplete="off"></label><label>Étape<select id="stage"><option value="all">Toutes les étapes</option><option value="lycee">Entrée au lycée</option><option value="postbac">Après le bac</option></select></label><div class="search-scope"><span>Périmètre</span><strong id="search-scope-label">'+esc(scopeLabel())+'</strong></div><button type="submit" id="search-online">Chercher en France</button></form><p class="context" id="search-status">Recherche dans les catalogues publics.</p><div id="search-results" class="search-results"></div><nav class="search-pagination" id="search-pagination" aria-label="Pages de résultats"></nav></details>'+
       '<details id="custom-details"><summary>Ajouter un établissement que je ne trouve pas</summary><form id="custom-form"><div class="profile-form"><label>Nom de l’établissement<input id="custom-name" required maxlength="150"></label><label>Formation ou section précise<input id="custom-program" required maxlength="200" placeholder="Par exemple : seconde avec section…"></label><label>Étape<select id="custom-stage"><option value="lycee">Entrée au lycée</option><option value="postbac">Après le bac</option></select></label><label>Famille de parcours<select id="custom-family">'+FAMILIES.map(f=>'<option value="'+f.id+'">'+f.name+'</option>').join('')+'</select></label><label>Lien officiel, si connu<input id="custom-url" type="url" placeholder="https://…"></label></div><button class="small-gap" type="submit">Garder ce projet à documenter</button><p class="notification" id="custom-status"></p></form></details></section>'+
       '<section class="section" id="section-5">'+heading(5,'Deux actions maintenant, puis un nouveau point','Un peu de découverte, un peu de préparation. Le projet grandit avec toi.')+'<div class="grid2" id="actions">'+actionsHTML(chosen)+'</div><div class="review"><div class="card"><h3>Au prochain bulletin ou conseil de classe</h3><p>Relire les appréciations, garder ce qui aide à progresser et ajuster le cap.</p><label class="small-gap">Une observation à garder · facultatif<textarea id="review-note" maxlength="1500" placeholder="Ce que nous avons découvert ou ce qui a changé…">'+esc(state.reviewDraft)+'</textarea></label><button id="record-review">Garder ce point d’étape</button><p class="notification" id="review-status">'+(state.reviews.length?'Dernier point conservé : '+date(state.reviews.at(-1).date)+'.':'Premier point à construire ensemble.')+'</p></div><div class="card"><h3>Le projet au fil du temps</h3><div class="history" id="review-history">'+historyHTML()+'</div></div></div>'+
@@ -435,6 +436,7 @@
     }
   }
   function bind(){
+    FutureLycees.mount(selectGoal,{isActive:()=>!!payload.children.find(c=>c.name===child)});
     $('#child-select').onchange=e=>{
       const name=e.target.value;
       if(embedded&&!payload.children.find(c=>c.name===name)?.demo){parent.postMessage({type:'futurepaths:child',child:name},location.origin==='null'?'*':location.origin);}
@@ -535,6 +537,7 @@
     const next=e.data.payload;if(!next||next.version!==1||!Array.isArray(next.children))return;
     payload=withDemos(next);child=next.activeChild||payload.children[0]?.name;state=saved();resetSearch();render();
   });
+  window.addEventListener('pagehide',()=>FutureLycees.clear());
   // Testable read-only view of the model; no raw grade or account data is exposed here.
   window.FuturePaths={milestones,levelIndex,familyReading,getProfile:()=>pupil(),admissionsSummary:g=>FutureAdmissions.summary(g,state.historyWindow)};
   if(embedded){
